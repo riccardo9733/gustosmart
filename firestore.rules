@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocumentOwner() {
+      return isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    function willBeDocumentOwner() {
+      return isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 2. Recipes collection
+    match /recipes/{recipeId} {
+      // Allow read/update/delete only if user owns the recipe
+      allow read, update, delete: if isDocumentOwner();
+      // Allow creation if the user is assigning the recipe to themselves
+      allow create: if willBeDocumentOwner();
+    }
+
+    // 3. Shopping Lists collection
+    match /shopping_lists/{listId} {
+      // Allow read/update/delete only if user owns the shopping list
+      allow read, update, delete: if isDocumentOwner();
+      // Allow creation if the user is assigning the list to themselves
+      allow create: if willBeDocumentOwner();
+    }
+  }
+}

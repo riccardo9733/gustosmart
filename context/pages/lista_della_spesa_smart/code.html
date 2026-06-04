@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GustoSmart | Smart Shopping List</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#e5e2de",
+                    "surface-tint": "#b32b00",
+                    "primary": "#ae2900",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#757471",
+                    "surface": "#faf9ff",
+                    "tertiary": "#5d5c59",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#5a413a",
+                    "surface-dim": "#d2daf1",
+                    "on-tertiary-container": "#faffe7",
+                    "on-primary-fixed-variant": "#891e00",
+                    "inverse-surface": "#283042",
+                    "outline": "#8e7069",
+                    "on-tertiary-fixed": "#1c1c1a",
+                    "on-secondary-fixed-variant": "#00513e",
+                    "surface-container": "#e9edff",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#faf9ff",
+                    "on-tertiary-fixed-variant": "#474744",
+                    "on-secondary-fixed": "#002117",
+                    "primary-fixed-dim": "#ffb4a1",
+                    "secondary-container": "#81f5ce",
+                    "on-primary-fixed": "#3c0800",
+                    "on-primary-container": "#fffbff",
+                    "secondary-fixed-dim": "#66dbb6",
+                    "secondary-fixed": "#84f7d1",
+                    "tertiary-fixed-dim": "#c8c6c2",
+                    "surface-variant": "#dbe2fa",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#ffb4a1",
+                    "secondary": "#006c53",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed": "#ffdbd2",
+                    "on-secondary-container": "#007057",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f1f3ff",
+                    "on-background": "#131b2c",
+                    "surface-container-highest": "#dbe2fa",
+                    "surface-container-high": "#e1e8ff",
+                    "background": "#faf9ff",
+                    "primary-container": "#d34018",
+                    "on-surface": "#131b2c",
+                    "outline-variant": "#e3beb6",
+                    "inverse-on-surface": "#edf0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "1.5rem",
+                    "xl": "3rem",
+                    "container-margin": "1.5rem",
+                    "xs": "0.5rem",
+                    "gutter": "1rem",
+                    "lg": "2rem",
+                    "sm": "1rem",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Outfit"],
+                    "label-sm": ["Inter"],
+                    "display-lg": ["Outfit"],
+                    "headline-lg-mobile": ["Outfit"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Outfit"],
+                    "display-lg-mobile": ["Outfit"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 40px rgba(174, 41, 0, 0.05);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .list-item-transition {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .checked-item {
+            opacity: 0.4;
+            text-decoration: line-through;
+        }
+        body {
+            background-color: #faf9ff;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(174, 41, 0, 0.03) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(0, 108, 83, 0.03) 0px, transparent 50%);
+            min-height: 100vh;
+        }
+        /* Custom scrollbar for better aesthetic */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(174, 41, 0, 0.1); border-radius: 10px; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-xl border-b border-white/10 shadow-xl shadow-primary/5 flex justify-between items-center px-md h-16">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-headline-md" data-icon="temp_preferences_eco">temp_preferences_eco</span>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary">GustoSmart</h1>
+</div>
+<button class="active:scale-95 transition-transform hover:opacity-80">
+<span class="material-symbols-outlined text-primary" data-icon="bolt">bolt</span>
+</button>
+</header>
+<main class="pt-24 pb-32 px-md max-w-3xl mx-auto">
+<!-- Hero Section -->
+<section class="mb-lg">
+<div class="flex justify-between items-end mb-sm">
+<div>
+<h2 class="font-display-lg-mobile text-display-lg-mobile text-on-background mb-1">Smart Shopping</h2>
+<p class="text-on-surface-variant font-body-md">7 items remaining across 3 categories</p>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 rounded-full text-primary border border-primary/20 hover:bg-primary/5 transition-colors font-label-md" onclick="resetList()">
+<span class="material-symbols-outlined text-[20px]" data-icon="restart_alt">restart_alt</span>
+                    Reset
+                </button>
+</div>
+</section>
+<!-- Dynamic Content Canvas -->
+<div class="space-y-lg" id="list-container">
+<!-- Category: Vegetables -->
+<div class="space-y-md" id="category-vegetables">
+<div class="flex items-center gap-3 px-1">
+<span class="material-symbols-outlined text-secondary" data-icon="eco">eco</span>
+<h3 class="font-headline-md text-on-surface-variant">Vegetables</h3>
+</div>
+<div class="space-y-sm">
+<!-- Item 1 -->
+<div class="list-item-transition glass-card p-md rounded-xl flex items-center justify-between cursor-pointer group" data-item-id="1" onclick="toggleItem(this)">
+<div class="flex items-center gap-4">
+<div class="w-6 h-6 border-2 border-primary rounded-md flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-primary hidden text-[18px]" data-icon="check" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div>
+<p class="font-label-md text-on-surface item-label">Organic Spinach</p>
+<p class="text-label-sm text-on-surface-variant">2 bunches • Fresh</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="drag_indicator">drag_indicator</span>
+</div>
+<!-- Item 2 -->
+<div class="list-item-transition glass-card p-md rounded-xl flex items-center justify-between cursor-pointer group" data-item-id="2" onclick="toggleItem(this)">
+<div class="flex items-center gap-4">
+<div class="w-6 h-6 border-2 border-primary rounded-md flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-primary hidden text-[18px]" data-icon="check" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div>
+<p class="font-label-md text-on-surface item-label">Red Bell Peppers</p>
+<p class="text-label-sm text-on-surface-variant">3 items • Unified from Fajitas &amp; Salad</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="drag_indicator">drag_indicator</span>
+</div>
+</div>
+</div>
+<!-- Category: Meat -->
+<div class="space-y-md" id="category-meat">
+<div class="flex items-center gap-3 px-1">
+<span class="material-symbols-outlined text-primary" data-icon="kebab_dining">kebab_dining</span>
+<h3 class="font-headline-md text-on-surface-variant">Meat</h3>
+</div>
+<div class="space-y-sm">
+<!-- Item 3 -->
+<div class="list-item-transition glass-card p-md rounded-xl flex items-center justify-between cursor-pointer group" data-item-id="3" onclick="toggleItem(this)">
+<div class="flex items-center gap-4">
+<div class="w-6 h-6 border-2 border-primary rounded-md flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-primary hidden text-[18px]" data-icon="check" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div>
+<p class="font-label-md text-on-surface item-label">Chicken Breast</p>
+<p class="text-label-sm text-on-surface-variant">800g • Free range</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="drag_indicator">drag_indicator</span>
+</div>
+</div>
+</div>
+<!-- Category: Pantry -->
+<div class="space-y-md" id="category-pantry">
+<div class="flex items-center gap-3 px-1">
+<span class="material-symbols-outlined text-tertiary" data-icon="inventory_2">inventory_2</span>
+<h3 class="font-headline-md text-on-surface-variant">Pantry</h3>
+</div>
+<div class="space-y-sm">
+<!-- Item 4 -->
+<div class="list-item-transition glass-card p-md rounded-xl flex items-center justify-between cursor-pointer group" data-item-id="4" onclick="toggleItem(this)">
+<div class="flex items-center gap-4">
+<div class="w-6 h-6 border-2 border-primary rounded-md flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-primary hidden text-[18px]" data-icon="check" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div>
+<p class="font-label-md text-on-surface item-label">Arborio Rice</p>
+<p class="text-label-sm text-on-surface-variant">1kg • Vacuum sealed</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="drag_indicator">drag_indicator</span>
+</div>
+<!-- Item 5 -->
+<div class="list-item-transition glass-card p-md rounded-xl flex items-center justify-between cursor-pointer group" data-item-id="5" onclick="toggleItem(this)">
+<div class="flex items-center gap-4">
+<div class="w-6 h-6 border-2 border-primary rounded-md flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-primary hidden text-[18px]" data-icon="check" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div>
+<p class="font-label-md text-on-surface item-label">Extra Virgin Olive Oil</p>
+<p class="text-label-sm text-on-surface-variant">500ml • Cold pressed</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="drag_indicator">drag_indicator</span>
+</div>
+</div>
+</div>
+<!-- "Presi" Section (Completed Items) -->
+<div class="pt-lg border-t border-primary/10 hidden" id="presi-section">
+<div class="flex items-center justify-between px-1 mb-md">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline" data-icon="task_alt">task_alt</span>
+<h3 class="font-headline-md text-outline">Presi</h3>
+</div>
+<button class="text-label-sm text-outline hover:text-primary transition-colors" onclick="emptyPresi()">Empty</button>
+</div>
+<div class="space-y-sm" id="presi-items">
+<!-- Completed items will move here -->
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full z-50 bg-surface/60 backdrop-blur-2xl border border-white/20 shadow-[0_10px_40px_rgba(174,41,0,0.1)] flex justify-around items-center p-2 h-20">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-2 hover:bg-primary/10 transition-colors active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-2 hover:bg-primary/10 transition-colors active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="font-label-sm text-label-sm">Recipes</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-5 py-2 active:scale-90 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="font-label-sm text-label-sm">Shopping</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-2 hover:bg-primary/10 transition-colors active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</a>
+</nav>
+<script>
+        function toggleItem(element) {
+            const checkIcon = element.querySelector('[data-icon="check"]');
+            const isChecked = element.classList.contains('checked-item');
+            const presiContainer = document.getElementById('presi-items');
+            const presiSection = document.getElementById('presi-section');
+            const itemId = element.getAttribute('data-item-id');
+
+            if (!isChecked) {
+                // Mark as checked
+                element.classList.add('checked-item', 'scale-95');
+                checkIcon.classList.remove('hidden');
+                
+                // Animate movement to Presi
+                setTimeout(() => {
+                    element.classList.remove('scale-95');
+                    presiContainer.appendChild(element);
+                    updateSectionsVisibility();
+                }, 300);
+            } else {
+                // Unmark
+                element.classList.remove('checked-item', 'scale-95');
+                checkIcon.classList.add('hidden');
+                
+                // Return to original category (for demo we just move to top of Vegetables if we don't track original parent)
+                // In a real app, we'd use data-category-id
+                const vegetablesList = document.querySelector('#category-vegetables .space-y-sm');
+                vegetablesList.prepend(element);
+                updateSectionsVisibility();
+            }
+        }
+
+        function updateSectionsVisibility() {
+            const presiContainer = document.getElementById('presi-items');
+            const presiSection = document.getElementById('presi-section');
+            
+            if (presiContainer.children.length > 0) {
+                presiSection.classList.remove('hidden');
+            } else {
+                presiSection.classList.add('hidden');
+            }
+
+            // Optional: Hide category headers if empty
+            const categories = ['vegetables', 'meat', 'pantry'];
+            categories.forEach(cat => {
+                const list = document.querySelector(`#category-${cat} .space-y-sm`);
+                const section = document.getElementById(`category-${cat}`);
+                if (list.children.length === 0) {
+                    section.classList.add('opacity-30', 'grayscale');
+                } else {
+                    section.classList.remove('opacity-30', 'grayscale');
+                }
+            });
+        }
+
+        function emptyPresi() {
+            const presiContainer = document.getElementById('presi-items');
+            presiContainer.style.opacity = '0';
+            setTimeout(() => {
+                presiContainer.innerHTML = '';
+                presiContainer.style.opacity = '1';
+                updateSectionsVisibility();
+            }, 300);
+        }
+
+        function resetList() {
+            location.reload();
+        }
+
+        // Atmospheric micro-interaction: Subtle parallax on scroll
+        window.addEventListener('scroll', () => {
+            const scroll = window.pageYOffset;
+            document.body.style.backgroundPositionY = `${scroll * 0.1}px`;
+        });
+    </script>
+</body></html>

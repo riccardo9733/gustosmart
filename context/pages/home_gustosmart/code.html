@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="light" lang="it"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#e5e2de",
+                    "surface-tint": "#b32b00",
+                    "primary": "#ae2900",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#757471",
+                    "surface": "#faf9ff",
+                    "tertiary": "#5d5c59",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#5a413a",
+                    "surface-dim": "#d2daf1",
+                    "on-tertiary-container": "#faffe7",
+                    "on-primary-fixed-variant": "#891e00",
+                    "inverse-surface": "#283042",
+                    "outline": "#8e7069",
+                    "on-tertiary-fixed": "#1c1c1a",
+                    "on-secondary-fixed-variant": "#00513e",
+                    "surface-container": "#e9edff",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#faf9ff",
+                    "on-tertiary-fixed-variant": "#474744",
+                    "on-secondary-fixed": "#002117",
+                    "primary-fixed-dim": "#ffb4a1",
+                    "secondary-container": "#81f5ce",
+                    "on-primary-fixed": "#3c0800",
+                    "on-primary-container": "#fffbff",
+                    "secondary-fixed-dim": "#66dbb6",
+                    "secondary-fixed": "#84f7d1",
+                    "tertiary-fixed-dim": "#c8c6c2",
+                    "surface-variant": "#dbe2fa",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#ffb4a1",
+                    "secondary": "#006c53",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed": "#ffdbd2",
+                    "on-secondary-container": "#007057",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f1f3ff",
+                    "on-background": "#131b2c",
+                    "surface-container-highest": "#dbe2fa",
+                    "surface-container-high": "#e1e8ff",
+                    "background": "#faf9ff",
+                    "primary-container": "#d34018",
+                    "on-surface": "#131b2c",
+                    "outline-variant": "#e3beb6",
+                    "inverse-on-surface": "#edf0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "1.5rem",
+                    "xl": "3rem",
+                    "container-margin": "1.5rem",
+                    "xs": "0.5rem",
+                    "gutter": "1rem",
+                    "lg": "2rem",
+                    "sm": "1rem",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Outfit"],
+                    "label-sm": ["Inter"],
+                    "display-lg": ["Outfit"],
+                    "headline-lg-mobile": ["Outfit"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Outfit"],
+                    "display-lg-mobile": ["Outfit"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .snap-x-mandatory {
+            scroll-snap-type: x mandatory;
+        }
+        .snap-start {
+            scroll-snap-align: start;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-xl dark:bg-surface-container/60 border-b border-white/10 shadow-xl shadow-primary/5 flex justify-between items-center px-md h-16">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="temp_preferences_eco">temp_preferences_eco</span>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary">GustoSmart</h1>
+</div>
+<button class="active:scale-95 transition-transform hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-primary" data-icon="bolt">bolt</span>
+</button>
+</header>
+<main class="pt-24 px-md">
+<!-- Hero Section -->
+<section class="mb-10 flex flex-col items-center text-center">
+<h2 class="font-display-lg-mobile text-display-lg-mobile mb-6 text-on-background">
+                Trasforma i tuoi Reel in <span class="text-primary">ricette reali</span>
+</h2>
+<!-- URL Import Input -->
+<div class="w-full max-w-lg relative group">
+<div class="absolute inset-0 bg-primary/10 blur-2xl rounded-full -z-10 transition-all duration-500 group-focus-within:bg-primary/20"></div>
+<div class="flex items-center glass-panel rounded-full p-2 shadow-xl shadow-primary/5 border-primary/20 focus-within:border-primary transition-all">
+<input class="flex-1 bg-transparent border-none focus:ring-0 px-6 py-3 text-body-md placeholder-on-surface-variant/60" placeholder="Incolla il link del video qui..." type="text"/>
+<button class="bg-primary text-on-primary rounded-full p-3 flex items-center justify-center shadow-lg active:scale-90 transition-all">
+<span class="material-symbols-outlined" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</button>
+</div>
+</div>
+<!-- Suggestion Badges -->
+<div class="flex flex-wrap justify-center gap-3 mt-6">
+<button class="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-label-md hover:bg-white/40 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="movie">movie</span>
+                    Instagram Reel
+                </button>
+<button class="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-label-md hover:bg-white/40 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="video_library">video_library</span>
+                    TikTok Video
+                </button>
+<button class="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-label-md hover:bg-white/40 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="link">link</span>
+                    Link Web
+                </button>
+</div>
+</section>
+<!-- Ultimi Arrivi Carousel -->
+<section class="mb-12">
+<div class="flex justify-between items-end mb-6">
+<h3 class="font-headline-md text-headline-md text-on-background">Ultimi Arrivi</h3>
+<a class="text-primary font-label-md flex items-center gap-1" href="#">
+                    Vedi tutto <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<div class="flex overflow-x-auto gap-6 snap-x-mandatory scrollbar-hide pb-4 -mx-md px-md">
+<!-- Card 1 -->
+<div class="min-w-[280px] snap-start">
+<div class="glass-panel rounded-[24px] overflow-hidden shadow-2xl shadow-primary/5 border border-white/40">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="A vibrant, high-definition close-up of a fresh Mediterranean salad with grilled tofu, quinoa, and avocado slices on a textured terracotta plate. The scene is brightly lit by natural warm kitchen sunlight, creating soft shadows and a breathable, high-key light-mode aesthetic. A minimalist glass vase with fresh herbs sits in the background, reinforcing the GustoSmart brand identity of artisanal quality mixed with modern clean design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9LDhxMVved3KIEPCpWexmPC3Wcd_6tFQG8k1TIWSNsSr-yX4MzzW4-j48lV0Uv5mXqeHUS3gb11UpJPS6oZm7vynS41jjvJyjjjW4TiJc3VPiiqcESSlAHKof_A3HGKJJAgEYE40QdnIvhOZjC1BBQDMPmiCBiH1rieRlniMDTJ6IZ6M1mFNXbx3ir3X3Vhebh-9NhyV_Yb1E2IVSwYFffAi9RXYPTvfol57xXZIg2rQKCByESOoCGhWnUPCBsCx398poU2BYkg"/>
+<div class="absolute top-4 left-4 glass-panel px-3 py-1 rounded-full text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="schedule">schedule</span>
+                                15 min
+                            </div>
+</div>
+<div class="p-5">
+<h4 class="font-headline-md text-[18px] text-on-surface mb-2">Bowl Mediterranea</h4>
+<div class="flex items-center gap-2">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-label-sm">Vegano</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-label-sm">Salute</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="min-w-[280px] snap-start">
+<div class="glass-panel rounded-[24px] overflow-hidden shadow-2xl shadow-primary/5 border border-white/40">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="A gourmet pasta dish featuring handmade tagliatelle with a rich terracotta-colored sun-dried tomato pesto and fresh basil garnish. The setting is a minimalist white marble kitchen counter with high-key lighting that emphasizes a clean, modern aesthetic. Blurred green plants in the background add a touch of Sage Green, aligning with the GustoSmart brand palette for a sophisticated culinary experience." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE-I3F-AtczPIvGDCBj-VyfNEvcMIuLefwNJyqx0Iqc-FXabZZ47j4-UWIKJuoQ_Sse5gQ-D3oOR6YBJjDyCx_7Tpt10pDaaEyWExJqJ4rNFQHxjrK_5aE3Y-utrhE8DYp0uV2y7YzcB_c5y5ZxeAk22jt9_WMwlRFi2WHfdY5TRH7QfXtNaG5Iblp_q1gYBk6V2ANkFKaheiCB9g9G1OngQtkB4oEtYQtgbfMngnC567bQdwZnyucMIlS-vxwmQHPTLkQLiB9Ng"/>
+<div class="absolute top-4 left-4 glass-panel px-3 py-1 rounded-full text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="schedule">schedule</span>
+                                25 min
+                            </div>
+</div>
+<div class="p-5">
+<h4 class="font-headline-md text-[18px] text-on-surface mb-2">Pesto Rosso Artigianale</h4>
+<div class="flex items-center gap-2">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-label-sm">Pasta</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-label-sm">Rapido</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="min-w-[280px] snap-start">
+<div class="glass-panel rounded-[24px] overflow-hidden shadow-2xl shadow-primary/5 border border-white/40">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="A macro shot of a sourdough avocado toast topped with perfectly poached eggs and a sprinkle of chili flakes. The scene is illuminated by soft, diffused daylight from a nearby kitchen window, creating an optimistic and inviting atmosphere. The design reflects a modern glassmorphism style with light-mode sensibilities, highlighting the warmth of the sourdough against a clean, light-colored background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlMdxSXeRFzaHpx6790ld5vxmHay2xizlbb4ySHUCCsfoUhil8EPFfpY5c3p5_BAwnKE4QmW6hzP5o2ie-gXfOVv5uZyjsKtSRLhf7p8Vut_cJLT8Lpztg6MxZkkGZKpwscG8aerEpVJKu1uQH3YS_imiU32YT3f9fv2Nu9cm0Ao5GKeiq85kASk0i3GjilabfMlbNnqNjbgaELio50jqHpMCtWuuNhV-FaQu1311lg7JurOgj61QlrwnbjxlS_ZZn6OPr0VMXFg"/>
+<div class="absolute top-4 left-4 glass-panel px-3 py-1 rounded-full text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="schedule">schedule</span>
+                                10 min
+                            </div>
+</div>
+<div class="p-5">
+<h4 class="font-headline-md text-[18px] text-on-surface mb-2">Avocado Toast Spicy</h4>
+<div class="flex items-center gap-2">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-label-sm">Brunch</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-label-sm">Proteine</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Smart Tip Banner -->
+<section class="glass-panel rounded-[32px] p-6 mb-12 flex items-center gap-5 border-l-4 border-l-primary">
+<div class="bg-primary/10 p-4 rounded-2xl">
+<span class="material-symbols-outlined text-primary text-[32px]" data-icon="oven_gen" style="font-variation-settings: 'FILL' 1;">oven_gen</span>
+</div>
+<div>
+<h4 class="font-label-md text-on-surface">Suggerimento Smart</h4>
+<p class="text-body-md text-on-surface-variant leading-tight">Il tuo forno è preriscaldato? Sincronizza le ricette con GustoHub.</p>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full z-50 bg-surface/60 backdrop-blur-2xl border border-white/20 shadow-[0_10px_40px_rgba(174,41,0,0.1)] flex justify-around items-center p-2 h-20">
+<!-- Home (Active) -->
+<button class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-5 py-2 active:scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<!-- Recipes -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-primary/10 transition-colors px-5 py-2 active:scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="font-label-sm text-label-sm">Recipes</span>
+</button>
+<!-- Shopping -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-primary/10 transition-colors px-5 py-2 active:scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="font-label-sm text-label-sm">Shopping</span>
+</button>
+<!-- Profile -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-primary/10 transition-colors px-5 py-2 active:scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</button>
+</nav>
+<script>
+        // Simple micro-interaction for the carousel horizontal scrolling
+        const carousel = document.querySelector('.overflow-x-auto');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        carousel.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - carousel.offsetLeft;
+            scrollLeft = carousel.scrollLeft;
+        });
+        carousel.addEventListener('mouseleave', () => {
+            isDown = false;
+        });
+        carousel.addEventListener('mouseup', () => {
+            isDown = false;
+        });
+        carousel.addEventListener('mousemove', (e) => {
+            if(!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - carousel.offsetLeft;
+            const walk = (x - startX) * 2;
+            carousel.scrollLeft = scrollLeft - walk;
+        });
+    </script>
+</body></html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="light" lang="it"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GustoSmart - Selezione Ricette</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 40px -10px rgba(174, 41, 0, 0.05);
+        }
+        .recipe-selected {
+            border-color: #ae2900 !important;
+            background: rgba(255, 219, 210, 0.3);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #faf9ff;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+        }
+        .custom-checkbox:checked {
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary": "#ae2900",
+                      "on-primary": "#ffffff",
+                      "primary-container": "#d34018",
+                      "secondary": "#006c53",
+                      "background": "#faf9ff",
+                      "surface": "#faf9ff",
+                      "surface-variant": "#dbe2fa",
+                      "on-surface": "#131b2c",
+                      "outline": "#8e7069",
+                      "outline-variant": "#e3beb6",
+              },
+              "borderRadius": {
+                      "lg": "1rem",
+                      "xl": "1.5rem",
+                      "full": "9999px"
+              }
+            }
+          }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface antialiased pb-32">
+<!-- Header Section -->
+<header class="sticky top-0 z-30 bg-surface/80 backdrop-blur-md px-container-margin py-md border-b border-surface-variant">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<div>
+<h1 class="text-headline-md text-on-surface">La Tua Spesa</h1>
+<p class="text-label-sm text-outline">Seleziona le ricette per generare la lista</p>
+</div>
+</div>
+</header>
+<main class="max-w-md mx-auto px-container-margin mt-lg">
+<!-- Search & Filter -->
+<div class="mb-lg relative">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline text-[20px]">search</span>
+</div>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-body-md" placeholder="Cerca tra le tue ricette..." type="text"/>
+</div>
+<!-- Recipe List -->
+<div class="space-y-sm" id="recipe-list">
+<!-- Recipe Card 1 -->
+<label class="recipe-item block cursor-pointer transition-all duration-300">
+<input checked="" class="hidden recipe-checkbox" type="checkbox"/>
+<div class="glass-card p-4 rounded-xl border border-outline-variant flex items-start gap-4 recipe-selected">
+<div class="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden">
+<img class="h-full w-full object-cover" data-alt="Close-up of a creamy pasta carbonara dish served in a rustic ceramic bowl. The lighting is warm and golden, highlighting the silky sauce and crispy guanciale pieces. The style is professional food photography with a shallow depth of field, set against a clean, modern kitchen background in a light-mode aesthetic with terracotta accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCS3RXYtKQ81dsLYuLjmdktZXcQycKgx8L30RZSAV8KH9VTPIlso2WNxkIKbXqZd0amqdFrFUWpbHeQHIu-3n1EYN3ZZ6_EvicaTN3WxWfWR04NZTpDUbkYuT_OhRXKVFbru7GvlUKpQpPwnfAEQKiRRnjYW8bKHvZHUSYm2LW0yMRokoJVA7kdr0_659A6o1G3wp3V1uK1GR_tidzJbGIFjqF9B6mhRDMksRKfZ2WU5Xcerzbj7Py_ll5PiVd2SLlRGCIbhrkjNw"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="text-body-lg font-semibold text-on-surface truncate">Pasta alla Carbonara</h3>
+<div class="h-6 w-6 rounded-full border-2 border-primary flex items-center justify-center bg-primary text-on-primary">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+</div>
+<p class="text-label-sm text-outline mb-3">Tempo: 20 min • Facile</p>
+<!-- Servings Selector (Visible when checked) -->
+<div class="servings-selector flex items-center justify-between bg-surface-container/50 rounded-lg p-2 mt-2">
+<span class="text-label-md text-on-surface">Persone</span>
+<div class="flex items-center gap-3">
+<button class="minus-btn h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-primary hover:bg-primary hover:text-white transition-colors" type="button">-</button>
+<span class="servings-count font-bold w-4 text-center">2</span>
+<button class="plus-btn h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-primary hover:bg-primary hover:text-white transition-colors" type="button">+</button>
+</div>
+</div>
+</div>
+</div>
+</label>
+<!-- Recipe Card 2 -->
+<label class="recipe-item block cursor-pointer transition-all duration-300">
+<input class="hidden recipe-checkbox" type="checkbox"/>
+<div class="glass-card p-4 rounded-xl border border-outline-variant flex items-start gap-4">
+<div class="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden">
+<img class="h-full w-full object-cover" data-alt="A vibrant golden-yellow chicken curry bowl garnished with fresh green herbs and red chili slices. The setting is a bright, minimalist dining room with soft daylight streaming in. The image is captured in a high-key style, emphasizing freshness and quality ingredients, consistent with a modern sage green and terracotta color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH6RJ3w841K9GJI39pd4o_FlGdwCoa9kO5kDtHkwRkYbPBgCVZCKK4GpZFUwywbkDbzcW60c_sPgh_ksNfPD3SQsVVJQL1_sw37Q-yKqrWEBes_HUCriCqmDQ_t5KnFvELqfK8VTvWF2GCTLE4zgWOQryFMxrAExVqPzjpuaFLXKVYQa0s6caY8PuSL9szUAo0hDumKlH0bZIpSmxAVkP__LQkksq45Ez-QqUuAGr0PruQQyS2GySEn7Qc_atyM1CCM_Ec1A-Ucw"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="text-body-lg font-semibold text-on-surface truncate">Pollo al Curry</h3>
+<div class="h-6 w-6 rounded-full border-2 border-outline-variant flex items-center justify-center bg-transparent text-transparent">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+</div>
+<p class="text-label-sm text-outline mb-3">Tempo: 45 min • Media</p>
+<!-- Servings Selector -->
+<div class="servings-selector hidden flex items-center justify-between bg-surface-container/50 rounded-lg p-2 mt-2">
+<span class="text-label-md text-on-surface">Persone</span>
+<div class="flex items-center gap-3">
+<button class="minus-btn h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-primary" type="button">-</button>
+<span class="servings-count font-bold w-4 text-center">4</span>
+<button class="plus-btn h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-primary" type="button">+</button>
+</div>
+</div>
+</div>
+</div>
+</label>
+<!-- Recipe Card 3 -->
+<label class="recipe-item block cursor-pointer transition-all duration-300">
+<input class="hidden recipe-checkbox" type="checkbox"/>
+<div class="glass-card p-4 rounded-xl border border-outline-variant flex items-start gap-4">
+<div class="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden">
+<img class="h-full w-full object-cover" data-alt="A colorful Mediterranean Buddha bowl filled with fresh vegetables, quinoa, and avocado. Bright, natural lighting highlights the textures and vibrant colors of the greens and purples. The mood is healthy and uplifting, shot from a top-down perspective on a light-colored wooden surface, adhering to the clean GustoSmart visual guidelines." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVYSSMz-GyTCVmZ6O_fu9Edoa-N7kPDrjsd7P31np3iMors2m-tgOlpgKe82KiSjisIiSAZ6ZoWYC_0bGEP6sUd3S5R0PrhsLLolfaxBYXbwqbGHNrHnYTqjxRqpeFkze5TMmbiR0E6GdjAD_y3DYSao3XWWxhcPeM5Lx5tzijnEax-IGRAUwxd5WCr-4iFWEeAyuDDNh7QImBi85mmAPIq5tGXP4gg_PpA99DfhhAwMxut9LfwhVGjgLh1fkPdmzERQmT8CCRgg"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="text-body-lg font-semibold text-on-surface truncate">Bowl Vegetariana</h3>
+<div class="h-6 w-6 rounded-full border-2 border-outline-variant flex items-center justify-center bg-transparent text-transparent">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+</div>
+<p class="text-label-sm text-outline mb-3">Tempo: 15 min • Facile</p>
+<div class="servings-selector hidden flex items-center justify-between bg-surface-container/50 rounded-lg p-2 mt-2">
+<span class="text-label-md text-on-surface">Persone</span>
+<div class="flex items-center gap-3">
+<button class="minus-btn h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-primary" type="button">-</button>
+<span class="servings-count font-bold w-4 text-center">1</span>
+<button class="plus-btn h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-primary" type="button">+</button>
+</div>
+</div>
+</div>
+</div>
+</label>
+<!-- Recipe Card 4 -->
+<label class="recipe-item block cursor-pointer transition-all duration-300">
+<input class="hidden recipe-checkbox" type="checkbox"/>
+<div class="glass-card p-4 rounded-xl border border-outline-variant flex items-start gap-4">
+<div class="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden">
+<img class="h-full w-full object-cover" data-alt="Close up of a grilled salmon fillet with lemon slices and asparagus on a designer plate. Elegant and sophisticated food styling with soft side lighting that emphasizes the texture of the fish. The atmosphere is upscale yet inviting, with a palette of warm terracotta and cool sage green accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJjwI5yKo3fjsd7GJJGfXEZCI5XDXthMwvlv96IQOrI7jChQ5eCiv3QXxrL3P9TSLfgO6Ws-AZGieUZGhJm-xxnnExepwpdommYvcP52Af9Pm4eJCmyTJWPpwt-d1gnuEbiOLt-Ub6jMm6sCIrVOKb9ImlWezhnvDwUxgsuwTLpCOz4JHsxSN30KvZpvriCD5vsOQmnYD5K6HtTB0b-eP7SjKHkS9vvkaHyed4NEq3tgmrRRHJqxoHhwtO7ba_usjuYgwvSp6-Iw"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="text-body-lg font-semibold text-on-surface truncate">Salmone al Limone</h3>
+<div class="h-6 w-6 rounded-full border-2 border-outline-variant flex items-center justify-center bg-transparent text-transparent">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+</div>
+<p class="text-label-sm text-outline mb-3">Tempo: 25 min • Media</p>
+<div class="servings-selector hidden flex items-center justify-between bg-surface-container/50 rounded-lg p-2 mt-2">
+<span class="text-label-md text-on-surface">Persone</span>
+<div class="flex items-center gap-3">
+<button class="minus-btn h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-primary" type="button">-</button>
+<span class="servings-count font-bold w-4 text-center">2</span>
+<button class="plus-btn h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-primary" type="button">+</button>
+</div>
+</div>
+</div>
+</div>
+</label>
+</div>
+</main>
+<!-- Bottom CTA Bar -->
+<div class="fixed bottom-0 left-0 right-0 p-container-margin z-40">
+<div class="max-w-md mx-auto">
+<div class="bg-surface/80 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl">
+<div class="flex items-center justify-between mb-4 px-2">
+<span class="text-label-md text-outline" id="selected-count-label">1 ricetta selezionata</span>
+<span class="text-label-md text-primary font-bold" id="total-servings-label">2 porzioni totali</span>
+</div>
+<button class="w-full bg-primary text-on-primary py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-container transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined">receipt_long</span>
+                    Genera Spesa Unificata
+                </button>
+</div>
+</div>
+</div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const recipeItems = document.querySelectorAll('.recipe-item');
+            const checkboxes = document.querySelectorAll('.recipe-checkbox');
+            const countLabel = document.getElementById('selected-count-label');
+            const totalServingsLabel = document.getElementById('total-servings-label');
+
+            function updateUI() {
+                let selectedCount = 0;
+                let totalServings = 0;
+
+                recipeItems.forEach(item => {
+                    const checkbox = item.querySelector('.recipe-checkbox');
+                    const card = item.querySelector('.glass-card');
+                    const selector = item.querySelector('.servings-selector');
+                    const checkIcon = item.querySelector('.flex-1 div div.h-6');
+                    const servingsCount = parseInt(item.querySelector('.servings-count').innerText);
+
+                    if (checkbox.checked) {
+                        selectedCount++;
+                        totalServings += servingsCount;
+                        card.classList.add('recipe-selected');
+                        selector.classList.remove('hidden');
+                        checkIcon.classList.add('bg-primary', 'text-on-primary');
+                        checkIcon.classList.remove('bg-transparent', 'text-transparent', 'border-outline-variant');
+                        checkIcon.classList.add('border-primary');
+                    } else {
+                        card.classList.remove('recipe-selected');
+                        selector.classList.add('hidden');
+                        checkIcon.classList.remove('bg-primary', 'text-on-primary', 'border-primary');
+                        checkIcon.classList.add('bg-transparent', 'text-transparent', 'border-outline-variant');
+                    }
+                });
+
+                countLabel.innerText = `${selectedCount} ${selectedCount === 1 ? 'ricetta selezionata' : 'ricette selezionate'}`;
+                totalServingsLabel.innerText = `${totalServings} ${totalServings === 1 ? 'porzione totale' : 'porzioni totali'}`;
+            }
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateUI);
+            });
+
+            // Prevent card toggle when clicking quantity buttons
+            document.querySelectorAll('.servings-selector button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const countSpan = btn.parentElement.querySelector('.servings-count');
+                    let current = parseInt(countSpan.innerText);
+                    
+                    if (btn.classList.contains('plus-btn')) {
+                        current++;
+                    } else if (btn.classList.contains('minus-btn') && current > 1) {
+                        current--;
+                    }
+                    
+                    countSpan.innerText = current;
+                    updateUI();
+                });
+            });
+
+            // Initial UI Sync
+            updateUI();
+        });
+    </script>
+</body></html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html class="light" lang="it"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GustoSmart - Il Tuo Ricettario</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#e5e2de",
+                    "surface-tint": "#b32b00",
+                    "primary": "#ae2900",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#757471",
+                    "surface": "#faf9ff",
+                    "tertiary": "#5d5c59",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#5a413a",
+                    "surface-dim": "#d2daf1",
+                    "on-tertiary-container": "#faffe7",
+                    "on-primary-fixed-variant": "#891e00",
+                    "inverse-surface": "#283042",
+                    "outline": "#8e7069",
+                    "on-tertiary-fixed": "#1c1c1a",
+                    "on-secondary-fixed-variant": "#00513e",
+                    "surface-container": "#e9edff",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#faf9ff",
+                    "on-tertiary-fixed-variant": "#474744",
+                    "on-secondary-fixed": "#002117",
+                    "primary-fixed-dim": "#ffb4a1",
+                    "secondary-container": "#81f5ce",
+                    "on-primary-fixed": "#3c0800",
+                    "on-primary-container": "#fffbff",
+                    "secondary-fixed-dim": "#66dbb6",
+                    "secondary-fixed": "#84f7d1",
+                    "tertiary-fixed-dim": "#c8c6c2",
+                    "surface-variant": "#dbe2fa",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#ffb4a1",
+                    "secondary": "#006c53",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed": "#ffdbd2",
+                    "on-secondary-container": "#007057",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f1f3ff",
+                    "on-background": "#131b2c",
+                    "surface-container-highest": "#dbe2fa",
+                    "surface-container-high": "#e1e8ff",
+                    "background": "#faf9ff",
+                    "primary-container": "#d34018",
+                    "on-surface": "#131b2c",
+                    "outline-variant": "#e3beb6",
+                    "inverse-on-surface": "#edf0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "1.5rem",
+                    "xl": "3rem",
+                    "container-margin": "1.5rem",
+                    "xs": "0.5rem",
+                    "gutter": "1rem",
+                    "lg": "2rem",
+                    "sm": "1rem",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Outfit"],
+                    "label-sm": ["Inter"],
+                    "display-lg": ["Outfit"],
+                    "headline-lg-mobile": ["Outfit"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Outfit"],
+                    "display-lg-mobile": ["Outfit"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .scrolling-hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .scrolling-hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-xl border-b border-white/10 shadow-xl shadow-primary/5 flex justify-between items-center px-md h-16">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">temp_preferences_eco</span>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary">GustoSmart</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform">bolt</button>
+</div>
+</header>
+<main class="pt-20 px-4 max-w-5xl mx-auto">
+<!-- Header & Search -->
+<section class="mb-8">
+<div class="flex flex-col gap-4">
+<h2 class="font-headline-lg text-headline-lg-mobile text-on-surface">Il Tuo Ricettario</h2>
+<!-- Search Bar -->
+<div class="relative w-full group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-12 pr-4 py-4 rounded-xl bg-surface-container border-none focus:ring-2 focus:ring-primary/20 transition-all text-body-md placeholder:text-outline-variant" placeholder="Cerca tra le tue ricette..." type="text"/>
+</div>
+<!-- Filter Chips -->
+<div class="flex overflow-x-auto gap-2 py-2 scrolling-hide-scrollbar">
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-primary text-on-primary font-label-md shadow-lg shadow-primary/20">Tutte</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full glass-card border-outline-variant text-on-surface-variant font-label-md hover:bg-white/40">Primi</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full glass-card border-outline-variant text-on-surface-variant font-label-md hover:bg-white/40">Secondi</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full glass-card border-outline-variant text-on-surface-variant font-label-md hover:bg-white/40">Dolci</button>
+<div class="w-px h-6 bg-outline-variant/30 self-center mx-1"></div>
+<button class="whitespace-nowrap px-6 py-2 rounded-full glass-card border-outline-variant text-on-surface-variant font-label-md hover:bg-white/40 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">infrared</span> Social
+                    </button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full glass-card border-outline-variant text-on-surface-variant font-label-md hover:bg-white/40 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">link</span> Web
+                    </button>
+</div>
+</div>
+</section>
+<!-- Empty State (Conditional Rendering Simulation) -->
+<section class="hidden flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-700" id="empty-state">
+<div class="w-64 h-64 mb-8 rounded-full bg-secondary-container/20 flex items-center justify-center relative">
+<div class="absolute inset-0 bg-primary/5 rounded-full animate-pulse"></div>
+<img alt="Empty Library Illustration" class="w-48 h-48 object-contain relative z-10" data-alt="A charming, stylized 3D digital illustration of an open, empty cookbook on a clean marble kitchen counter. The scene is bathed in warm, soft sunlight streaming through a nearby window, creating a serene and optimistic atmosphere. The color palette features soft terracotta and sage green accents against a high-key, bright light-mode background, consistent with a modern, high-tech kitchen aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnttm-GbLD3lkDSG56fwGW6DCc4fD9FpznrOIRvycvfMBaiC94s4Nm_Mnmy_LRRF2Q1qhFx-_AQ0AniK434cXSMz929qYKJzKb5qn_-d9jTKbbr_Bv4HR1fYrlYifTZLr_YnDHCElFSWbYDEQSQO6GALYxNUYJ_DEeOin2HzhMRo6BmAvTEODlnyOJJdAptQsHM2SUKtMuIx6oQ7OK-AlcmPbe8HG9w_RM5AEQZrvd_xwwmeM8HL3wynlGa2BNXpSFZQqBSeTW3Q"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Ancora nessuna ricetta?</h3>
+<p class="text-body-md text-on-surface-variant max-w-xs mb-8">Inizia a salvare i tuoi piatti preferiti dai social o dal web in un unico posto.</p>
+<button class="bg-primary text-on-primary px-8 py-4 rounded-full font-headline-md shadow-xl shadow-primary/25 active:scale-95 transition-all">
+                Importa la tua prima ricetta!
+            </button>
+</section>
+<!-- Recipe Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="recipe-grid">
+<!-- Card 1 -->
+<div class="group relative overflow-hidden rounded-3xl glass-card transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl shadow-primary/10">
+<div class="aspect-[4/5] relative">
+<img alt="Recipe Image" class="w-full h-full object-cover" data-alt="A top-down, professional food photography shot of a vibrant Mediterranean salad bowl. The dish features fresh arugula, sun-ripened cherry tomatoes, creamy feta cheese, and toasted pine nuts, presented in a minimalist ceramic bowl. The lighting is bright and natural, highlighting textures and fresh colors like terracotta red and sage green. The background is a soft, blurred white marble surface, embodying a clean and sophisticated kitchen aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmHVxEri0bwWTB-C7_5EvghnW-kuK9xj7enkh3007hVKLRr85RRlO_pv1m4xtopSLxILVP6x7Zt5YXLD0nB4wLICPRb8ZCkn_FsI_91IMWiwHzUPnyqRZCb7eq1f034DMjNcToFghtkm3SrRLl6eBVlCjiMhW3SVUGlZc0NW5taDUMQm9JR79LPHqaGVEpZNW8yhnpAqIcmyLFYH1u80qCep6iytlJIHoi2XJNAlTl-BBD2Ui1z06fGfNh6Dfsym8u7LTG0LFR6Q"/>
+<!-- Overlays -->
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute top-4 right-4 bg-white/90 backdrop-blur shadow-sm p-2 rounded-xl">
+<span class="material-symbols-outlined text-primary text-[20px]">infrared</span>
+</div>
+<!-- Details -->
+<div class="absolute bottom-0 left-0 right-0 p-6">
+<h4 class="font-headline-md text-white mb-3">Bowl Mediterranea</h4>
+<div class="flex items-center gap-4 text-white/90 font-label-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+                                15 min
+                            </div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">group</span>
+                                2 porzioni
+                            </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group relative overflow-hidden rounded-3xl glass-card transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl shadow-primary/10">
+<div class="aspect-[4/5] relative">
+<img alt="Recipe Image" class="w-full h-full object-cover" data-alt="A close-up shot of an artisanal sourdough avocado toast topped with a perfectly poached egg and a sprinkle of chili flakes. The lighting is warm and directional, emphasizing the crispy texture of the bread and the vibrant green of the avocado. The scene is set on a light wood kitchen island with a soft background blur. The color palette incorporates rich terracotta tones from the chili and earthy sage greens from the garnish, creating a modern, appetizing look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCprQjJKG771bj27nwR23w4LVhhs1hZS2QskRGCqrOKNZoWi3I65ZggQ55MrnhEbDMZfef0aBGdue5T8j6RRULNzX_YOz5_0VPg34KuC7jFQENqF6k_fJ_CTkNlU2a-CkSBhCE7ENJE5m_x2V44ZqC6H8FofNj7u9y1Y301_rp85AzKKvUXqU3omwRMXpHAVfcqIrUkmoF7C88JBnixhi4sRy5a7DaVeGh6FPT33GTBnp-Uyx39bc79K_Cfe_96Vz-kABV81OFOtQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute top-4 right-4 bg-white/90 backdrop-blur shadow-sm p-2 rounded-xl">
+<span class="material-symbols-outlined text-secondary text-[20px]">link</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-6">
+<h4 class="font-headline-md text-white mb-3">Avocado Toast Supreme</h4>
+<div class="flex items-center gap-4 text-white/90 font-label-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+                                10 min
+                            </div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">group</span>
+                                1 porzione
+                            </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group relative overflow-hidden rounded-3xl glass-card transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl shadow-primary/10">
+<div class="aspect-[4/5] relative">
+<img alt="Recipe Image" class="w-full h-full object-cover" data-alt="A beautiful spread of homemade pasta with a rich tomato and basil sauce, garnished with fresh herbs. The plate is positioned centrally on a rustic but clean tabletop. The lighting is soft and diffused, creating a cozy and welcoming atmosphere. Deep terracotta reds of the sauce contrast with the fresh greens of the basil, all within a bright, modern interior setting that feels like a professional yet homey kitchen studio." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp2wQsNxKf-aFqCZzVnJmyBLrIqmcP3Vs6Maaxw8mw5p9BIbQ74puwed5ezEduV4h64x4Uflx2uKtMxAWgUmo52h9M3UjR28yJwche-OblxjvAWKQt7MFJ5VOY8tNbOUqX6jglUkWROpcwmkbnHu_pXI8UZJPXIC-FN_5qmZX2AwDOP_p2ps8gtJQqQXlAaRb8nQtPySdIymyjnHXqJdYdvk1dyg6n9e6VgPcGa7R5LoZcxRxuww3wGp_PKidjALI6GSzaGaywiw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute top-4 right-4 bg-white/90 backdrop-blur shadow-sm p-2 rounded-xl">
+<span class="material-symbols-outlined text-primary text-[20px]">infrared</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-6">
+<h4 class="font-headline-md text-white mb-3">Pasta al Pomodoro Bio</h4>
+<div class="flex items-center gap-4 text-white/90 font-label-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+                                25 min
+                            </div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">group</span>
+                                4 porzioni
+                            </div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB -->
+<button class="fixed bottom-32 right-6 w-16 h-16 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-2xl shadow-primary/40 z-50 hover:scale-110 active:scale-90 transition-all">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full z-50 bg-surface/60 backdrop-blur-2xl border border-white/20 shadow-2xl shadow-primary/10 flex justify-around items-center p-2 h-20">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-2 hover:bg-primary/10 transition-colors active:scale-90 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-5 py-2 active:scale-90 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">restaurant_menu</span>
+<span class="font-label-sm text-label-sm">Recipes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-2 hover:bg-primary/10 transition-colors active:scale-90 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-sm text-label-sm">Shopping</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-2 hover:bg-primary/10 transition-colors active:scale-90 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions and simple state toggle for demo
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('recipe-grid');
+            const empty = document.getElementById('empty-state');
+            const search = document.querySelector('input[type="text"]');
+
+            search.addEventListener('input', (e) => {
+                if (e.target.value.toLowerCase() === 'vuoto') {
+                    grid.classList.add('hidden');
+                    empty.classList.remove('hidden');
+                } else {
+                    grid.classList.remove('hidden');
+                    empty.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body></html>

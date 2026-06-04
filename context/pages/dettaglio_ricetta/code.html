@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GustoSmart - Recipe Detail</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Outfit:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#e5e2de",
+                    "surface-tint": "#b32b00",
+                    "primary": "#ae2900",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#757471",
+                    "surface": "#faf9ff",
+                    "tertiary": "#5d5c59",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#5a413a",
+                    "surface-dim": "#d2daf1",
+                    "on-tertiary-container": "#faffe7",
+                    "on-primary-fixed-variant": "#891e00",
+                    "inverse-surface": "#283042",
+                    "outline": "#8e7069",
+                    "on-tertiary-fixed": "#1c1c1a",
+                    "on-secondary-fixed-variant": "#00513e",
+                    "surface-container": "#e9edff",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#faf9ff",
+                    "on-tertiary-fixed-variant": "#474744",
+                    "on-secondary-fixed": "#002117",
+                    "primary-fixed-dim": "#ffb4a1",
+                    "secondary-container": "#81f5ce",
+                    "on-primary-fixed": "#3c0800",
+                    "on-primary-container": "#fffbff",
+                    "secondary-fixed-dim": "#66dbb6",
+                    "secondary-fixed": "#84f7d1",
+                    "tertiary-fixed-dim": "#c8c6c2",
+                    "surface-variant": "#dbe2fa",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#ffb4a1",
+                    "secondary": "#006c53",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed": "#ffdbd2",
+                    "on-secondary-container": "#007057",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f1f3ff",
+                    "on-background": "#131b2c",
+                    "surface-container-highest": "#dbe2fa",
+                    "surface-container-high": "#e1e8ff",
+                    "background": "#faf9ff",
+                    "primary-container": "#d34018",
+                    "on-surface": "#131b2c",
+                    "outline-variant": "#e3beb6",
+                    "inverse-on-surface": "#edf0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "1.5rem",
+                    "xl": "3rem",
+                    "container-margin": "1.5rem",
+                    "xs": "0.5rem",
+                    "gutter": "1rem",
+                    "lg": "2rem",
+                    "sm": "1rem",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Outfit"],
+                    "label-sm": ["Inter"],
+                    "display-lg": ["Outfit"],
+                    "headline-lg-mobile": ["Outfit"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Outfit"],
+                    "display-lg-mobile": ["Outfit"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .parallax-container {
+            height: 60vh;
+            overflow: hidden;
+            position: sticky;
+            top: 0;
+            z-index: -1;
+        }
+        .parallax-bg {
+            height: 120%;
+            width: 100%;
+            background-size: cover;
+            background-position: center;
+            transform: translateY(0);
+            transition: transform 0.1s linear;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .ticker-digit {
+            display: inline-block;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .step-checkbox:checked + span {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .edit-fab {
+            box-shadow: 0 10px 40px rgba(174, 41, 0, 0.25);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #ae290044; border-radius: 10px; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-xl border-b border-white/10 shadow-xl shadow-primary/5 flex justify-between items-center px-md h-16">
+<div class="flex items-center gap-2">
+<button class="active:scale-95 transition-transform" onclick="window.history.back()">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary">GustoSmart</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary active:scale-95 transition-transform cursor-pointer" data-icon="temp_preferences_eco">temp_preferences_eco</span>
+<span class="material-symbols-outlined text-primary active:scale-95 transition-transform cursor-pointer" data-icon="bolt">bolt</span>
+</div>
+</header>
+<!-- Hero Section (Parallax) -->
+<div class="parallax-container relative">
+<div class="parallax-bg" data-alt="A top-down gourmet shot of a fresh Mediterranean salad with vibrant greens, cherry tomatoes, and feta cheese, captured in warm, golden kitchen lighting. The style is professional food photography with high contrast and rich, natural textures. The color palette emphasizes terracotta oranges and sage greens against a pristine white marble countertop. The mood is artisanal and inviting, perfectly aligning with a premium smart-home cooking experience." id="hero-bg" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAC8ajc_hCUoE2y5AvhO0cZ087uMN_cq2tyU1DlkZ-QwLQCiYJAg8e9St7a61XEyx2jMI1og-erFGDlHtzWBUe7_7tqUjO2T_BPm1qL0YfZFfuI_1-cp0aGXB79Huz85OC8B-5D3w-MtOAAyMwPUyHCRaMUncmjG8ztr-d98bq1onaDCQfUvRvsrJ1nnG7mxEfcVs-XFXj3TGMEXHBrEouLqC4NC6bhxebQU8GxgQADo7BaiyXMODEP-2IWe19NlDXMLyboo2V68w')">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+</div>
+<!-- Content Over Card -->
+<main class="relative -mt-32 pb-32">
+<div class="container mx-auto px-4 max-w-4xl">
+<!-- Header Glass Card -->
+<div class="glass-card rounded-[32px] p-8 shadow-2xl shadow-primary/5 mb-8">
+<div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+<div>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm mb-3">
+<span class="material-symbols-outlined text-[14px] mr-1" data-icon="timer">timer</span> 25 Mins
+                        </span>
+<h2 class="font-headline-lg text-headline-lg-mobile text-on-surface mb-2" contenteditable="false" id="recipe-title">Tuscan Sun Salad</h2>
+<p class="text-on-surface-variant font-body-md">Fresh garden greens, charred artisan bread, and sun-ripened tomatoes.</p>
+</div>
+<!-- Servings Counter -->
+<div class="bg-surface-container rounded-full p-2 flex items-center gap-4 shadow-inner">
+<button class="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary active:scale-90 transition-all" onclick="updateServings(-1)">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<div class="flex flex-col items-center min-w-[40px]">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Serves</span>
+<span class="font-headline-md text-headline-md text-primary leading-none" id="servings-ticker">2</span>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary active:scale-90 transition-all" onclick="updateServings(1)">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<!-- Quick Stats -->
+<div class="grid grid-cols-3 gap-4 py-6 border-y border-outline-variant/30">
+<div class="text-center">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Calories</p>
+<p class="font-headline-md text-headline-md-mobile text-on-surface">340</p>
+</div>
+<div class="text-center border-x border-outline-variant/30">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Prep</p>
+<p class="font-headline-md text-headline-md-mobile text-on-surface">15m</p>
+</div>
+<div class="text-center">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Difficulty</p>
+<p class="font-headline-md text-headline-md-mobile text-on-surface">Easy</p>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Ingredients Section -->
+<section class="lg:col-span-5">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface">Ingredients</h3>
+<span class="material-symbols-outlined text-primary" data-icon="shopping_basket">shopping_basket</span>
+</div>
+<div class="glass-card rounded-[24px] p-6 space-y-4">
+<label class="flex items-center gap-4 group cursor-pointer">
+<input class="w-6 h-6 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox"/>
+<span class="font-body-md text-on-surface">
+<span class="ingredient-qty font-bold" data-base="1">1</span> <span contenteditable="false">cup Baby Spinach</span>
+</span>
+</label>
+<label class="flex items-center gap-4 group cursor-pointer">
+<input class="w-6 h-6 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox"/>
+<span class="font-body-md text-on-surface">
+<span class="ingredient-qty font-bold" data-base="0.5">0.5</span> <span contenteditable="false">oz Balsamic Glaze</span>
+</span>
+</label>
+<label class="flex items-center gap-4 group cursor-pointer">
+<input class="w-6 h-6 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox"/>
+<span class="font-body-md text-on-surface">
+<span class="ingredient-qty font-bold" data-base="4">4</span> <span contenteditable="false">Cherry Tomatoes</span>
+</span>
+</label>
+<label class="flex items-center gap-4 group cursor-pointer">
+<input class="w-6 h-6 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox"/>
+<span class="font-body-md text-on-surface">
+<span class="ingredient-qty font-bold" data-base="2">2</span> <span contenteditable="false">slices Sourdough</span>
+</span>
+</label>
+<label class="flex items-center gap-4 group cursor-pointer">
+<input class="w-6 h-6 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox"/>
+<span class="font-body-md text-on-surface">
+<span class="ingredient-qty font-bold" data-base="0.25">0.25</span> <span contenteditable="false">cup Feta Crumbs</span>
+</span>
+</label>
+</div>
+</section>
+<!-- Instructions Section -->
+<section class="lg:col-span-7">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface">Instructions</h3>
+<div class="flex gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Cooking Mode Active</span>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Step 1 -->
+<div class="group flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold shadow-lg shadow-primary/20 z-10">1</div>
+<div class="w-0.5 h-full bg-outline-variant/30 group-last:bg-transparent"></div>
+</div>
+<div class="glass-card rounded-[24px] p-6 flex-1 mb-4 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-primary/5">
+<p class="font-body-md text-on-surface mb-3" contenteditable="false">Wash the baby spinach and cherry tomatoes thoroughly. Pat dry with a kitchen towel to ensure crispness.</p>
+<label class="flex items-center gap-2 text-secondary font-label-md cursor-pointer select-none">
+<input class="step-checkbox w-5 h-5 rounded-full border-secondary text-secondary focus:ring-secondary/20 transition-all" type="checkbox"/>
+<span>Step Complete</span>
+</label>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="group flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-10 h-10 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center font-bold z-10">2</div>
+<div class="w-0.5 h-full bg-outline-variant/30 group-last:bg-transparent"></div>
+</div>
+<div class="glass-card rounded-[24px] p-6 flex-1 mb-4 transition-all duration-300">
+<p class="font-body-md text-on-surface mb-3" contenteditable="false">Toast the sourdough slices until golden brown. Once toasted, rub a clove of garlic on one side for extra aroma.</p>
+<label class="flex items-center gap-2 text-secondary font-label-md cursor-pointer select-none">
+<input class="step-checkbox w-5 h-5 rounded-full border-secondary text-secondary focus:ring-secondary/20 transition-all" type="checkbox"/>
+<span>Step Complete</span>
+</label>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="group flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-10 h-10 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center font-bold z-10">3</div>
+<div class="w-0.5 h-full bg-outline-variant/30 group-last:bg-transparent"></div>
+</div>
+<div class="glass-card rounded-[24px] p-6 flex-1 mb-4 transition-all duration-300">
+<p class="font-body-md text-on-surface mb-3" contenteditable="false">Assemble by tossing spinach with tomatoes, feta, and olive oil. Drizzle with balsamic glaze and serve immediately.</p>
+<label class="flex items-center gap-2 text-secondary font-label-md cursor-pointer select-none">
+<input class="step-checkbox w-5 h-5 rounded-full border-secondary text-secondary focus:ring-secondary/20 transition-all" type="checkbox"/>
+<span>Step Complete</span>
+</label>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-10 right-10 w-16 h-16 bg-primary text-on-primary rounded-full flex items-center justify-center edit-fab active:scale-90 transition-all duration-300 z-50" id="edit-fab" onclick="toggleEditMode()">
+<span class="material-symbols-outlined" id="edit-icon">edit</span>
+</button>
+<!-- Navigation Shell Placeholder (Not visible on detail task focus as per mandate, but simulated shell for global context) -->
+<nav class="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] lg:max-w-2xl rounded-full z-50 bg-surface/60 backdrop-blur-2xl border border-white/20 shadow-2xl shadow-primary/10 items-center justify-around p-2 h-20">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-2 hover:bg-primary/10 rounded-full transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-5 py-2" href="#">
+<span class="material-symbols-outlined">restaurant_menu</span>
+<span class="font-label-sm text-label-sm">Recipes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-2 hover:bg-primary/10 rounded-full transition-colors" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-sm text-label-sm">Shopping</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-2 hover:bg-primary/10 rounded-full transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</a>
+</nav>
+<script>
+        // Parallax Effect
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const heroBg = document.getElementById('hero-bg');
+            heroBg.style.transform = `translateY(${scrolled * 0.4}px)`;
+        });
+
+        // Servings and Quantity Update Logic
+        let currentServings = 2;
+        const servingsTicker = document.getElementById('servings-ticker');
+        const qtyElements = document.querySelectorAll('.ingredient-qty');
+
+        function updateServings(delta) {
+            const newVal = currentServings + delta;
+            if (newVal < 1) return;
+            
+            // Animation for ticker
+            servingsTicker.style.transform = 'scale(0.8) translateY(' + (delta > 0 ? '-' : '') + '10px)';
+            servingsTicker.style.opacity = '0';
+            
+            setTimeout(() => {
+                currentServings = newVal;
+                servingsTicker.innerText = currentServings;
+                servingsTicker.style.transform = 'scale(1) translateY(0)';
+                servingsTicker.style.opacity = '1';
+                
+                // Update Ingredients
+                qtyElements.forEach(el => {
+                    const base = parseFloat(el.getAttribute('data-base'));
+                    const perPerson = base / 2; // Original is for 2
+                    const finalVal = (perPerson * currentServings);
+                    el.innerText = finalVal % 1 === 0 ? finalVal : finalVal.toFixed(1);
+                });
+            }, 150);
+        }
+
+        // Edit Mode Logic
+        let isEditing = false;
+        function toggleEditMode() {
+            isEditing = !isEditing;
+            const editFab = document.getElementById('edit-fab');
+            const editIcon = document.getElementById('edit-icon');
+            const editableElements = document.querySelectorAll('[contenteditable]');
+
+            if (isEditing) {
+                editFab.classList.replace('bg-primary', 'bg-secondary');
+                editIcon.innerText = 'save';
+                editableElements.forEach(el => {
+                    el.contentEditable = "true";
+                    el.classList.add('ring-2', 'ring-primary/20', 'rounded', 'bg-white/30', 'p-1', 'outline-none');
+                });
+            } else {
+                editFab.classList.replace('bg-secondary', 'bg-primary');
+                editIcon.innerText = 'edit';
+                editableElements.forEach(el => {
+                    el.contentEditable = "false";
+                    el.classList.remove('ring-2', 'ring-primary/20', 'rounded', 'bg-white/30', 'p-1');
+                });
+                // Micro-interaction: Success Toast simulation
+                const toast = document.createElement('div');
+                toast.className = 'fixed bottom-32 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface px-6 py-3 rounded-full font-label-md shadow-xl z-[100] animate-bounce';
+                toast.innerText = 'Recipe Saved Successfully!';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+        }
+    </script>
+</body></html>
