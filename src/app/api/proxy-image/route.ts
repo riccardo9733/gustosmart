@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getB2Image } from "@/lib/scraping/b2";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -33,7 +35,7 @@ export async function GET(request: Request) {
       return new Response(new Uint8Array(buffer), {
         headers: {
           "Content-Type": contentType,
-          "Cache-Control": "public, max-age=31536000, immutable", // Cache a lungo termine per immagini B2
+          "Cache-Control": "private, max-age=31536000, immutable", // Cache a lungo termine per immagini B2 (browser-only)
         },
       });
     }
@@ -59,7 +61,7 @@ export async function GET(request: Request) {
     return new Response(imageBuffer, {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400, must-revalidate", // Cache per 24 ore per CDN esterni
+        "Cache-Control": "private, max-age=86400, must-revalidate", // Cache per 24 ore per CDN esterni (browser-only)
       },
     });
   } catch (error: any) {
