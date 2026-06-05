@@ -12,7 +12,7 @@ service cloud.firestore {
     }
 
     function isDocumentOwner() {
-      return isAuthenticated() && resource.data.userId == request.auth.uid;
+      return isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
     }
 
     function willBeDocumentOwner() {
