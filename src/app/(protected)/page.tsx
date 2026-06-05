@@ -178,6 +178,8 @@ export default function Home() {
               instructions: statusJson.recipe.instructions,
               imageUrl: statusJson.recipe.imageUrl || null,
               prepTimeMinutes: statusJson.recipe.prepTimeMinutes,
+              category: statusJson.recipe.category || "other",
+              kcal: statusJson.recipe.kcal !== undefined && statusJson.recipe.kcal !== null ? statusJson.recipe.kcal : null,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp()
             };
@@ -336,15 +338,14 @@ export default function Home() {
                   className="min-w-[280px] max-w-[280px] snap-start relative pt-0 border border-white/40 dark:border-white/10 shadow-xl shadow-primary/5 hover:scale-[1.02] transition-transform duration-300 cursor-pointer flex flex-col justify-between"
                 >
                   <div className="relative w-full aspect-video bg-muted/20 overflow-hidden">
-                    <div className="absolute inset-0 z-30 bg-black/35 pointer-events-none" />
                     {recipe.imageUrl ? (
                       <img 
                         src={`/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`}
                         alt={recipe.title}
-                        className="relative z-20 aspect-video w-full object-cover brightness-60 grayscale dark:brightness-40"
+                        className="relative z-20 aspect-video w-full object-cover"
                       />
                     ) : (
-                      <div className="relative z-20 w-full h-full flex items-center justify-center text-muted-foreground/30 aspect-video brightness-60 grayscale dark:brightness-40">
+                      <div className="relative z-20 w-full h-full flex items-center justify-center text-muted-foreground/30 aspect-video">
                         <ChefHat className="h-10 w-10 text-primary/20" />
                       </div>
                     )}

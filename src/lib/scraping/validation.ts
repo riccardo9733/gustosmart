@@ -14,9 +14,42 @@ export const RecipeSchema = z.object({
   instructions: z.array(z.string().min(1)),
   imageUrl: z.string().url().nullable().optional().default(null),
   prepTimeMinutes: z.number().int().nonnegative().nullable().optional().default(null),
+  category: z.enum(['first_courses', 'second_courses', 'desserts', 'appetizers', 'sides', 'single_dishes', 'other']).default('other'),
+  kcal: z.number().int().nonnegative().nullable().optional().default(null),
 });
 
 export type RecipeInput = z.infer<typeof RecipeSchema>;
+
+function normalizeCategory(cat: any): 'first_courses' | 'second_courses' | 'desserts' | 'appetizers' | 'sides' | 'single_dishes' | 'other' {
+  if (!cat) return "other";
+  const normalized = String(cat).toLowerCase().trim().replace(" ", "_").replace("-", "_");
+  const mapping: Record<string, 'first_courses' | 'second_courses' | 'desserts' | 'appetizers' | 'sides' | 'single_dishes' | 'other'> = {
+    primi: "first_courses",
+    primi_piatti: "first_courses",
+    primi_piatto: "first_courses",
+    primo: "first_courses",
+    secondi: "second_courses",
+    secondo: "second_courses",
+    secondi_piatti: "second_courses",
+    dolci: "desserts",
+    dolce: "desserts",
+    antipasti: "appetizers",
+    antipasto: "appetizers",
+    contorni: "sides",
+    contorno: "sides",
+    piatti_unici: "single_dishes",
+    piatto_unico: "single_dishes",
+    altro: "other",
+    first_courses: "first_courses",
+    second_courses: "second_courses",
+    desserts: "desserts",
+    appetizers: "appetizers",
+    sides: "sides",
+    single_dishes: "single_dishes",
+    other: "other"
+  };
+  return mapping[normalized] || "other";
+}
 
 /**
  * Valida l'output grezzo di Gemini aggiungendo l'URL sorgente e l'immagine.
@@ -44,6 +77,10 @@ export function validateAndFormatRecipe(
     imageUrl: imageUrl || null,
     prepTimeMinutes: geminiOutput.prepTimeMinutes !== undefined && geminiOutput.prepTimeMinutes !== null
       ? Number(geminiOutput.prepTimeMinutes)
+      : null,
+    category: normalizeCategory(geminiOutput.category),
+    kcal: geminiOutput.kcal !== undefined && geminiOutput.kcal !== null
+      ? Number(geminiOutput.kcal)
       : null
   };
 

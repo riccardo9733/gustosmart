@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
@@ -19,13 +19,42 @@ import {
   ChefHat,
   Sparkles,
   ShoppingBag,
-  ExternalLink
+  ExternalLink,
+  Flame
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+const CATEGORY_MAP: Record<string, string> = {
+  first_courses: "Primi",
+  second_courses: "Secondi",
+  desserts: "Dolci",
+  appetizers: "Antipasti",
+  sides: "Contorni",
+  single_dishes: "Piatti Unici",
+  other: "Altro"
+};
 
 export default function RecipeDetailPage() {
   const params = useParams();
@@ -111,7 +140,19 @@ export default function RecipeDetailPage() {
     setEditRecipe(null);
   };
 
-  // Save edits back to Firestore
+  const handleDeleteRecipe = async () => {
+    const toastId = toast.loading("Eliminazione ricetta...");
+    try {
+      const db = getFirebaseDb();
+      await deleteDoc(doc(db, "recipes", id));
+      toast.success("Ricetta eliminata con successo!", { id: toastId });
+      router.push("/recipes");
+    } catch (error) {
+      console.error("Errore durante l'eliminazione:", error);
+      toast.error("Impossibile eliminare la ricetta.", { id: toastId });
+    }
+  };
+
   const handleSave = async () => {
     if (!editRecipe.title.trim()) {
       toast.error("Il titolo della ricetta è obbligatorio.");
@@ -124,7 +165,6 @@ export default function RecipeDetailPage() {
       const db = getFirebaseDb();
       const recipeRef = doc(db, "recipes", id);
 
-      // Clean and validate ingredients
       const cleanedIngredients = editRecipe.ingredients
         .map((ing: any) => ({
           name: ing.name.trim(),
@@ -133,7 +173,6 @@ export default function RecipeDetailPage() {
         }))
         .filter((ing: any) => ing.name !== "");
 
-      // Clean instructions
       const cleanedInstructions = editRecipe.instructions
         .map((step: string) => step.trim())
         .filter((step: string) => step !== "");
@@ -143,6 +182,10 @@ export default function RecipeDetailPage() {
         servings: Number(editRecipe.servings) || 2,
         prepTimeMinutes: editRecipe.prepTimeMinutes !== null && editRecipe.prepTimeMinutes !== "" 
           ? Number(editRecipe.prepTimeMinutes) 
+          : null,
+        category: editRecipe.category || "other",
+        kcal: editRecipe.kcal !== undefined && editRecipe.kcal !== null && editRecipe.kcal !== ""
+          ? Number(editRecipe.kcal) 
           : null,
         ingredients: cleanedIngredients,
         instructions: cleanedInstructions,
@@ -227,6 +270,33 @@ export default function RecipeDetailPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
+        {/* Floating Delete Button */}
+        <AlertDialog>
+          <AlertDialogTrigger render={
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute top-24 right-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-destructive active:scale-95 transition-all"
+              aria-label="Elimina ricetta"
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          } />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Sei sicuro di voler eliminare questa ricetta?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Questa azione è irreversibile. La ricetta verrà rimossa permanentemente dal tuo ricettario.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteRecipe} className="bg-destructive hover:bg-destructive/90 text-white">
+                Elimina
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Main Content Over Card */}
@@ -250,7 +320,7 @@ export default function RecipeDetailPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase">Porzioni Base</label>
                   <Input
@@ -263,7 +333,7 @@ export default function RecipeDetailPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Tempo Prep (minuti)</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Tempo Prep (min.)</label>
                   <Input
                     type="number"
                     value={editRecipe.prepTimeMinutes ?? ""}
@@ -276,12 +346,57 @@ export default function RecipeDetailPage() {
                     className="bg-background/40"
                   />
                 </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Categoria</label>
+                  <Select
+                    value={editRecipe.category || "other"}
+                    onValueChange={(val) => setEditRecipe({ ...editRecipe, category: val })}
+                  >
+                    <SelectTrigger className="bg-background/40 h-10 border border-input focus:ring-1 focus:ring-ring">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="first_courses">Primi</SelectItem>
+                      <SelectItem value="second_courses">Secondi</SelectItem>
+                      <SelectItem value="desserts">Dolci</SelectItem>
+                      <SelectItem value="appetizers">Antipasti</SelectItem>
+                      <SelectItem value="sides">Contorni</SelectItem>
+                      <SelectItem value="single_dishes">Piatti Unici</SelectItem>
+                      <SelectItem value="other">Altro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Calorie (kcal/porz.)</label>
+                  <Input
+                    type="number"
+                    value={editRecipe.kcal ?? ""}
+                    onChange={(e) => setEditRecipe({ 
+                      ...editRecipe, 
+                      kcal: e.target.value === "" ? null : Number(e.target.value) 
+                    })}
+                    placeholder="es. 450"
+                    min="0"
+                    className="bg-background/40"
+                  />
+                </div>
               </div>
             </div>
           ) : (
             <div className="flex flex-col md:flex-row justify-between items-start gap-6">
               <div className="flex-1">
                 <div className="flex flex-wrap gap-2 items-center mb-3">
+                  {recipe.category && (
+                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-primary/20 text-primary">
+                      {CATEGORY_MAP[recipe.category] || "Altro"}
+                    </Badge>
+                  )}
+                  {recipe.kcal && (
+                    <Badge variant="secondary" className="bg-primary/10 text-primary rounded-full px-3 py-1 font-semibold flex items-center gap-1">
+                      <Flame className="w-3.5 h-3.5 fill-primary" />
+                      {recipe.kcal} kcal / porz.
+                    </Badge>
+                  )}
                   {recipe.prepTimeMinutes && (
                     <Badge variant="secondary" className="bg-secondary-container text-on-secondary-container rounded-full px-3 py-1 font-semibold flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
@@ -293,7 +408,7 @@ export default function RecipeDetailPage() {
                       href={recipe.sourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline"
+                      className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline ml-2"
                     >
                       Fonte Originale
                       <ExternalLink className="w-3 h-3" />

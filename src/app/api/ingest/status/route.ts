@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getRunStatus, getDatasetItems } from "@/lib/scraping/apify";
 import { generateRecipeFromText } from "@/lib/scraping/gemini";
 import { validateAndFormatRecipe } from "@/lib/scraping/validation";
+import { uploadImageToB2 } from "@/lib/scraping/b2";
 
 
 export async function GET(request: Request) {
@@ -41,8 +42,21 @@ export async function GET(request: Request) {
     console.log("Dati recuperati da Apify. Avvio estrazione con Gemini...");
     const geminiOutput = await generateRecipeFromText(scrapedData.caption, scrapedData.transcript);
     
-    console.log("Risposta Gemini ottenuta. Validazione e formattazione con Zod...");
-    const validatedRecipe = validateAndFormatRecipe(geminiOutput, sourceUrl, scrapedData.coverImageUrl);
+    console.log("Risposta Gemini ottenuta. Caricamento immagine su Backblaze B2...");
+    let b2ImageUrl: string | null = null;
+    if (scrapedData.coverImageUrl) {
+      try {
+        b2ImageUrl = await uploadImageToB2(scrapedData.coverImageUrl, recipeId);
+        console.log(`Immagine caricata con successo su B2: ${b2ImageUrl}`);
+      } catch (b2Err) {
+        console.error("Errore durante il caricamento dell'immagine su B2:", b2Err);
+        // Fallback sul link originale in caso di errore, per non bloccare l'intera importazione
+        b2ImageUrl = scrapedData.coverImageUrl;
+      }
+    }
+
+    console.log("Validazione e formattazione con Zod...");
+    const validatedRecipe = validateAndFormatRecipe(geminiOutput, sourceUrl, b2ImageUrl);
 
     return NextResponse.json({
       success: true,
