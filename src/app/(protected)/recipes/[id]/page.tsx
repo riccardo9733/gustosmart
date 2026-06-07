@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, deleteDoc, serverTimestamp, getDoc, collection, getDocs, writeBatch, setDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
@@ -20,13 +20,17 @@ import {
   Sparkles,
   ShoppingBag,
   ExternalLink,
-  Flame
+  Flame,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { useAppSelector } from "@/store/hooks";
+import { selectUserProfile } from "@/store/userSlice";
+import { convertToImperial } from "@/lib/units";
 import {
   Select,
   SelectContent,
@@ -61,6 +65,8 @@ export default function RecipeDetailPage() {
   const id = params?.id as string;
   const router = useRouter();
   const { user } = useAuth();
+  const profile = useAppSelector(selectUserProfile);
+  const measurementSystem = profile?.preferences?.measurementSystem || "metric";
 
   const [recipe, setRecipe] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -73,6 +79,14 @@ export default function RecipeDetailPage() {
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
   const [editRecipe, setEditRecipe] = useState<any>(null);
+
+  const [displayData, setDisplayData] = useState<{
+    title: string;
+    ingredients: any[];
+    instructions: string[];
+    isTranslated: boolean;
+  } | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const [scrollY, setScrollY] = useState(0);
 
@@ -116,6 +130,103 @@ export default function RecipeDetailPage() {
     return unsubscribe;
   }, [id, router]);
 
+  // Translation Sync & Fetch Listener
+  useEffect(() => {
+    if (!recipe) return;
+
+    const sourceLang = recipe.sourceLanguage || "it";
+    const userLanguage = profile?.preferences?.language || "it";
+
+    if (sourceLang === userLanguage) {
+      setDisplayData({
+        title: recipe.title,
+        ingredients: recipe.ingredients || [],
+        instructions: recipe.instructions || [],
+        isTranslated: false
+      });
+      setIsTranslating(false);
+    } else {
+      const fetchTranslation = async () => {
+        try {
+          const db = getFirebaseDb();
+          const translationRef = doc(db, "recipes", recipe.id, "translations", userLanguage);
+          const transSnap = await getDoc(translationRef);
+
+          if (transSnap.exists()) {
+            const transData = transSnap.data();
+            setDisplayData({
+              title: transData.title,
+              ingredients: transData.ingredients || [],
+              instructions: transData.instructions || [],
+              isTranslated: true
+            });
+            setIsTranslating(false);
+          } else {
+            // Mostra temporaneamente i dati in lingua originale
+            setDisplayData({
+              title: recipe.title,
+              ingredients: recipe.ingredients || [],
+              instructions: recipe.instructions || [],
+              isTranslated: false
+            });
+
+            // Avvia la traduzione lazy tramite l'API
+            setIsTranslating(true);
+            const res = await fetch("/api/recipes/translate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: recipe.title,
+                ingredients: recipe.ingredients || [],
+                instructions: recipe.instructions || [],
+                targetLanguage: userLanguage
+              })
+            });
+
+            if (!res.ok) {
+              throw new Error("Errore chiamata API di traduzione");
+            }
+
+            const resJson = await res.json();
+            if (resJson.success && resJson.translation) {
+              const translationDoc = {
+                title: resJson.translation.title,
+                ingredients: resJson.translation.ingredients || [],
+                instructions: resJson.translation.instructions || [],
+                translatedAt: new Date().toISOString()
+              };
+
+              // Salva la traduzione su Firestore dal client autenticato
+              const translationRef = doc(db, "recipes", recipe.id, "translations", userLanguage);
+              await setDoc(translationRef, translationDoc);
+
+              setDisplayData({
+                title: resJson.translation.title,
+                ingredients: resJson.translation.ingredients || [],
+                instructions: resJson.translation.instructions || [],
+                isTranslated: true
+              });
+            } else {
+              toast.error("Errore di traduzione. Visualizzazione in lingua originale.");
+            }
+            setIsTranslating(false);
+          }
+        } catch (error) {
+          console.error("Errore traduzione:", error);
+          setIsTranslating(false);
+          setDisplayData({
+            title: recipe.title,
+            ingredients: recipe.ingredients || [],
+            instructions: recipe.instructions || [],
+            isTranslated: false
+          });
+        }
+      };
+
+      fetchTranslation();
+    }
+  }, [recipe, profile?.preferences?.language, user?.uid]);
+
   // Adjust Servings handlers
   const updateServings = (delta: number) => {
     const newVal = currentServings + delta;
@@ -130,7 +241,13 @@ export default function RecipeDetailPage() {
       handleSave();
     } else {
       // Enter edit mode
-      setEditRecipe(JSON.parse(JSON.stringify(recipe))); // Deep clone
+      const activeRecipeVersion = {
+        ...recipe,
+        title: displayData?.title || recipe.title,
+        ingredients: displayData?.ingredients || recipe.ingredients || [],
+        instructions: displayData?.instructions || recipe.instructions || []
+      };
+      setEditRecipe(JSON.parse(JSON.stringify(activeRecipeVersion))); // Deep clone
       setIsEditing(true);
     }
   };
@@ -177,8 +294,11 @@ export default function RecipeDetailPage() {
         .map((step: string) => step.trim())
         .filter((step: string) => step !== "");
 
+      const userLanguage = profile?.preferences?.language || "it";
+
       const updateData = {
         title: editRecipe.title.trim(),
+        sourceLanguage: userLanguage,
         servings: Number(editRecipe.servings) || 2,
         prepTimeMinutes: editRecipe.prepTimeMinutes !== null && editRecipe.prepTimeMinutes !== "" 
           ? Number(editRecipe.prepTimeMinutes) 
@@ -193,6 +313,20 @@ export default function RecipeDetailPage() {
       };
 
       await updateDoc(recipeRef, updateData);
+
+      // Elimina tutte le vecchie traduzioni cached della ricetta
+      try {
+        const translationsColRef = collection(db, "recipes", id, "translations");
+        const translationsSnap = await getDocs(translationsColRef);
+        const batch = writeBatch(db);
+        translationsSnap.docs.forEach((docSnap) => {
+          batch.delete(docSnap.ref);
+        });
+        await batch.commit();
+      } catch (err) {
+        console.error("Errore durante l'eliminazione delle traduzioni obsolete:", err);
+      }
+
       toast.success("Ricetta salvata con successo!", { id: toastId });
       setIsEditing(false);
       setEditRecipe(null);
@@ -239,6 +373,10 @@ export default function RecipeDetailPage() {
   const imageSrc = recipe.imageUrl
     ? `/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`
     : null;
+
+  const displayedTitle = displayData?.title || recipe.title || "";
+  const displayedIngredients = displayData?.ingredients || recipe.ingredients || [];
+  const displayedInstructions = displayData?.instructions || recipe.instructions || [];
 
   return (
     <div className="relative w-full max-w-4xl mx-auto pb-32 animate-in fade-in duration-500">
@@ -367,7 +505,7 @@ export default function RecipeDetailPage() {
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Calorie (kcal/porz.)</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Calorie (kcal/100g)</label>
                   <Input
                     type="number"
                     value={editRecipe.kcal ?? ""}
@@ -375,7 +513,7 @@ export default function RecipeDetailPage() {
                       ...editRecipe, 
                       kcal: e.target.value === "" ? null : Number(e.target.value) 
                     })}
-                    placeholder="es. 450"
+                    placeholder="es. 150"
                     min="0"
                     className="bg-background/40"
                   />
@@ -394,7 +532,7 @@ export default function RecipeDetailPage() {
                   {recipe.kcal && (
                     <Badge variant="secondary" className="bg-primary/10 text-primary rounded-full px-3 py-1 font-semibold flex items-center gap-1">
                       <Flame className="w-3.5 h-3.5 fill-primary" />
-                      {recipe.kcal} kcal / porz.
+                      {recipe.kcal} kcal/100g
                     </Badge>
                   )}
                   {recipe.prepTimeMinutes && (
@@ -414,9 +552,23 @@ export default function RecipeDetailPage() {
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
+                  {displayData?.isTranslated && (
+                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-secondary/20 text-secondary flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-secondary fill-secondary" />
+                      Tradotto
+                    </Badge>
+                  )}
                 </div>
+
+                {isTranslating && (
+                  <div className="flex items-center gap-2.5 mb-3 p-3 rounded-xl bg-primary/10 text-primary border border-primary/15 animate-pulse text-xs font-semibold max-w-xs">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Traduzione in corso...</span>
+                  </div>
+                )}
+
                 <h2 className="font-heading text-3xl font-bold text-on-surface mb-2">
-                  {recipe.title}
+                  {displayedTitle}
                 </h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   Trascritto e ottimizzato in formato smart.
@@ -531,16 +683,27 @@ export default function RecipeDetailPage() {
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Aggiungi Ingrediente
                   </Button>
+                  <p className="text-[11px] text-muted-foreground mt-2 italic">
+                    * Inserisci quantità in formato metrico (g, ml). Verranno convertite in imperiale a runtime per la visualizzazione a seconda delle preferenze utente.
+                  </p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {recipe.ingredients && recipe.ingredients.length > 0 ? (
-                    recipe.ingredients.map((ing: any, idx: number) => {
+                  {displayedIngredients && displayedIngredients.length > 0 ? (
+                    displayedIngredients.map((ing: any, idx: number) => {
                       const baseQty = ing.quantity;
-                      const calculatedQty = baseQty !== null 
+                      let calculatedQty = baseQty !== null 
                         ? baseQty * (currentServings / baseServings) 
                         : null;
                       
+                      let displayedUnit = ing.unit || "";
+                      
+                      if (calculatedQty !== null && measurementSystem === "imperial" && displayedUnit) {
+                        const converted = convertToImperial(calculatedQty, displayedUnit);
+                        calculatedQty = converted.quantity;
+                        displayedUnit = converted.unit;
+                      }
+
                       const isChecked = !!checkedIngredients[idx];
 
                       return (
@@ -565,8 +728,8 @@ export default function RecipeDetailPage() {
                                 {formatQuantity(calculatedQty)}
                               </span>
                             )}
-                            {ing.unit && ing.unit !== "q.b." && (
-                              <span className="text-muted-foreground mr-1">{ing.unit}</span>
+                            {displayedUnit && displayedUnit !== "q.b." && (
+                              <span className="text-muted-foreground mr-1">{displayedUnit}</span>
                             )}
                             <span>{ing.name}</span>
                           </span>
@@ -646,8 +809,8 @@ export default function RecipeDetailPage() {
                   </Button>
                 </div>
               ) : (
-                recipe.instructions && recipe.instructions.length > 0 ? (
-                  recipe.instructions.map((step: string, idx: number) => {
+                displayedInstructions && displayedInstructions.length > 0 ? (
+                  displayedInstructions.map((step: string, idx: number) => {
                     const isChecked = !!completedSteps[idx];
 
                     return (

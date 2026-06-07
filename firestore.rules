@@ -30,6 +30,12 @@ service cloud.firestore {
       allow read, update, delete: if isDocumentOwner();
       // Allow creation if the user is assigning the recipe to themselves
       allow create: if willBeDocumentOwner();
+
+      // Subcollection for translations
+      match /translations/{langCode} {
+        allow read, write: if isAuthenticated() && 
+          get(/databases/$(database)/documents/recipes/$(recipeId)).data.userId == request.auth.uid;
+      }
     }
 
     // 3. Shopping Lists collection
@@ -38,6 +44,12 @@ service cloud.firestore {
       allow read, update, delete: if isDocumentOwner();
       // Allow creation if the user is assigning the list to themselves
       allow create: if willBeDocumentOwner();
+    }
+
+    // 4. Global Language collection
+    match /language/{langId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
     }
   }
 }

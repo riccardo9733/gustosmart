@@ -386,7 +386,7 @@ export default function RecipesPage() {
                       {recipe.kcal && (
                         <span className="flex items-center gap-1 bg-primary/20 px-2.5 py-1 rounded-full border border-primary/20">
                           <Flame className="h-3.5 w-3.5 fill-primary text-primary" />
-                          {recipe.kcal} kcal
+                          {recipe.kcal} kcal/100g
                         </span>
                       )}
                     </div>

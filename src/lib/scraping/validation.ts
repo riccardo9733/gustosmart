@@ -9,6 +9,7 @@ export const IngredientSchema = z.object({
 export const RecipeSchema = z.object({
   title: z.string().min(1, "Il titolo è obbligatorio"),
   sourceUrl: z.string().url("URL sorgente non valido"),
+  sourceLanguage: z.string().min(2).max(5).default("it"),
   servings: z.number().int().positive().default(2),
   ingredients: z.array(IngredientSchema),
   instructions: z.array(z.string().min(1)),
@@ -63,12 +64,13 @@ export function validateAndFormatRecipe(
   const rawRecipe = {
     title: geminiOutput.title,
     sourceUrl,
+    sourceLanguage: geminiOutput.sourceLanguage || "it",
     servings: geminiOutput.servings !== undefined ? Number(geminiOutput.servings) : 2,
     ingredients: Array.isArray(geminiOutput.ingredients)
       ? geminiOutput.ingredients.map((ing: any) => ({
           name: ing.name || "",
           quantity: ing.quantity !== undefined && ing.quantity !== null ? Number(ing.quantity) : null,
-          unit: ing.unit || "q.b."
+          unit: ing.unit !== undefined && ing.unit !== null ? String(ing.unit) : "q.b."
         }))
       : [],
     instructions: Array.isArray(geminiOutput.instructions)

@@ -14,23 +14,129 @@ import {
   Trash2,
   Check
 } from "lucide-react";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import { useAppSelector } from "@/store/hooks";
-import { selectUserProfile } from "@/store/userSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { selectUserProfile, setUserSuccess } from "@/store/userSlice";
+import { doc, updateDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ProfilePage() {
+  const dispatch = useAppDispatch();
   const profile = useAppSelector(selectUserProfile);
   const [metricUnit, setMetricUnit] = useState(true);
   const [timerAlerts, setTimerAlerts] = useState(true);
   const [recipeRecs, setRecipeRecs] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const [languages, setLanguages] = useState<any[]>([
+    { code: "it", name: "Italiano", flag: "🇮🇹" },
+    { code: "en", name: "English", flag: "🇺🇸" },
+    { code: "es", name: "Español", flag: "🇪🇸" },
+    { code: "fr", name: "Français", flag: "🇫🇷" }
+  ]);
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const db = getFirebaseDb();
+        const languagesColRef = collection(db, "language");
+        const q = query(languagesColRef, where("enabled", "==", true));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const fetchedLanguages = querySnapshot.docs.map((docSnap) => {
+            const data = docSnap.data();
+            return {
+              code: data.code || docSnap.id,
+              name: data.name || "",
+              flag: data.flag || "🌐",
+              enabled: data.enabled !== false
+            };
+          });
+          
+          // Ordina alfabeticamente per nome
+          fetchedLanguages.sort((a, b) => a.name.localeCompare(b.name));
+          setLanguages(fetchedLanguages);
+        }
+      } catch (error) {
+        console.error("Errore durante il recupero delle lingue da Firestore:", error);
+      }
+    };
+    
+    fetchLanguages();
+  }, []);
+
   useEffect(() => {
     if (profile?.preferences?.measurementSystem) {
       setMetricUnit(profile.preferences.measurementSystem === "metric");
     }
   }, [profile]);
+
+  const handleLanguageChange = async (langCode: string) => {
+    if (!profile) return;
+    try {
+      const db = getFirebaseDb();
+      const userRef = doc(db, "users", profile.uid);
+      const updatedPreferences = {
+        ...profile.preferences,
+        language: langCode,
+      };
+
+      await updateDoc(userRef, {
+        preferences: updatedPreferences,
+        updatedAt: new Date().toISOString(),
+      });
+
+      dispatch(
+        setUserSuccess({
+          ...profile,
+          preferences: updatedPreferences,
+        })
+      );
+      toast.success("Lingua aggiornata!");
+    } catch (error) {
+      console.error("Errore durante l'aggiornamento della lingua:", error);
+      toast.error("Impossibile salvare la preferenza della lingua.");
+    }
+  };
+
+  const handleUnitChange = async (isMetric: boolean) => {
+    setMetricUnit(isMetric);
+    if (!profile) return;
+    try {
+      const db = getFirebaseDb();
+      const userRef = doc(db, "users", profile.uid);
+      const updatedPreferences = {
+        ...profile.preferences,
+        measurementSystem: isMetric ? ("metric" as const) : ("imperial" as const),
+      };
+
+      await updateDoc(userRef, {
+        preferences: updatedPreferences,
+        updatedAt: new Date().toISOString(),
+      });
+
+      dispatch(
+        setUserSuccess({
+          ...profile,
+          preferences: updatedPreferences,
+        })
+      );
+      toast.success("Unità di misura aggiornata!");
+    } catch (error) {
+      console.error("Errore durante l'aggiornamento dell'unità di misura:", error);
+      toast.error("Impossibile salvare le preferenze.");
+      // Ripristina lo stato locale precedente
+      setMetricUnit(profile.preferences.measurementSystem === "metric");
+    }
+  };
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -43,6 +149,8 @@ export default function ProfilePage() {
       setIsLoggingOut(false);
     }
   };
+
+  const currentLangObj = languages.find(l => l.code === profile?.preferences?.language) || { code: "it", name: "Italiano", flag: "🇮🇹" };
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 pb-10 animate-in fade-in duration-500">
@@ -78,23 +186,44 @@ export default function ProfilePage() {
           </h3>
           <div className="glass-panel rounded-[20px] overflow-hidden border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5">
             {/* Language Selector */}
-            <div className="flex items-center justify-between p-5 border-b border-white/10 hover:bg-white/40 dark:hover:bg-white/5 transition-colors cursor-pointer group">
-              <div className="flex items-center gap-4">
-                <Globe className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium text-foreground">App Language</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 dark:bg-white/5 rounded-full border border-white/25">
-                  <span className="text-sm">
-                    {profile?.preferences?.language === "en" ? "🇺🇸" : "🇮🇹"}
-                  </span>
-                  <span className="text-xs font-semibold text-foreground">
-                    {profile?.preferences?.language === "en" ? "English" : "Italian"}
-                  </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger render={
+                <div className="flex items-center justify-between p-5 border-b border-white/10 hover:bg-white/40 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+                  <div className="flex items-center gap-4">
+                    <Globe className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium text-foreground">App Language</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 dark:bg-white/5 rounded-full border border-white/25">
+                      <span className="text-sm">
+                        {currentLangObj.flag}
+                      </span>
+                      <span className="text-xs font-semibold text-foreground">
+                        {currentLangObj.name}
+                      </span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
+              } />
+              <DropdownMenuContent align="end" className="w-48 rounded-[16px] p-1.5 shadow-xl bg-popover text-popover-foreground border border-white/10">
+                {languages.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang.code}
+                    onClick={() => handleLanguageChange(lang.code)}
+                    className="flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-base leading-none">{lang.flag}</span>
+                      <span className="font-medium">{lang.name}</span>
+                    </div>
+                    {currentLangObj.code === lang.code && (
+                      <Check className="h-4 w-4 text-primary shrink-0" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             {/* Measurement Toggle */}
             <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-4">
@@ -103,7 +232,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex bg-surface-container-low dark:bg-surface-container p-1 rounded-full border border-white/10">
                 <button 
-                  onClick={() => setMetricUnit(true)}
+                  onClick={() => handleUnitChange(true)}
                   className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     metricUnit 
                       ? "bg-primary text-white shadow-sm" 
@@ -113,7 +242,7 @@ export default function ProfilePage() {
                   Metric
                 </button>
                 <button 
-                  onClick={() => setMetricUnit(false)}
+                  onClick={() => handleUnitChange(false)}
                   className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     !metricUnit 
                       ? "bg-primary text-white shadow-sm" 

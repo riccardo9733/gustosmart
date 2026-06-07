@@ -172,6 +172,7 @@ export default function Home() {
               userId: user.uid,
               title: statusJson.recipe.title,
               sourceUrl: targetUrl,
+              sourceLanguage: statusJson.recipe.sourceLanguage || "it",
               sourcePlatform: "instagram",
               servings: statusJson.recipe.servings,
               ingredients: statusJson.recipe.ingredients,
