@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { StoreProvider } from "@/store/store-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { PWAProvider } from "@/contexts/pwa-context";
+import { ThemeProvider } from "@/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -50,16 +51,23 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <AuthProvider>
-            <StoreProvider>
-              <QueryProvider>
-                <PWAProvider>
-                  {children}
-                  <Toaster />
-                </PWAProvider>
-              </QueryProvider>
-            </StoreProvider>
-          </AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthProvider>
+              <StoreProvider>
+                <QueryProvider>
+                  <PWAProvider>
+                    {children}
+                    <Toaster />
+                  </PWAProvider>
+                </QueryProvider>
+              </StoreProvider>
+            </AuthProvider>
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

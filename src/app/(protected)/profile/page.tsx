@@ -15,12 +15,14 @@ import {
   Trash2,
   Check,
   Zap,
-  Smartphone
+  Smartphone,
+  SunMoon
 } from "lucide-react";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { usePWA } from "@/contexts/pwa-context";
+import { useTheme } from "next-themes";
 import { selectUserProfile, setUserSuccess } from "@/store/userSlice";
 import { doc, updateDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { toast } from "sonner";
@@ -36,6 +38,8 @@ export default function ProfilePage() {
   const profile = useAppSelector(selectUserProfile);
   const t = useTranslations("Profile");
   const { isInstalled, installApp } = usePWA();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   const [metricUnit, setMetricUnit] = useState(true);
   const [timerAlerts, setTimerAlerts] = useState(true);
@@ -48,6 +52,10 @@ export default function ProfilePage() {
     { code: "es", name: "Español", flag: "🇪🇸" },
     { code: "fr", name: "Français", flag: "🇫🇷" }
   ]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -281,6 +289,47 @@ export default function ProfilePage() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            {/* Theme Selector */}
+            <div className="flex items-center justify-between p-5 border-b border-white/10">
+              <div className="flex items-center gap-4">
+                <SunMoon className="h-5 w-5 text-muted-foreground" />
+                <span className="font-medium text-foreground">{t("theme")}</span>
+              </div>
+              {mounted && (
+                <div className="flex bg-surface-container-low dark:bg-surface-container p-1 rounded-full border border-white/10">
+                  <button
+                    onClick={() => setTheme("light")}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                      theme === "light"
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t("light")}
+                  </button>
+                  <button
+                    onClick={() => setTheme("dark")}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                      theme === "dark"
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t("dark")}
+                  </button>
+                  <button
+                    onClick={() => setTheme("system")}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                      theme === "system"
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t("system")}
+                  </button>
+                </div>
+              )}
+            </div>
             {/* Measurement Toggle */}
             <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-4">
