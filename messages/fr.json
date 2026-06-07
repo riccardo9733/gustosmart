@@ -34,7 +34,13 @@
     "errorNetworkFailed": "Erreur réseau. Veuillez vérifier votre connexion.",
     "errorDefault": "Une erreur est survenue. Veuillez réessayer.",
     "errorPasswordsDontMatch": "Les mots de passe ne correspondent pas.",
-    "errorNameRequired": "Veuillez entrer votre nom complet."
+    "errorNameRequired": "Veuillez entrer votre nom complet.",
+    "pwaBannerTitle": "Installer GustoSmart",
+    "pwaBannerDesc": "Ajoutez GustoSmart à l'écran d'accueil pour une expérience plein écran et hors ligne.",
+    "pwaInstallBtn": "Installer",
+    "pwaDismissBtn": "Pas maintenant",
+    "pwaIosGuideTitle": "Installer sur iOS",
+    "pwaIosGuideDesc": "1. Appuyez sur le bouton Partager (carré avec flèche vers le haut) dans le navigateur Safari.\n2. Faites défiler vers le bas et sélectionnez 'Sur l'écran d'accueil'."
   },
   "Nav": {
     "home": "Accueil",
@@ -89,7 +95,10 @@
     "usage": "Utilisation",
     "tokensTitle": "Tokens d'Utilisation",
     "tokensSubtitle": "Chaque nouveau scan consomme 1 token. Les recettes déjà présentes dans le catalogue sont gratuites.",
-    "tokensRemaining": "Tokens restants"
+    "tokensRemaining": "Tokens restants",
+    "pwaSectionTitle": "Application",
+    "pwaInstallApp": "Installer GustoSmart",
+    "pwaInstallDesc": "Ajoutez l'application à votre écran d'accueil pour l'utiliser en plein écran et hors ligne."
   },
   "Recipes": {
     "title": "Votre Carnet de Recettes",

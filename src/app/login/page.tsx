@@ -28,6 +28,7 @@ import {
   Leaf,
   AlertCircle,
   User as UserIcon,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { useAuth } from "@/contexts/auth-context";
+import { usePWA } from "@/contexts/pwa-context";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 
 /* -------------------------------------------------- */
@@ -96,6 +98,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const t = useTranslations("Login");
+  const { canInstall, isDismissed, installApp, dismissPrompt } = usePWA();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -549,6 +552,41 @@ function LoginForm() {
           </Link>
         </footer>
       </main>
+
+      {/* Floating PWA Install Banner */}
+      {canInstall && !isDismissed && (
+        <div className="fixed bottom-6 left-6 right-6 md:left-auto md:right-6 md:w-[380px] z-40 bg-background/80 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl rounded-[24px] p-5 flex gap-4 items-center animate-in slide-in-from-bottom-8 duration-500">
+          {/* Brand Icon */}
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl terracotta-gradient shadow-md shadow-primary/10 shrink-0">
+            <Leaf className="h-6 w-6 text-white" />
+          </div>
+          {/* Content */}
+          <div className="flex-1 space-y-1">
+            <h4 className="font-heading text-sm font-bold text-foreground leading-tight">
+              {t("pwaBannerTitle")}
+            </h4>
+            <p className="text-xs text-muted-foreground leading-snug">
+              {t("pwaBannerDesc")}
+            </p>
+          </div>
+          {/* Action and Dismiss */}
+          <div className="flex flex-col gap-2.5 shrink-0">
+            <Button
+              onClick={installApp}
+              size="sm"
+              className="terracotta-gradient text-white rounded-xl text-xs font-bold hover:scale-[1.02] active:scale-[0.98] transition-transform"
+            >
+              {t("pwaInstallBtn")}
+            </Button>
+            <button
+              onClick={dismissPrompt}
+              className="text-[11px] font-bold text-muted-foreground hover:text-foreground text-center transition-colors cursor-pointer"
+            >
+              {t("pwaDismissBtn")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

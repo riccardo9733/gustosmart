@@ -5,6 +5,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { AuthProvider } from "@/contexts/auth-context";
 import { StoreProvider } from "@/store/store-provider";
 import { QueryProvider } from "@/providers/query-provider";
+import { PWAProvider } from "@/contexts/pwa-context";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -22,6 +23,12 @@ export const metadata: Metadata = {
   title: "GustoSmart — Precision Cooking, Smart Living",
   description:
     "Importa ricette dai social, ricalcola le dosi e genera la tua lista della spesa intelligente.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "GustoSmart",
+  },
 };
 
 export default async function RootLayout({
@@ -43,8 +50,10 @@ export default async function RootLayout({
           <AuthProvider>
             <StoreProvider>
               <QueryProvider>
-                {children}
-                <Toaster />
+                <PWAProvider>
+                  {children}
+                  <Toaster />
+                </PWAProvider>
               </QueryProvider>
             </StoreProvider>
           </AuthProvider>

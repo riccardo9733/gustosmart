@@ -14,11 +14,13 @@ import {
   LogOut, 
   Trash2,
   Check,
-  Zap
+  Zap,
+  Smartphone
 } from "lucide-react";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { usePWA } from "@/contexts/pwa-context";
 import { selectUserProfile, setUserSuccess } from "@/store/userSlice";
 import { doc, updateDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { toast } from "sonner";
@@ -33,6 +35,7 @@ export default function ProfilePage() {
   const dispatch = useAppDispatch();
   const profile = useAppSelector(selectUserProfile);
   const t = useTranslations("Profile");
+  const { isInstalled, installApp } = usePWA();
 
   const [metricUnit, setMetricUnit] = useState(true);
   const [timerAlerts, setTimerAlerts] = useState(true);
@@ -356,6 +359,36 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* App Installation Section */}
+        {!isInstalled && (
+          <div className="space-y-2 animate-in fade-in duration-300">
+            <h3 className="text-xs font-bold px-1 text-primary uppercase tracking-wider opacity-80">
+              {t("pwaSectionTitle")}
+            </h3>
+            <div className="glass-panel rounded-[20px] overflow-hidden border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex gap-4">
+                <div className="bg-primary/10 dark:bg-primary/20 p-2.5 rounded-2xl shrink-0 h-10 w-10 flex items-center justify-center">
+                  <Smartphone className="h-5 w-5 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-heading text-sm font-bold text-foreground">
+                    {t("pwaInstallApp")}
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t("pwaInstallDesc")}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={installApp}
+                className="terracotta-gradient text-white rounded-full px-5 py-2.5 text-xs font-bold hover:scale-[1.03] active:scale-[0.97] transition-all w-full sm:w-auto shrink-0 shadow-md shadow-primary/15"
+              >
+                {t("pwaInstallApp")}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Account Actions */}
         <div className="space-y-2 pt-2">

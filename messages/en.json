@@ -34,7 +34,13 @@
     "errorNetworkFailed": "Network error. Please check your connection.",
     "errorDefault": "An error occurred. Please try again.",
     "errorPasswordsDontMatch": "Passwords do not match.",
-    "errorNameRequired": "Please enter your full name."
+    "errorNameRequired": "Please enter your full name.",
+    "pwaBannerTitle": "Install GustoSmart",
+    "pwaBannerDesc": "Add GustoSmart to your Home screen for a full screen and offline experience.",
+    "pwaInstallBtn": "Install",
+    "pwaDismissBtn": "Not now",
+    "pwaIosGuideTitle": "Install on iOS",
+    "pwaIosGuideDesc": "1. Tap the Share button (square with up arrow) in your Safari browser.\n2. Scroll down and select 'Add to Home Screen'."
   },
   "Nav": {
     "home": "Home",
@@ -89,7 +95,10 @@
     "usage": "Usage",
     "tokensTitle": "Usage Tokens",
     "tokensSubtitle": "Each new scan consumes 1 token. Recipes already in the catalog are free.",
-    "tokensRemaining": "Tokens left"
+    "tokensRemaining": "Tokens left",
+    "pwaSectionTitle": "Application",
+    "pwaInstallApp": "Install GustoSmart",
+    "pwaInstallDesc": "Add the app to your home screen to use it full screen and offline."
   },
   "Recipes": {
     "title": "Your Recipes",

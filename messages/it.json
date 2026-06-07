@@ -34,7 +34,13 @@
     "errorNetworkFailed": "Errore di rete. Controlla la tua connessione.",
     "errorDefault": "Si è verificato un errore. Riprova.",
     "errorPasswordsDontMatch": "Le password non coincidono.",
-    "errorNameRequired": "Inserisci il tuo nome completo."
+    "errorNameRequired": "Inserisci il tuo nome completo.",
+    "pwaBannerTitle": "Installa GustoSmart",
+    "pwaBannerDesc": "Aggiungi GustoSmart alla schermata Home per un'esperienza a schermo intero e offline.",
+    "pwaInstallBtn": "Installa",
+    "pwaDismissBtn": "Non ora",
+    "pwaIosGuideTitle": "Installa su iOS",
+    "pwaIosGuideDesc": "1. Tocca il pulsante Condividi (quadrato con freccia verso l'alto) nel browser Safari.\n2. Scorri verso il basso e seleziona 'Aggiungi alla schermata Home'."
   },
   "Nav": {
     "home": "Home",
@@ -89,7 +95,10 @@
     "usage": "Utilizzo",
     "tokensTitle": "Token di Utilizzo",
     "tokensSubtitle": "Ogni scansione consuma 1 token. Le ricette già presenti sono gratuite.",
-    "tokensRemaining": "Token rimasti"
+    "tokensRemaining": "Token rimasti",
+    "pwaSectionTitle": "Applicazione",
+    "pwaInstallApp": "Installa GustoSmart",
+    "pwaInstallDesc": "Aggiungi l'app alla tua schermata home per usarla a schermo intero e offline."
   },
   "Recipes": {
     "title": "Il Tuo Ricettario",

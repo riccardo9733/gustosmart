@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="terracotta-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF8A65;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E64A19;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="112" fill="url(#terracotta-grad)" />
+  <!-- Leaf icon in the center -->
+  <path 
+    d="M256 120 C180 120 130 180 130 260 C130 340 180 392 256 392 C332 392 382 340 382 260 C382 180 332 120 256 120 Z" 
+    fill="none" 
+    stroke="#FFFFFF" 
+    stroke-width="24" 
+    stroke-linecap="round" 
+    stroke-linejoin="round" 
+  />
+  <path 
+    d="M256 120 C256 210 215 285 165 330" 
+    fill="none" 
+    stroke="#FFFFFF" 
+    stroke-width="20" 
+    stroke-linecap="round" 
+    stroke-linejoin="round" 
+  />
+  <path 
+    d="M256 225 C280 255 310 275 340 285" 
+    fill="none" 
+    stroke="#FFFFFF" 
+    stroke-width="18" 
+    stroke-linecap="round" 
+    stroke-linejoin="round" 
+  />
+  <path 
+    d="M256 392 L256 425" 
+    fill="none" 
+    stroke="#FFFFFF" 
+    stroke-width="24" 
+    stroke-linecap="round" 
+  />
+</svg>
