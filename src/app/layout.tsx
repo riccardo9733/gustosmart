@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   description:
     "Importa ricette dai social, ricalcola le dosi e genera la tua lista della spesa intelligente.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

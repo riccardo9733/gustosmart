@@ -244,7 +244,7 @@ export default function ProfilePage() {
           <div className="glass-panel rounded-[20px] overflow-hidden border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5">
             {/* Language Selector */}
             <DropdownMenu>
-              <DropdownMenuTrigger render={
+              <DropdownMenuTrigger nativeButton={false} render={
                 <div className="flex items-center justify-between p-5 border-b border-white/10 hover:bg-white/40 dark:hover:bg-white/5 transition-colors cursor-pointer group">
                   <div className="flex items-center gap-4">
                     <Globe className="h-5 w-5 text-muted-foreground" />
