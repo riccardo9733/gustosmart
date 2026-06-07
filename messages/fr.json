@@ -63,7 +63,9 @@
     "importedSuccess": "Recette Importée !",
     "importedSuccessDesc": "La recette est prête dans votre carnet !",
     "importFailed": "Erreur d'importation",
-    "importFailedDesc": "Impossible de terminer l'importation. Veuillez réessayer plus tard."
+    "importFailedDesc": "Impossible de terminer l'importation. Veuillez réessayer plus tard.",
+    "noTokensErrorTitle": "Tokens épuisés",
+    "noTokensErrorDesc": "Vous n'avez plus de tokens ! La recette que vous essayez d'importer n'est pas encore dans le catalogue. Rechargez vos tokens pour scanner de nouvelles recettes."
   },
   "Profile": {
     "title": "Profil",
@@ -83,7 +85,11 @@
     "langUpdated": "Langue mise à jour !",
     "langUpdateFailed": "Impossible d'enregistrer la préférence de langue.",
     "unitsUpdated": "Unités de mesure mises à jour !",
-    "unitsUpdateFailed": "Impossible d'enregistrer les préférences."
+    "unitsUpdateFailed": "Impossible d'enregistrer les préférences.",
+    "usage": "Utilisation",
+    "tokensTitle": "Tokens d'Utilisation",
+    "tokensSubtitle": "Chaque nouveau scan consomme 1 token. Les recettes déjà présentes dans le catalogue sont gratuites.",
+    "tokensRemaining": "Tokens restants"
   },
   "Recipes": {
     "title": "Votre Carnet de Recettes",

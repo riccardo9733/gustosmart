@@ -63,7 +63,9 @@
     "importedSuccess": "Ricetta Importata!",
     "importedSuccessDesc": "La ricetta è pronta nel tuo ricettario!",
     "importFailed": "Errore di importazione",
-    "importFailedDesc": "Impossibile completare lo scraping. Riprova più tardi."
+    "importFailedDesc": "Impossibile completare lo scraping. Riprova più tardi.",
+    "noTokensErrorTitle": "Token esauriti",
+    "noTokensErrorDesc": "Hai esaurito i token! La ricetta che hai cercato di importare non fa ancora parte del catalogo e serve ricaricare i token."
   },
   "Profile": {
     "title": "Profilo",
@@ -83,7 +85,11 @@
     "langUpdated": "Lingua aggiornata!",
     "langUpdateFailed": "Impossibile salvare la preferenza della lingua.",
     "unitsUpdated": "Unità di misura aggiornata!",
-    "unitsUpdateFailed": "Impossibile salvare le preferenze."
+    "unitsUpdateFailed": "Impossibile salvare le preferenze.",
+    "usage": "Utilizzo",
+    "tokensTitle": "Token di Utilizzo",
+    "tokensSubtitle": "Ogni scansione consuma 1 token. Le ricette già presenti sono gratuite.",
+    "tokensRemaining": "Token rimasti"
   },
   "Recipes": {
     "title": "Il Tuo Ricettario",

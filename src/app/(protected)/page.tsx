@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, serverTimestamp, setDoc, updateDoc, increment } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { useRecipes, useAddToUserRecipes } from "@/hooks/useRecipes";
+import { useAppSelector } from "@/store/hooks";
+import { selectUserProfile } from "@/store/userSlice";
 import {
   Sparkles,
   Film,
@@ -31,6 +33,7 @@ export default function Home() {
 
   const { user } = useAuth();
   const router = useRouter();
+  const profile = useAppSelector(selectUserProfile);
   
   const t = useTranslations("Home");
   const tRecipes = useTranslations("Recipes");
@@ -94,6 +97,17 @@ export default function Home() {
             label: t("view"),
             onClick: () => router.push(`/recipes/${existingRecipeId}`),
           },
+        });
+        return;
+      }
+
+      // Controlla la disponibilità dei token prima dell'ingest (se la ricetta non esiste già)
+      const tokens = profile?.tokens ?? 10;
+      if (tokens <= 0) {
+        cleanup();
+        toast.error(t("noTokensErrorTitle"), {
+          id: toastId,
+          description: t("noTokensErrorDesc"),
         });
         return;
       }
@@ -175,6 +189,13 @@ export default function Home() {
             // Crea il documento personale in /users/{uid}/recipes/{recipeId}
             const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
             await addFn(user.uid, recipeId);
+
+            // Detrai 1 token all'utente per aver scansionato una nuova ricetta
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, {
+              tokens: increment(-1),
+              updatedAt: new Date().toISOString(),
+            });
           }
         } catch (pollErr) {
           console.error("Errore nel polling dello stato:", pollErr);

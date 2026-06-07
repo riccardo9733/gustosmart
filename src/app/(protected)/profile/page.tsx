@@ -13,7 +13,8 @@ import {
   Utensils, 
   LogOut, 
   Trash2,
-  Check
+  Check,
+  Zap
 } from "lucide-react";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,47 @@ export default function ProfilePage() {
 
       {/* Settings Groups */}
       <div className="space-y-6">
+        {/* Token Usage Section */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold px-1 text-primary uppercase tracking-wider opacity-80">
+            {t("usage")}
+          </h3>
+          <div className="glass-panel rounded-[24px] p-6 border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5 flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 dark:bg-primary/20 p-2.5 rounded-2xl">
+                  <Zap className="h-5 w-5 text-primary fill-primary animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="font-heading text-base font-bold text-foreground">{t("tokensTitle")}</h4>
+                  <p className="text-xs text-muted-foreground">{t("tokensSubtitle")}</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-2xl font-extrabold text-primary leading-none">
+                  {profile?.tokens ?? 10}
+                </span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1">
+                  {t("tokensRemaining")}
+                </span>
+              </div>
+            </div>
+
+            {/* Custom progress bar */}
+            <div className="w-full bg-surface-container-low dark:bg-surface-container h-3 rounded-full overflow-hidden border border-white/5 relative">
+              <div 
+                className="terracotta-gradient h-full rounded-full transition-all duration-500 shadow-sm"
+                style={{ width: `${Math.min(100, Math.max(0, ((profile?.tokens ?? 10) / 10) * 100))}%` }}
+              />
+            </div>
+            
+            <div className="flex justify-between text-[11px] font-semibold text-muted-foreground px-1">
+              <span>0 / 10 Scans</span>
+              <span>10 / 10 Scans</span>
+            </div>
+          </div>
+        </div>
+
         {/* Preferences Section */}
         <div className="space-y-2">
           <h3 className="text-xs font-bold px-1 text-primary uppercase tracking-wider opacity-80">

@@ -63,7 +63,9 @@
     "importedSuccess": "Recipe Imported!",
     "importedSuccessDesc": "The recipe is ready in your collection!",
     "importFailed": "Import error",
-    "importFailedDesc": "Could not complete scraping. Please try again later."
+    "importFailedDesc": "Could not complete scraping. Please try again later.",
+    "noTokensErrorTitle": "Tokens exhausted",
+    "noTokensErrorDesc": "You have run out of tokens! The recipe you are trying to import is not yet in the catalog. Refill your tokens to scan new recipes."
   },
   "Profile": {
     "title": "Profile",
@@ -83,7 +85,11 @@
     "langUpdated": "Language updated!",
     "langUpdateFailed": "Could not save language preference.",
     "unitsUpdated": "Measurement units updated!",
-    "unitsUpdateFailed": "Could not save preferences."
+    "unitsUpdateFailed": "Could not save preferences.",
+    "usage": "Usage",
+    "tokensTitle": "Usage Tokens",
+    "tokensSubtitle": "Each new scan consumes 1 token. Recipes already in the catalog are free.",
+    "tokensRemaining": "Tokens left"
   },
   "Recipes": {
     "title": "Your Recipes",

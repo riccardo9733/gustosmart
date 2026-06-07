@@ -12,6 +12,7 @@ export interface UserProfile {
   displayName: string;
   photoURL: string | null;
   preferences: UserPreferences;
+  tokens: number;
   createdAt: any;
   updatedAt: any;
 }

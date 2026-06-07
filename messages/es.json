@@ -63,7 +63,9 @@
     "importedSuccess": "¡Receta Importada!",
     "importedSuccessDesc": "¡La receta ya está lista en tu colección!",
     "importFailed": "Error de importación",
-    "importFailedDesc": "No se pudo completar la importación. Inténtalo más tarde."
+    "importFailedDesc": "No se pudo completar la importación. Inténtalo más tarde.",
+    "noTokensErrorTitle": "Tokens agotados",
+    "noTokensErrorDesc": "¡Te has quedado sin tokens! La receta que intentas importar no está en el catálogo. Recarga tus tokens para escanear nuevas recetas."
   },
   "Profile": {
     "title": "Perfil",
@@ -83,7 +85,11 @@
     "langUpdated": "¡Idioma actualizado!",
     "langUpdateFailed": "No se pudo guardar la preferencia de idioma.",
     "unitsUpdated": "¡Unidades de medida actualizadas!",
-    "unitsUpdateFailed": "No se pudo guardar la preferencia."
+    "unitsUpdateFailed": "No se pudo guardar la preferencia.",
+    "usage": "Uso",
+    "tokensTitle": "Tokens de Uso",
+    "tokensSubtitle": "Cada escaneo consume 1 token. Las recetas que ya están en el catálogo son gratuitas.",
+    "tokensRemaining": "Tokens restantes"
   },
   "Recipes": {
     "title": "Tu Recetario",
