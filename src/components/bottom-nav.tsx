@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Home, UtensilsCrossed, ShoppingCart, User } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const t = useTranslations("Nav");
 
   const navItems = [
-    { label: "Home", href: "/", icon: Home },
-    { label: "Recipes", href: "/recipes", icon: UtensilsCrossed },
-    { label: "Shopping", href: "/shopping", icon: ShoppingCart },
-    { label: "Profile", href: "/profile", icon: User },
+    { label: t("home"), href: "/", icon: Home },
+    { label: t("recipes"), href: "/recipes", icon: UtensilsCrossed },
+    { label: t("shoppingList"), href: "/shopping", icon: ShoppingCart },
+    { label: t("profile"), href: "/profile", icon: User },
   ];
 
   return (

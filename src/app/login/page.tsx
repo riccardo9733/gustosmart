@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useRef, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -44,38 +45,34 @@ import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
 const googleProvider = new GoogleAuthProvider();
 
 /** Maps Firebase auth error codes to user-friendly messages. */
-function getErrorMessage(error: AuthError): string {
+function getErrorMessage(error: AuthError, t: any): string {
   switch (error.code) {
     case "auth/invalid-email":
-      return "L'indirizzo email non è valido.";
+      return t("errorInvalidEmail");
     case "auth/user-disabled":
-      return "Questo account è stato disattivato.";
+      return t("errorUserDisabled");
     case "auth/user-not-found":
-      return "Nessun account trovato con questa email.";
+      return t("errorUserNotFound");
     case "auth/wrong-password":
     case "auth/invalid-credential":
-      return "Email o password non corretti.";
+      return t("errorWrongPassword");
     case "auth/email-already-in-use":
-      return "Questo indirizzo email è già associato a un altro account.";
+      return t("errorEmailInUse");
     case "auth/weak-password":
-      return "La password deve contenere almeno 6 caratteri.";
+      return t("errorWeakPassword");
     case "auth/too-many-requests":
-      return "Troppi tentativi. Riprova tra qualche minuto.";
+      return t("errorTooManyRequests");
     case "auth/popup-closed-by-user":
-      return "Il popup Google è stato chiuso prima del completamento.";
+      return t("errorPopupClosed");
     case "auth/network-request-failed":
-      return "Errore di rete. Controlla la tua connessione.";
+      return t("errorNetworkFailed");
     default:
-      return "Si è verificato un errore. Riprova.";
+      return t("errorDefault");
   }
 }
 
 /* ================================================== */
 /*  Login Page                                        */
-/* ================================================== */
-/* ================================================== */
-/*  Page wrapper — provides the Suspense boundary     */
-/*  required by useSearchParams during prerendering.   */
 /* ================================================== */
 export default function LoginPage() {
   return (
@@ -98,6 +95,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+  const t = useTranslations("Login");
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -169,20 +167,20 @@ function LoginForm() {
         await signInWithEmailAndPassword(auth, email, password);
         handleSuccess();
       } catch (err) {
-        setError(getErrorMessage(err as AuthError));
+        setError(getErrorMessage(err as AuthError, t));
         setIsSubmitting(false);
       }
     } else {
       if (password !== confirmPassword) {
-        setError("Le password non coincidono.");
+        setError(t("errorPasswordsDontMatch"));
         return;
       }
       if (password.length < 6) {
-        setError("La password deve contenere almeno 6 caratteri.");
+        setError(t("errorWeakPassword"));
         return;
       }
       if (!name.trim()) {
-        setError("Inserisci il tuo nome completo.");
+        setError(t("errorNameRequired"));
         return;
       }
 
@@ -215,7 +213,7 @@ function LoginForm() {
 
         handleSuccess();
       } catch (err) {
-        setError(getErrorMessage(err as AuthError));
+        setError(getErrorMessage(err as AuthError, t));
         setIsSubmitting(false);
       }
     }
@@ -259,7 +257,7 @@ function LoginForm() {
       const authErr = err as AuthError;
       // Don't show error if user simply closed the popup
       if (authErr.code !== "auth/popup-closed-by-user") {
-        setError(getErrorMessage(authErr));
+        setError(getErrorMessage(authErr, t));
       }
       setIsGoogleLoading(false);
     }
@@ -320,12 +318,10 @@ function LoginForm() {
             {/* Card title */}
             <div className="mb-8 space-y-1 text-center">
               <h2 className="font-heading text-2xl font-semibold text-foreground">
-                {mode === "login" ? "Welcome back" : "Create an account"}
+                {mode === "login" ? t("welcomeBack") : t("createAccount")}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {mode === "login"
-                  ? "Log in to your smart kitchen dashboard"
-                  : "Start cooking with precision and smart features"}
+                {mode === "login" ? t("loginTitle") : t("signupTitle")}
               </p>
             </div>
 
@@ -350,14 +346,14 @@ function LoginForm() {
               ) : (
                 <GoogleIcon />
               )}
-              {mode === "login" ? "Continue with Google" : "Sign up with Google"}
+              {mode === "login" ? t("googleLogin") : t("googleSignup")}
             </Button>
 
             {/* Divider */}
             <div className="relative my-8">
               <Separator className="bg-outline-variant" />
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                or email
+                {t("orEmail")}
               </span>
             </div>
 
@@ -367,7 +363,7 @@ function LoginForm() {
               {mode === "signup" && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <Label htmlFor="name" className="px-1 text-sm font-semibold">
-                    Nome Completo
+                    {t("nameLabel")}
                   </Label>
                   <div className="relative">
                     <UserIcon className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
@@ -388,7 +384,7 @@ function LoginForm() {
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="px-1 text-sm font-semibold">
-                  Email Address
+                  {t("emailLabel")}
                 </Label>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
@@ -409,14 +405,14 @@ function LoginForm() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between px-1">
                   <Label htmlFor="password" className="text-sm font-semibold">
-                    Password
+                    {t("passwordLabel")}
                   </Label>
                   {mode === "login" && (
                     <Link
                       href="#"
                       className="text-xs font-medium text-primary transition-all hover:underline"
                     >
-                      Forgot?
+                      {t("forgotPassword")}
                     </Link>
                   )}
                 </div>
@@ -454,7 +450,7 @@ function LoginForm() {
               {mode === "signup" && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <Label htmlFor="confirmPassword" className="px-1 text-sm font-semibold">
-                    Conferma Password
+                    {t("confirmPasswordLabel")}
                   </Label>
                   <div className="relative">
                     <Lock className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
@@ -486,17 +482,17 @@ function LoginForm() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {mode === "login" ? "Verifying Account…" : "Creating Account…"}
+                    {mode === "login" ? t("verifying") : t("creating")}
                   </>
                 ) : isSuccess ? (
                   <>
                     <CheckCircle2 className="mr-2 h-4 w-4" />
-                    Success!
+                    {t("success")}
                   </>
                 ) : mode === "login" ? (
-                  "Login to Dashboard"
+                  t("loginBtn")
                 ) : (
-                  "Register Account"
+                  t("registerBtn")
                 )}
               </Button>
             </form>
@@ -506,14 +502,14 @@ function LoginForm() {
               <p className="text-sm text-muted-foreground">
                 {mode === "login" ? (
                   <>
-                    New to the kitchen?{" "}
+                    {t("newToKitchen")}{" "}
                     <button
                       type="button"
                       id="switch-to-signup-btn"
                       onClick={toggleMode}
                       className="group ml-1 inline-flex items-center font-semibold text-primary underline-offset-4 decoration-2 transition-all hover:underline cursor-pointer"
                     >
-                      Register
+                      {t("register")}
                       <span className="ml-1 inline-block transition-transform group-hover:translate-x-1">
                         →
                       </span>
@@ -521,14 +517,14 @@ function LoginForm() {
                   </>
                 ) : (
                   <>
-                    Already have an account?{" "}
+                    {t("alreadyHaveAccount")}{" "}
                     <button
                       type="button"
                       id="switch-to-login-btn"
                       onClick={toggleMode}
                       className="group ml-1 inline-flex items-center font-semibold text-primary underline-offset-4 decoration-2 transition-all hover:underline cursor-pointer"
                     >
-                      Log in
+                      {t("login")}
                       <span className="ml-1 inline-block transition-transform group-hover:translate-x-1">
                         →
                       </span>
@@ -543,11 +539,11 @@ function LoginForm() {
         {/* Footer */}
         <footer className="mt-8 flex justify-center gap-6 text-xs text-muted-foreground/60">
           <Link href="#" className="transition-colors hover:text-primary">
-            Privacy Policy
+            {t("privacyPolicy")}
           </Link>
           <span>•</span>
           <Link href="#" className="transition-colors hover:text-primary">
-            Terms of Service
+            {t("termsOfService")}
           </Link>
         </footer>
       </main>

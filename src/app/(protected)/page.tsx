@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
@@ -30,6 +31,9 @@ export default function Home() {
 
   const { user } = useAuth();
   const router = useRouter();
+  
+  const t = useTranslations("Home");
+  const tRecipes = useTranslations("Recipes");
 
   // TanStack Query: condivide la stessa cache con /recipes page → zero letture extra
   const { data: recipes = [], isLoading: recipesLoading } = useRecipes();
@@ -56,8 +60,8 @@ export default function Home() {
     const targetUrl = videoUrl;
     setVideoUrl("");
 
-    const toastId = toast.loading("Importazione in corso", {
-      description: "Stiamo elaborando il video. La ricetta sarà disponibile a breve.",
+    const toastId = toast.loading(t("importing"), {
+      description: t("importingDesc"),
       duration: Infinity,
     });
 
@@ -75,8 +79,6 @@ export default function Home() {
 
     try {
       // 0. Check client-side: esiste già una ricetta globale con questo URL?
-      //    Questo deve avvenire lato client dove l'utente è autenticato e
-      //    le Firestore Security Rules permettono la lettura.
       const { checkRecipeExistsByUrl } = await import("@/lib/firestore/recipes");
       const existingRecipeId = await checkRecipeExistsByUrl(targetUrl);
 
@@ -84,12 +86,12 @@ export default function Home() {
         // Ricetta già nel catalogo globale → aggiungila direttamente al ricettario
         await addToUserRecipes(existingRecipeId);
         cleanup();
-        toast.success("Ricetta già nel catalogo!", {
+        toast.success(t("recipeExists"), {
           id: toastId,
-          description: "La ricetta è stata aggiunta al tuo ricettario.",
+          description: t("recipeExistsDesc"),
           duration: 6000,
           action: {
-            label: "Visualizza",
+            label: t("view"),
             onClick: () => router.push(`/recipes/${existingRecipeId}`),
           },
         });
@@ -113,18 +115,17 @@ export default function Home() {
       // Nuova ricetta: avvia polling Apify e ascolta Firestore per il completamento
       const { runId, datasetId, recipeId } = json;
 
-      // Listener one-shot su /users/{uid}/recipes/{recipeId}: si attiva quando
-      // il client scrive il documento personale dopo aver salvato la ricetta globale.
+      // Listener one-shot su /users/{uid}/recipes/{recipeId}
       const db = getFirebaseDb();
       unsubscribeFirestore = onSnapshot(doc(db, "users", user.uid, "recipes", recipeId), (docSnap) => {
         if (docSnap.exists()) {
           cleanup();
-          toast.success("Ricetta Importata!", {
+          toast.success(t("importedSuccess"), {
             id: toastId,
-            description: "La ricetta è pronta nel tuo ricettario!",
+            description: t("importedSuccessDesc"),
             duration: 8000,
             action: {
-              label: "Visualizza",
+              label: t("view"),
               onClick: () => router.push(`/recipes/${recipeId}`),
             },
           });
@@ -142,9 +143,9 @@ export default function Home() {
           const statusJson = await statusRes.json();
           if (statusJson.status === "failed") {
             cleanup();
-            toast.error("Errore di importazione", {
+            toast.error(t("importFailed"), {
               id: toastId,
-              description: statusJson.error || "Impossibile completare lo scraping.",
+              description: statusJson.error || t("importFailedDesc"),
             });
             return;
           }
@@ -166,13 +167,12 @@ export default function Home() {
                 ? statusJson.recipe.kcal
                 : null,
               createdAt: serverTimestamp(),
-              createdBy: user.uid,  // attribuzione (non ownership esclusiva)
+              createdBy: user.uid,
             };
 
             await setDoc(doc(db, "recipes", recipeId), recipeDoc);
 
             // Crea il documento personale in /users/{uid}/recipes/{recipeId}
-            // onSnapshot lo intercetterà e farà scattare il toast di successo
             const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
             await addFn(user.uid, recipeId);
           }
@@ -184,9 +184,9 @@ export default function Home() {
     } catch (error: any) {
       console.error("Errore durante il flusso di importazione:", error);
       cleanup();
-      toast.error("Errore di importazione", {
+      toast.error(t("importFailed"), {
         id: toastId,
-        description: error.message || "Impossibile avviare l'importazione. Riprova più tardi.",
+        description: error.message || t("importFailedDesc"),
       });
     }
   };
@@ -209,7 +209,9 @@ export default function Home() {
       {/* Hero Section */}
       <section className="flex flex-col items-center text-center">
         <h2 className="font-heading text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:max-w-2xl">
-          Trasforma i tuoi Reel in <span className="text-primary">ricette reali</span>
+          {t.rich("title", {
+            highlight: (chunks) => <span className="text-primary">{chunks}</span>
+          })}
         </h2>
 
         {/* URL Import Input */}
@@ -220,7 +222,7 @@ export default function Home() {
               type="text"
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder="Incolla il link del video qui..."
+              placeholder={t("placeholder")}
               className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-5 text-sm h-11"
               disabled={isImporting}
             />
@@ -246,21 +248,21 @@ export default function Home() {
             className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all"
           >
             <Film className="h-4 w-4 text-primary" />
-            Instagram Reel
+            {t("instagram")}
           </button>
           <button
             onClick={() => setPlatformUrl("tiktok")}
             className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all"
           >
             <Video className="h-4 w-4 text-primary" />
-            TikTok Video
+            {t("tiktok")}
           </button>
           <button
             onClick={() => setPlatformUrl("web")}
             className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all"
           >
             <LinkIcon className="h-4 w-4 text-primary" />
-            Link Web
+            {t("web")}
           </button>
         </div>
       </section>
@@ -268,9 +270,9 @@ export default function Home() {
       {/* Ultimi Arrivi Carousel */}
       <section className="w-full">
         <div className="flex justify-between items-end mb-6">
-          <h3 className="font-heading text-xl font-semibold text-foreground">Ultimi Arrivi</h3>
+          <h3 className="font-heading text-xl font-semibold text-foreground">{t("recent")}</h3>
           <Link href="/recipes" className="text-primary font-semibold text-sm flex items-center gap-1 hover:underline">
-            Vedi tutto <ArrowRight className="h-4 w-4" />
+            {t("seeAll")} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
@@ -297,25 +299,25 @@ export default function Home() {
           ) : recentRecipes.length === 0 ? (
             <div className="w-full flex flex-col items-center justify-center text-center p-8 glass-panel rounded-[24px] border border-white/40 dark:border-white/10 shadow-lg max-w-lg mx-auto py-12">
               <ChefHat className="h-12 w-12 text-primary/60 mb-4" />
-              <h4 className="text-lg font-bold text-foreground mb-2">Ancora nessuna ricetta</h4>
+              <h4 className="text-lg font-bold text-foreground mb-2">{t("noRecipesTitle")}</h4>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Incolla il link di un Reel di Instagram qui sopra per iniziare ad importare le tue ricette!
+                {t("noRecipesDesc")}
               </p>
             </div>
           ) : (
             recentRecipes.map((recipe) => {
               const tags = [];
               if (recipe.prepTimeMinutes && recipe.prepTimeMinutes <= 20) {
-                tags.push("Rapido");
+                tags.push(tRecipes("fast"));
               }
               if (recipe.ingredients && recipe.ingredients.length > 0) {
-                tags.push(`${recipe.ingredients.length} ing.`);
+                tags.push(tRecipes("ingredients", { count: recipe.ingredients.length }));
               }
               if (recipe.sourcePlatform) {
                 tags.push(recipe.sourcePlatform.charAt(0).toUpperCase() + recipe.sourcePlatform.slice(1));
               }
 
-              const descText = `${recipe.ingredients?.length || 0} ingredienti · ${recipe.instructions?.length || 0} passaggi`;
+              const descText = `${tRecipes("ingredients", { count: recipe.ingredients?.length || 0 })} · ${tRecipes("instructions", { count: recipe.instructions?.length || 0 })}`;
 
               return (
                 <Card
@@ -358,9 +360,9 @@ export default function Home() {
           <ChefHat className="h-7 w-7 text-primary" />
         </div>
         <div className="flex flex-col">
-          <h4 className="text-sm font-bold text-foreground">Suggerimento Smart</h4>
+          <h4 className="text-sm font-bold text-foreground">{t("smartTip")}</h4>
           <p className="text-sm text-muted-foreground leading-tight mt-0.5">
-            Il tuo forno è preriscaldato? Sincronizza le ricette con GustoHub.
+            {t("smartTipDesc")}
           </p>
         </div>
       </section>

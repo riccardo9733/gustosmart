@@ -35,6 +35,17 @@ export function useSyncUser() {
 
           if (docSnap.exists()) {
             const data = docSnap.data();
+            const dbLang = data.preferences?.language || "it";
+
+            // Sincronizza cookie NEXT_LOCALE se differisce
+            const cookiesMatch = document.cookie.match(/(^|;)\s*NEXT_LOCALE\s*=\s*([^;]+)/);
+            const currentCookie = cookiesMatch ? cookiesMatch[2] : null;
+            if (currentCookie !== dbLang) {
+              document.cookie = `NEXT_LOCALE=${dbLang}; path=/; max-age=31536000; SameSite=Lax`;
+              window.location.reload();
+              return;
+            }
+
             dispatch(
               setUserSuccess({
                 uid: data.uid || user.uid,
@@ -42,7 +53,7 @@ export function useSyncUser() {
                 displayName: data.displayName || user.displayName || "Chef Gusto",
                 photoURL: data.photoURL || user.photoURL || null,
                 preferences: {
-                  language: data.preferences?.language || "it",
+                  language: dbLang,
                   measurementSystem: data.preferences?.measurementSystem || "metric",
                 },
                 createdAt: data.createdAt ? (typeof data.createdAt.toDate === "function" ? data.createdAt.toDate().toISOString() : data.createdAt) : null,
@@ -51,6 +62,15 @@ export function useSyncUser() {
             );
           } else {
             // Fallback profile if Firestore document does not exist yet (e.g. sync lag or initial creation in progress)
+            const dbLang = "it";
+            const cookiesMatch = document.cookie.match(/(^|;)\s*NEXT_LOCALE\s*=\s*([^;]+)/);
+            const currentCookie = cookiesMatch ? cookiesMatch[2] : null;
+            if (currentCookie !== dbLang) {
+              document.cookie = `NEXT_LOCALE=${dbLang}; path=/; max-age=31536000; SameSite=Lax`;
+              window.location.reload();
+              return;
+            }
+
             dispatch(
               setUserSuccess({
                 uid: user.uid,
@@ -58,7 +78,7 @@ export function useSyncUser() {
                 displayName: user.displayName || "Chef Gusto",
                 photoURL: user.photoURL || null,
                 preferences: {
-                  language: "it",
+                  language: dbLang,
                   measurementSystem: "metric",
                 },
                 createdAt: null,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useRecipes, useRemoveFromUserRecipes } from "@/hooks/useRecipes";
 import {
@@ -38,19 +39,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const CATEGORIES = [
-  { key: "all", label: "Tutte" },
-  { key: "first_courses", label: "Primi" },
-  { key: "second_courses", label: "Secondi" },
-  { key: "desserts", label: "Dolci" },
-  { key: "appetizers", label: "Antipasti" },
-  { key: "sides", label: "Contorni" },
-  { key: "single_dishes", label: "Piatti Unici" },
-  { key: "other", label: "Altro" },
-];
-
 export default function RecipesPage() {
   const router = useRouter();
+  const t = useTranslations("Recipes");
+  const tDetails = useTranslations("Details");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -62,14 +54,25 @@ export default function RecipesPage() {
   // Mutation per rimuovere dal ricettario personale (non tocca la ricetta globale)
   const { mutateAsync: removeRecipe } = useRemoveFromUserRecipes();
 
+  const CATEGORIES = [
+    { key: "all", label: t("all") },
+    { key: "first_courses", label: t("primi") },
+    { key: "second_courses", label: t("secondi") },
+    { key: "desserts", label: t("dolci") },
+    { key: "appetizers", label: t("antipasti") },
+    { key: "sides", label: t("contorni") },
+    { key: "single_dishes", label: t("singleDishes") },
+    { key: "other", label: t("other") },
+  ];
+
   const handleDeleteRecipe = async (id: string, title: string) => {
-    const toastId = toast.loading(`Eliminazione di "${title}"...`);
+    const toastId = toast.loading(t("removingRecipeProgress", { title }));
     try {
       await removeRecipe(id);
-      toast.success("Ricetta rimossa dal tuo ricettario!", { id: toastId });
+      toast.success(t("recipeRemovedSuccess"), { id: toastId });
     } catch (error) {
       console.error("Errore eliminazione:", error);
-      toast.error("Impossibile rimuovere la ricetta.", { id: toastId });
+      toast.error(t("recipeRemoveFailed"), { id: toastId });
     }
   };
 
@@ -114,7 +117,7 @@ export default function RecipesPage() {
       {/* Title & Search Panel */}
       <section className="flex flex-col gap-4">
         <h2 className="font-heading text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Il Tuo Ricettario
+          {t("title")}
         </h2>
 
         {/* Search Input */}
@@ -124,7 +127,7 @@ export default function RecipesPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cerca per titolo o ingrediente..."
+            placeholder={t("searchPlaceholder")}
             className="w-full pl-12 pr-4 py-6 rounded-2xl bg-surface-container/60 border-0 focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
           />
         </div>
@@ -161,7 +164,7 @@ export default function RecipesPage() {
                   : "glass-panel border-white/10 text-foreground hover:bg-white/40 dark:hover:bg-white/10"
               }`}
             >
-              Tutte Fonti
+              {t("allSources")}
             </button>
             <button
               onClick={() => setSelectedSource("social")}
@@ -172,7 +175,7 @@ export default function RecipesPage() {
               }`}
             >
               <Film className="h-3.5 w-3.5" />
-              Social
+              {t("socialSource")}
             </button>
             <button
               onClick={() => setSelectedSource("web")}
@@ -183,7 +186,7 @@ export default function RecipesPage() {
               }`}
             >
               <LinkIcon className="h-3.5 w-3.5" />
-              Web
+              {t("webSource")}
             </button>
           </div>
         </div>
@@ -205,30 +208,30 @@ export default function RecipesPage() {
               <div className="absolute inset-0 bg-primary/5 rounded-full animate-pulse" />
               <ChefHat className="w-32 h-32 stroke-[1] text-primary/20 relative z-10" />
             </div>
-            <h3 className="font-heading text-2xl font-bold text-foreground mb-2">Ancora nessuna ricetta?</h3>
+            <h3 className="font-heading text-2xl font-bold text-foreground mb-2">{t("noRecipesYet")}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-              Inizia a salvare i tuoi piatti preferiti dai social o dal web in un unico posto.
+              {t("noRecipesYetDesc")}
             </p>
             <Button
               onClick={() => router.push("/")}
               className="bg-primary hover:bg-primary/95 text-white px-8 py-6 rounded-full font-heading text-base shadow-xl shadow-primary/20 active:scale-95 transition-all"
             >
-              Importa la tua prima ricetta!
+              {t("importFirstRecipe")}
             </Button>
           </div>
         ) : filteredRecipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-500 max-w-sm mx-auto">
             <ChefHat className="h-16 w-16 text-primary/40 mb-4 stroke-[1.2]" />
-            <h3 className="text-xl font-bold text-foreground mb-2">Nessun risultato trovato</h3>
+            <h3 className="text-xl font-bold text-foreground mb-2">{t("noResultsTitle")}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              Nessuna ricetta corrisponde alla ricerca corrente o ai filtri selezionati.
+              {t("noResultsDesc")}
             </p>
             <Button
               onClick={resetFilters}
               variant="outline"
               className="border-primary/20 text-primary hover:bg-primary/5 rounded-full px-6"
             >
-              Azzera tutti i filtri
+              {t("clearFilters")}
             </Button>
           </div>
         ) : (
@@ -279,7 +282,7 @@ export default function RecipesPage() {
                           <AlertDialogTrigger render={
                             <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer flex gap-2">
                               <Trash2 className="h-4 w-4" />
-                              Rimuovi
+                              {t("removeBtn")}
                             </DropdownMenuItem>
                           } />
                         </DropdownMenuContent>
@@ -287,18 +290,18 @@ export default function RecipesPage() {
 
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Rimuovere questa ricetta?</AlertDialogTitle>
+                          <AlertDialogTitle>{t("removeRecipeConfirmTitle")}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            &ldquo;{recipe.title}&rdquo; verrà rimossa dal tuo ricettario. La ricetta resterà disponibile nel catalogo globale.
+                            {t("removeRecipeConfirmDesc", { title: recipe.title })}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Annulla</AlertDialogCancel>
+                          <AlertDialogCancel>{t("cancelBtn")}</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDeleteRecipe(recipe.id, recipe.title)}
                             className="bg-destructive hover:bg-destructive/95 text-white"
                           >
-                            Rimuovi
+                            {t("removeBtn")}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -324,17 +327,17 @@ export default function RecipesPage() {
                       {recipe.prepTimeMinutes && (
                         <span className="flex items-center gap-1 bg-white/10 dark:bg-black/35 px-2.5 py-1 rounded-full backdrop-blur border border-white/5">
                           <Clock className="h-3.5 w-3.5" />
-                          {recipe.prepTimeMinutes} min
+                          {t("minCount", { count: recipe.prepTimeMinutes })}
                         </span>
                       )}
                       <span className="flex items-center gap-1 bg-white/10 dark:bg-black/35 px-2.5 py-1 rounded-full backdrop-blur border border-white/5">
                         <Users className="h-3.5 w-3.5" />
-                        {recipe.servings || 2} porz.
+                        {t("servingsCount", { count: recipe.servings || 2 })}
                       </span>
                       {recipe.kcal && (
                         <span className="flex items-center gap-1 bg-primary/20 px-2.5 py-1 rounded-full border border-primary/20">
                           <Flame className="h-3.5 w-3.5 fill-primary text-primary" />
-                          {recipe.kcal} kcal/100g
+                          {tDetails("kcalCount", { count: recipe.kcal })}
                         </span>
                       )}
                     </div>
@@ -350,7 +353,7 @@ export default function RecipesPage() {
       <button
         onClick={() => router.push("/")}
         className="fixed bottom-32 right-6 w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-2xl shadow-primary/30 z-40 hover:scale-110 active:scale-90 transition-all duration-300"
-        aria-label="Aggiungi nuova ricetta"
+        aria-label={t("addRecipeAria")}
       >
         <Plus className="h-7 w-7" />
       </button>

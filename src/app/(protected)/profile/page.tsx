@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { signOut } from "firebase/auth";
+import { useTranslations } from "next-intl";
 import { 
   Pencil, 
   Globe, 
@@ -30,6 +31,8 @@ import {
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
   const profile = useAppSelector(selectUserProfile);
+  const t = useTranslations("Profile");
+
   const [metricUnit, setMetricUnit] = useState(true);
   const [timerAlerts, setTimerAlerts] = useState(true);
   const [recipeRecs, setRecipeRecs] = useState(false);
@@ -100,10 +103,19 @@ export default function ProfilePage() {
           preferences: updatedPreferences,
         })
       );
-      toast.success("Lingua aggiornata!");
+
+      // Imposta il cookie NEXT_LOCALE per next-intl
+      document.cookie = `NEXT_LOCALE=${langCode}; path=/; max-age=31536000; SameSite=Lax`;
+      
+      toast.success(t("langUpdated"));
+
+      // Ricarica la finestra per applicare la nuova lingua
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error("Errore durante l'aggiornamento della lingua:", error);
-      toast.error("Impossibile salvare la preferenza della lingua.");
+      toast.error(t("langUpdateFailed"));
     }
   };
 
@@ -129,10 +141,10 @@ export default function ProfilePage() {
           preferences: updatedPreferences,
         })
       );
-      toast.success("Unità di misura aggiornata!");
+      toast.success(t("unitsUpdated"));
     } catch (error) {
       console.error("Errore durante l'aggiornamento dell'unità di misura:", error);
-      toast.error("Impossibile salvare le preferenze.");
+      toast.error(t("unitsUpdateFailed"));
       // Ripristina lo stato locale precedente
       setMetricUnit(profile.preferences.measurementSystem === "metric");
     }
@@ -182,7 +194,7 @@ export default function ProfilePage() {
         {/* Preferences Section */}
         <div className="space-y-2">
           <h3 className="text-xs font-bold px-1 text-primary uppercase tracking-wider opacity-80">
-            Kitchen Preferences
+            {t("kitchenPreferences")}
           </h3>
           <div className="glass-panel rounded-[20px] overflow-hidden border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5">
             {/* Language Selector */}
@@ -191,7 +203,7 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between p-5 border-b border-white/10 hover:bg-white/40 dark:hover:bg-white/5 transition-colors cursor-pointer group">
                   <div className="flex items-center gap-4">
                     <Globe className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium text-foreground">App Language</span>
+                    <span className="font-medium text-foreground">{t("appLanguage")}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 dark:bg-white/5 rounded-full border border-white/25">
@@ -228,7 +240,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-4">
                 <Ruler className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium text-foreground">Measurement Units</span>
+                <span className="font-medium text-foreground">{t("measurementUnits")}</span>
               </div>
               <div className="flex bg-surface-container-low dark:bg-surface-container p-1 rounded-full border border-white/10">
                 <button 
@@ -239,7 +251,7 @@ export default function ProfilePage() {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  Metric
+                  {t("metric")}
                 </button>
                 <button 
                   onClick={() => handleUnitChange(false)}
@@ -249,7 +261,7 @@ export default function ProfilePage() {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  Imperial
+                  {t("imperial")}
                 </button>
               </div>
             </div>
@@ -259,14 +271,14 @@ export default function ProfilePage() {
         {/* Notifications Section */}
         <div className="space-y-2">
           <h3 className="text-xs font-bold px-1 text-primary uppercase tracking-wider opacity-80">
-            Notifications
+            {t("notifications")}
           </h3>
           <div className="glass-panel rounded-[20px] overflow-hidden border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5">
             {/* Smart Timer Alerts */}
             <div className="flex items-center justify-between p-5 border-b border-white/10">
               <div className="flex items-center gap-4">
                 <Bell className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium text-foreground">Smart Timer Alerts</span>
+                <span className="font-medium text-foreground">{t("timerAlerts")}</span>
               </div>
               <button 
                 onClick={() => setTimerAlerts(v => !v)}
@@ -285,7 +297,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-4">
                 <Utensils className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium text-foreground">Recipe Recommendations</span>
+                <span className="font-medium text-foreground">{t("recommendations")}</span>
               </div>
               <button 
                 onClick={() => setRecipeRecs(v => !v)}
@@ -314,14 +326,14 @@ export default function ProfilePage() {
             >
               <LogOut className="h-5 w-5 text-muted-foreground group-hover:text-destructive transition-colors" />
               <span className="font-medium">
-                {isLoggingOut ? "Uscendo..." : "Log Out"}
+                {isLoggingOut ? t("loggingOut") : t("logOut")}
               </span>
             </button>
             <div className="h-[1px] bg-white/10 mx-5"></div>
             {/* Delete Account */}
             <button className="w-full flex items-center gap-4 p-5 hover:bg-destructive/15 dark:hover:bg-destructive/15 text-destructive transition-all active:scale-[0.99] text-left">
               <Trash2 className="h-5 w-5" />
-              <span className="font-medium">Delete Account</span>
+              <span className="font-medium">{t("deleteAccount")}</span>
             </button>
           </div>
         </div>
@@ -329,10 +341,10 @@ export default function ProfilePage() {
         {/* Version Info */}
         <div className="text-center pt-6 pb-10 space-y-1">
           <p className="text-[11px] font-bold text-muted-foreground tracking-wide">
-            GustoSmart v2.4.1 (Build 1082)
+            {t("version")}
           </p>
           <p className="text-[11px] text-muted-foreground/60">
-            Designed for modern smart kitchens
+            {t("designedFor")}
           </p>
         </div>
       </div>

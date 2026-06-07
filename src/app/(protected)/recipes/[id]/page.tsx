@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc, setDoc, collection, getDocs, writeBatch } from "firebase/firestore";
+import { useTranslations } from "next-intl";
+import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
@@ -51,16 +52,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const CATEGORY_MAP: Record<string, string> = {
-  first_courses: "Primi",
-  second_courses: "Secondi",
-  desserts: "Dolci",
-  appetizers: "Antipasti",
-  sides: "Contorni",
-  single_dishes: "Piatti Unici",
-  other: "Altro"
-};
-
 export default function RecipeDetailPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -68,6 +59,9 @@ export default function RecipeDetailPage() {
   const { user } = useAuth();
   const profile = useAppSelector(selectUserProfile);
   const measurementSystem = profile?.preferences?.measurementSystem || "metric";
+
+  const t = useTranslations("Details");
+  const tRecipes = useTranslations("Recipes");
 
   // TanStack Query: one-shot getDoc (no open WebSocket), 10-min staleTime
   const { data: recipe, isLoading: loading } = useRecipe(id);
@@ -233,24 +227,24 @@ export default function RecipeDetailPage() {
   };
 
   const handleDeleteRecipe = async () => {
-    const toastId = toast.loading("Rimozione ricetta dal ricettario...");
+    const toastId = toast.loading(t("removingRecipeProgress"));
     try {
       await removeRecipe(id);
-      toast.success("Ricetta rimossa dal tuo ricettario!", { id: toastId });
+      toast.success(t("recipeRemovedSuccess"), { id: toastId });
       router.push("/recipes");
     } catch (error) {
       console.error("Errore durante la rimozione:", error);
-      toast.error("Impossibile rimuovere la ricetta.", { id: toastId });
+      toast.error(t("recipeRemoveFailed"), { id: toastId });
     }
   };
 
   const handleSave = async () => {
     if (!editRecipe?.title?.trim()) {
-      toast.error("Il titolo della ricetta è obbligatorio.");
+      toast.error(t("titleRequired"));
       return;
     }
 
-    const toastId = toast.loading("Salvataggio personalizzazioni...");
+    const toastId = toast.loading(t("savingCustomizations"));
 
     try {
       const cleanedIngredients = editRecipe.ingredients
@@ -273,21 +267,16 @@ export default function RecipeDetailPage() {
       });
 
       // If the recipe was customized, invalidate old shared translations
-      // (they are based on the original global text; personal overrides don't translate)
       const db = getFirebaseDb();
       try {
         const translationsColRef = collection(db, "recipes", id, "translations");
         const translationsSnap = await getDocs(translationsColRef);
         if (!translationsSnap.empty) {
-          // Only clear translations if the recipe content was meaningfully changed
           const hasContentChange =
             cleanedIngredients.length !== (recipe?.ingredients?.length ?? 0) ||
             cleanedInstructions.length !== (recipe?.instructions?.length ?? 0);
 
           if (hasContentChange) {
-            // Don't delete shared translations — personal edits are user-local,
-            // so we just update the displayData locally. Translations remain valid
-            // for other users of the global recipe.
             console.log("Personal customization saved. Shared translations preserved.");
           }
         }
@@ -295,7 +284,7 @@ export default function RecipeDetailPage() {
         console.error("Errore lettura traduzioni:", err);
       }
 
-      toast.success("Personalizzazioni salvate!", { id: toastId });
+      toast.success(t("customizationsSaved"), { id: toastId });
       setIsEditing(false);
       setEditRecipe(null);
 
@@ -309,12 +298,24 @@ export default function RecipeDetailPage() {
 
     } catch (error) {
       console.error("Errore durante il salvataggio:", error);
-      toast.error("Impossibile salvare le modifiche.", { id: toastId });
+      toast.error(t("saveFailed"), { id: toastId });
     }
   };
 
   const formatQuantity = (qty: number) => {
     return qty % 1 === 0 ? qty.toString() : qty.toFixed(1);
+  };
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case "first_courses": return tRecipes("primi");
+      case "second_courses": return tRecipes("secondi");
+      case "desserts": return tRecipes("dolci");
+      case "appetizers": return tRecipes("antipasti");
+      case "sides": return tRecipes("contorni");
+      case "single_dishes": return tRecipes("singleDishes");
+      default: return tRecipes("other");
+    }
   };
 
   // ----------------------------------------------------
@@ -350,12 +351,12 @@ export default function RecipeDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
         <ChefHat className="w-16 h-16 text-primary/20 mb-4" />
-        <h2 className="text-xl font-bold text-foreground mb-2">Ricetta non trovata</h2>
+        <h2 className="text-xl font-bold text-foreground mb-2">{t("recipeNotFound")}</h2>
         <p className="text-muted-foreground text-sm mb-6">
-          Questa ricetta non è nel tuo ricettario.
+          {t("recipeNotFoundDesc")}
         </p>
         <Button onClick={() => router.push("/recipes")} variant="outline" className="rounded-full">
-          Torna al Ricettario
+          {t("backToRecipes")}
         </Button>
       </div>
     );
@@ -408,22 +409,22 @@ export default function RecipeDetailPage() {
               variant="outline"
               size="icon"
               className="absolute top-24 right-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-destructive active:scale-95 transition-all"
-              aria-label="Rimuovi dal ricettario"
+              aria-label={t("removeFromRecipes")}
             >
               <Trash2 className="h-5 w-5" />
             </Button>
           } />
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Rimuovere dal ricettario?</AlertDialogTitle>
+              <AlertDialogTitle>{t("removeDialogTitle")}</AlertDialogTitle>
               <AlertDialogDescription>
-                La ricetta verrà rimossa dal tuo ricettario personale. Resterà disponibile nel catalogo globale e potrai riaggiungerla in futuro.
+                {t("removeDialogDesc")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteRecipe} className="bg-destructive hover:bg-destructive/90 text-white">
-                Rimuovi
+                {t("remove")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -438,22 +439,22 @@ export default function RecipeDetailPage() {
           {isEditing ? (
             <div className="flex flex-col gap-4">
               <h3 className="text-sm font-semibold tracking-wider text-primary uppercase font-heading">
-                Modifica Dettagli
+                {t("editDetails")}
               </h3>
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase">Titolo</label>
+                <label className="text-xs font-bold text-muted-foreground uppercase">{t("titleLabel")}</label>
                 <Input
                   type="text"
                   value={editRecipe.title}
                   onChange={(e) => setEditRecipe({ ...editRecipe, title: e.target.value })}
-                  placeholder="Titolo Ricetta"
+                  placeholder={t("titleLabel")}
                   className="font-heading text-xl font-bold bg-background/40"
                 />
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Porzioni Base</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">{t("baseServingsLabel")}</label>
                   <Input
                     type="number"
                     value={editRecipe.servings ?? ""}
@@ -464,7 +465,7 @@ export default function RecipeDetailPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Tempo Prep (min.)</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">{t("prepTimeLabel")}</label>
                   <Input
                     type="number"
                     value={editRecipe.prepTimeMinutes ?? ""}
@@ -478,27 +479,27 @@ export default function RecipeDetailPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Categoria</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">{t("categoryLabel")}</label>
                   <Select
                     value={editRecipe.category || "other"}
                     onValueChange={(val) => setEditRecipe({ ...editRecipe, category: val })}
                   >
                     <SelectTrigger className="bg-background/40 h-10 border border-input focus:ring-1 focus:ring-ring">
-                      <SelectValue placeholder="Categoria" />
+                      <SelectValue placeholder={t("categoryLabel")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="first_courses">Primi</SelectItem>
-                      <SelectItem value="second_courses">Secondi</SelectItem>
-                      <SelectItem value="desserts">Dolci</SelectItem>
-                      <SelectItem value="appetizers">Antipasti</SelectItem>
-                      <SelectItem value="sides">Contorni</SelectItem>
-                      <SelectItem value="single_dishes">Piatti Unici</SelectItem>
-                      <SelectItem value="other">Altro</SelectItem>
+                      <SelectItem value="first_courses">{tRecipes("primi")}</SelectItem>
+                      <SelectItem value="second_courses">{tRecipes("secondi")}</SelectItem>
+                      <SelectItem value="desserts">{tRecipes("dolci")}</SelectItem>
+                      <SelectItem value="appetizers">{tRecipes("antipasti")}</SelectItem>
+                      <SelectItem value="sides">{tRecipes("contorni")}</SelectItem>
+                      <SelectItem value="single_dishes">{tRecipes("singleDishes")}</SelectItem>
+                      <SelectItem value="other">{tRecipes("other")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Calorie (kcal/100g)</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">{t("kcalLabel")}</label>
                   <Input
                     type="number"
                     value={editRecipe.kcal ?? ""}
@@ -519,19 +520,19 @@ export default function RecipeDetailPage() {
                 <div className="flex flex-wrap gap-2 items-center mb-3">
                   {recipe.category && (
                     <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-primary/20 text-primary">
-                      {CATEGORY_MAP[recipe.category] || "Altro"}
+                      {getCategoryLabel(recipe.category)}
                     </Badge>
                   )}
                   {recipe.kcal && (
                     <Badge variant="secondary" className="bg-primary/10 text-primary rounded-full px-3 py-1 font-semibold flex items-center gap-1">
                       <Flame className="w-3.5 h-3.5 fill-primary" />
-                      {recipe.kcal} kcal/100g
+                      {t("kcalCount", { count: recipe.kcal })}
                     </Badge>
                   )}
                   {recipe.prepTimeMinutes && (
                     <Badge variant="secondary" className="bg-secondary-container text-on-secondary-container rounded-full px-3 py-1 font-semibold flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
-                      {recipe.prepTimeMinutes} Minuti
+                      {t("minutesCount", { count: recipe.prepTimeMinutes })}
                     </Badge>
                   )}
                   {recipe.sourceUrl && (
@@ -541,20 +542,20 @@ export default function RecipeDetailPage() {
                       rel="noopener noreferrer"
                       className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline ml-2"
                     >
-                      Fonte Originale
+                      {t("originalSource")}
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
                   {recipe.isCustomized && (
                     <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-secondary/20 text-secondary flex items-center gap-1">
                       <Edit2 className="w-3 h-3" />
-                      Personalizzata
+                      {t("customized")}
                     </Badge>
                   )}
                   {displayData?.isTranslated && (
                     <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-secondary/20 text-secondary flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-secondary fill-secondary" />
-                      Tradotto
+                      {t("translated")}
                     </Badge>
                   )}
                 </div>
@@ -562,7 +563,7 @@ export default function RecipeDetailPage() {
                 {isTranslating && (
                   <div className="flex items-center gap-2.5 mb-3 p-3 rounded-xl bg-primary/10 text-primary border border-primary/15 animate-pulse text-xs font-semibold max-w-xs">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Traduzione in corso...</span>
+                    <span>{t("translating")}</span>
                   </div>
                 )}
 
@@ -570,7 +571,7 @@ export default function RecipeDetailPage() {
                   {displayedTitle}
                 </h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Trascritto e ottimizzato in formato smart.
+                  {t("smartOptimized")}
                 </p>
               </div>
 
@@ -585,7 +586,7 @@ export default function RecipeDetailPage() {
                   <Minus className="h-4 w-4" />
                 </Button>
                 <div className="flex flex-col items-center min-w-[48px]">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Persone</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t("servings")}</span>
                   <span className="font-heading text-xl font-bold text-primary leading-none mt-0.5">
                     {currentServings}
                   </span>
@@ -611,7 +612,7 @@ export default function RecipeDetailPage() {
             <div className="flex items-center justify-between">
               <h3 className="font-heading text-xl font-bold text-on-surface flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-primary" />
-                Ingredienti
+                {t("ingredientsTitle")}
               </h3>
             </div>
 
@@ -622,7 +623,7 @@ export default function RecipeDetailPage() {
                     <div key={idx} className="flex gap-2 items-center">
                       <Input
                         type="number"
-                        placeholder="Quantità"
+                        placeholder={t("quantityPlaceholder")}
                         value={ing.quantity ?? ""}
                         onChange={(e) => {
                           const val = e.target.value === "" ? null : Number(e.target.value);
@@ -634,7 +635,7 @@ export default function RecipeDetailPage() {
                       />
                       <Input
                         type="text"
-                        placeholder="Unità"
+                        placeholder={t("unitPlaceholder")}
                         value={ing.unit}
                         onChange={(e) => {
                           const updated = [...editRecipe.ingredients];
@@ -645,7 +646,7 @@ export default function RecipeDetailPage() {
                       />
                       <Input
                         type="text"
-                        placeholder="Ingrediente"
+                        placeholder={t("ingredientPlaceholder")}
                         value={ing.name}
                         onChange={(e) => {
                           const updated = [...editRecipe.ingredients];
@@ -680,10 +681,10 @@ export default function RecipeDetailPage() {
                     className="mt-2 text-primary border-primary/20 hover:bg-primary/5 self-start w-full md:w-auto"
                   >
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Aggiungi Ingrediente
+                    {t("addIngredient")}
                   </Button>
                   <p className="text-[11px] text-muted-foreground mt-2 italic">
-                    * Le modifiche sono personali e non alterano la ricetta globale condivisa.
+                    {t("personalChangesInfo")}
                   </p>
                 </div>
               ) : (
@@ -736,7 +737,7 @@ export default function RecipeDetailPage() {
                       );
                     })
                   ) : (
-                    <span className="text-sm text-muted-foreground">Nessun ingrediente elencato.</span>
+                    <span className="text-sm text-muted-foreground">{t("noIngredients")}</span>
                   )}
                 </div>
               )}
@@ -748,13 +749,13 @@ export default function RecipeDetailPage() {
             <div className="flex items-center justify-between">
               <h3 className="font-heading text-xl font-bold text-on-surface flex items-center gap-2">
                 <ChefHat className="w-5 h-5 text-primary" />
-                Procedimento
+                {t("instructionsTitle")}
               </h3>
               {!isEditing && (
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                   <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">
-                    Cottura Attiva
+                    {t("activeCooking")}
                   </span>
                 </div>
               )}
@@ -775,7 +776,7 @@ export default function RecipeDetailPage() {
                           updated[idx] = e.target.value;
                           setEditRecipe({ ...editRecipe, instructions: updated });
                         }}
-                        placeholder={`Descrivi il passaggio ${idx + 1}`}
+                        placeholder={t("stepPlaceholder", { count: idx + 1 })}
                         className="flex-1 min-h-[70px] bg-background/40 rounded-md border border-input px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       />
                       <Button
@@ -804,7 +805,7 @@ export default function RecipeDetailPage() {
                     className="mt-2 text-primary border-primary/20 hover:bg-primary/5 self-start w-full md:w-auto"
                   >
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Aggiungi Passaggio
+                    {t("addInstruction")}
                   </Button>
                 </div>
               ) : (
@@ -851,14 +852,14 @@ export default function RecipeDetailPage() {
                                 }));
                               }}
                             />
-                            <span>Passaggio Completato</span>
+                            <span>{t("stepCompleted")}</span>
                           </label>
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <span className="text-sm text-muted-foreground">Nessuna istruzione fornita.</span>
+                  <span className="text-sm text-muted-foreground">{t("noInstructions")}</span>
                 )
               )}
             </div>
@@ -874,7 +875,7 @@ export default function RecipeDetailPage() {
             onClick={handleCancelEdit}
             className="w-14 h-14 bg-muted hover:bg-muted-foreground/20 text-muted-foreground rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-all duration-300"
             size="icon"
-            aria-label="Annulla modifiche"
+            aria-label={t("cancelChanges")}
           >
             <X className="h-6 w-6" />
           </Button>
@@ -887,7 +888,7 @@ export default function RecipeDetailPage() {
               : "bg-primary hover:bg-primary/95 text-white"
           }`}
           size="icon"
-          aria-label={isEditing ? "Salva modifiche" : "Modifica ricetta"}
+          aria-label={isEditing ? t("saveChanges") : t("editRecipe")}
         >
           {isEditing ? (
             <Save className="h-6 w-6" />
