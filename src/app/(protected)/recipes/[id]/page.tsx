@@ -7,17 +7,13 @@ import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
-import { useRecipe, useSaveRecipeCustomizations, useRemoveFromUserRecipes } from "@/hooks/useRecipes";
+import { useRecipe, useRemoveFromUserRecipes } from "@/hooks/useRecipes";
 import {
   ArrowLeft,
   Clock,
   Plus,
   Minus,
-  Edit2,
-  Save,
-  X,
   Trash2,
-  PlusCircle,
   ChefHat,
   Sparkles,
   ShoppingBag,
@@ -27,19 +23,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useAppSelector } from "@/store/hooks";
 import { selectUserProfile } from "@/store/userSlice";
 import { convertToImperial } from "@/lib/units";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,10 +60,6 @@ export default function RecipeDetailPage() {
   const [checkedIngredients, setCheckedIngredients] = useState<Record<number, boolean>>({});
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});
 
-  // Edit mode state
-  const [isEditing, setIsEditing] = useState(false);
-  const [editRecipe, setEditRecipe] = useState<any>(null);
-
   const [displayData, setDisplayData] = useState<{
     title: string;
     ingredients: any[];
@@ -87,7 +71,6 @@ export default function RecipeDetailPage() {
   const [scrollY, setScrollY] = useState(0);
 
   // Mutations
-  const { mutateAsync: saveCustomizations } = useSaveRecipeCustomizations(id);
   const { mutateAsync: removeRecipe } = useRemoveFromUserRecipes();
 
   // Update servings when recipe loads
@@ -206,26 +189,6 @@ export default function RecipeDetailPage() {
     setCurrentServings(newVal);
   };
 
-  const handleToggleEdit = () => {
-    if (isEditing) {
-      handleSave();
-    } else {
-      const activeVersion = {
-        ...recipe,
-        title: displayData?.title || recipe?.title,
-        ingredients: displayData?.ingredients || recipe?.ingredients || [],
-        instructions: displayData?.instructions || recipe?.instructions || []
-      };
-      setEditRecipe(JSON.parse(JSON.stringify(activeVersion)));
-      setIsEditing(true);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditRecipe(null);
-  };
-
   const handleDeleteRecipe = async () => {
     const toastId = toast.loading(t("removingRecipeProgress"));
     try {
@@ -235,70 +198,6 @@ export default function RecipeDetailPage() {
     } catch (error) {
       console.error("Errore durante la rimozione:", error);
       toast.error(t("recipeRemoveFailed"), { id: toastId });
-    }
-  };
-
-  const handleSave = async () => {
-    if (!editRecipe?.title?.trim()) {
-      toast.error(t("titleRequired"));
-      return;
-    }
-
-    const toastId = toast.loading(t("savingCustomizations"));
-
-    try {
-      const cleanedIngredients = editRecipe.ingredients
-        .map((ing: any) => ({
-          name: ing.name.trim(),
-          quantity: ing.quantity !== null && ing.quantity !== "" ? Number(ing.quantity) : null,
-          unit: ing.unit.trim() || "q.b.",
-        }))
-        .filter((ing: any) => ing.name !== "");
-
-      const cleanedInstructions = editRecipe.instructions
-        .map((step: string) => step.trim())
-        .filter((step: string) => step !== "");
-
-      // Save ONLY to the personal override — global recipe is immutable
-      await saveCustomizations({
-        customTitle: editRecipe.title.trim() !== recipe?.title ? editRecipe.title.trim() : null,
-        customIngredients: cleanedIngredients,
-        customInstructions: cleanedInstructions,
-      });
-
-      // If the recipe was customized, invalidate old shared translations
-      const db = getFirebaseDb();
-      try {
-        const translationsColRef = collection(db, "recipes", id, "translations");
-        const translationsSnap = await getDocs(translationsColRef);
-        if (!translationsSnap.empty) {
-          const hasContentChange =
-            cleanedIngredients.length !== (recipe?.ingredients?.length ?? 0) ||
-            cleanedInstructions.length !== (recipe?.instructions?.length ?? 0);
-
-          if (hasContentChange) {
-            console.log("Personal customization saved. Shared translations preserved.");
-          }
-        }
-      } catch (err) {
-        console.error("Errore lettura traduzioni:", err);
-      }
-
-      toast.success(t("customizationsSaved"), { id: toastId });
-      setIsEditing(false);
-      setEditRecipe(null);
-
-      // Update local displayData immediately for snappy UX
-      setDisplayData({
-        title: editRecipe.title.trim(),
-        ingredients: cleanedIngredients,
-        instructions: cleanedInstructions,
-        isTranslated: displayData?.isTranslated ?? false
-      });
-
-    } catch (error) {
-      console.error("Errore durante il salvataggio:", error);
-      toast.error(t("saveFailed"), { id: toastId });
     }
   };
 
@@ -436,85 +335,6 @@ export default function RecipeDetailPage() {
 
         {/* Header Glass Card */}
         <div className="glass-panel rounded-[32px] p-6 md:p-8 shadow-2xl shadow-primary/5 mb-8">
-          {isEditing ? (
-            <div className="flex flex-col gap-4">
-              <h3 className="text-sm font-semibold tracking-wider text-primary uppercase font-heading">
-                {t("editDetails")}
-              </h3>
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase">{t("titleLabel")}</label>
-                <Input
-                  type="text"
-                  value={editRecipe.title}
-                  onChange={(e) => setEditRecipe({ ...editRecipe, title: e.target.value })}
-                  placeholder={t("titleLabel")}
-                  className="font-heading text-xl font-bold bg-background/40"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">{t("baseServingsLabel")}</label>
-                  <Input
-                    type="number"
-                    value={editRecipe.servings ?? ""}
-                    onChange={(e) => setEditRecipe({ ...editRecipe, servings: Number(e.target.value) })}
-                    placeholder="2"
-                    min="1"
-                    className="bg-background/40"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">{t("prepTimeLabel")}</label>
-                  <Input
-                    type="number"
-                    value={editRecipe.prepTimeMinutes ?? ""}
-                    onChange={(e) => setEditRecipe({
-                      ...editRecipe,
-                      prepTimeMinutes: e.target.value === "" ? null : Number(e.target.value)
-                    })}
-                    placeholder="es. 25"
-                    min="0"
-                    className="bg-background/40"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">{t("categoryLabel")}</label>
-                  <Select
-                    value={editRecipe.category || "other"}
-                    onValueChange={(val) => setEditRecipe({ ...editRecipe, category: val })}
-                  >
-                    <SelectTrigger className="bg-background/40 h-10 border border-input focus:ring-1 focus:ring-ring">
-                      <SelectValue placeholder={t("categoryLabel")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="first_courses">{tRecipes("primi")}</SelectItem>
-                      <SelectItem value="second_courses">{tRecipes("secondi")}</SelectItem>
-                      <SelectItem value="desserts">{tRecipes("dolci")}</SelectItem>
-                      <SelectItem value="appetizers">{tRecipes("antipasti")}</SelectItem>
-                      <SelectItem value="sides">{tRecipes("contorni")}</SelectItem>
-                      <SelectItem value="single_dishes">{tRecipes("singleDishes")}</SelectItem>
-                      <SelectItem value="other">{tRecipes("other")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">{t("kcalLabel")}</label>
-                  <Input
-                    type="number"
-                    value={editRecipe.kcal ?? ""}
-                    onChange={(e) => setEditRecipe({
-                      ...editRecipe,
-                      kcal: e.target.value === "" ? null : Number(e.target.value)
-                    })}
-                    placeholder="es. 150"
-                    min="0"
-                    className="bg-background/40"
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
             <div className="flex flex-col md:flex-row justify-between items-start gap-6">
               <div className="flex-1">
                 <div className="flex flex-wrap gap-2 items-center mb-3">
@@ -545,12 +365,6 @@ export default function RecipeDetailPage() {
                       {t("originalSource")}
                       <ExternalLink className="w-3 h-3" />
                     </a>
-                  )}
-                  {recipe.isCustomized && (
-                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-secondary/20 text-secondary flex items-center gap-1">
-                      <Edit2 className="w-3 h-3" />
-                      {t("customized")}
-                    </Badge>
                   )}
                   {displayData?.isTranslated && (
                     <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-secondary/20 text-secondary flex items-center gap-1">
@@ -601,7 +415,6 @@ export default function RecipeDetailPage() {
                 </Button>
               </div>
             </div>
-          )}
         </div>
 
         {/* Dynamic Lists Section */}
@@ -617,130 +430,58 @@ export default function RecipeDetailPage() {
             </div>
 
             <div className="glass-panel rounded-[24px] p-6">
-              {isEditing ? (
-                <div className="flex flex-col gap-3">
-                  {editRecipe.ingredients.map((ing: any, idx: number) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <Input
-                        type="number"
-                        placeholder={t("quantityPlaceholder")}
-                        value={ing.quantity ?? ""}
-                        onChange={(e) => {
-                          const val = e.target.value === "" ? null : Number(e.target.value);
-                          const updated = [...editRecipe.ingredients];
-                          updated[idx] = { ...updated[idx], quantity: val };
-                          setEditRecipe({ ...editRecipe, ingredients: updated });
-                        }}
-                        className="w-20 shrink-0 bg-background/40"
-                      />
-                      <Input
-                        type="text"
-                        placeholder={t("unitPlaceholder")}
-                        value={ing.unit}
-                        onChange={(e) => {
-                          const updated = [...editRecipe.ingredients];
-                          updated[idx] = { ...updated[idx], unit: e.target.value };
-                          setEditRecipe({ ...editRecipe, ingredients: updated });
-                        }}
-                        className="w-20 shrink-0 bg-background/40"
-                      />
-                      <Input
-                        type="text"
-                        placeholder={t("ingredientPlaceholder")}
-                        value={ing.name}
-                        onChange={(e) => {
-                          const updated = [...editRecipe.ingredients];
-                          updated[idx] = { ...updated[idx], name: e.target.value };
-                          setEditRecipe({ ...editRecipe, ingredients: updated });
-                        }}
-                        className="flex-1 bg-background/40"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const updated = editRecipe.ingredients.filter((_: any, i: number) => i !== idx);
-                          setEditRecipe({ ...editRecipe, ingredients: updated });
-                        }}
-                        className="text-destructive hover:bg-destructive/10 shrink-0"
+              <div className="flex flex-col gap-4">
+                {displayedIngredients && displayedIngredients.length > 0 ? (
+                  displayedIngredients.map((ing: any, idx: number) => {
+                    const baseQty = ing.quantity;
+                    let calculatedQty = baseQty !== null
+                      ? baseQty * (currentServings / baseServings)
+                      : null;
+
+                    let displayedUnit = ing.unit || "";
+
+                    if (calculatedQty !== null && measurementSystem === "imperial" && displayedUnit) {
+                      const converted = convertToImperial(calculatedQty, displayedUnit);
+                      calculatedQty = converted.quantity;
+                      displayedUnit = converted.unit;
+                    }
+
+                    const isChecked = !!checkedIngredients[idx];
+
+                    return (
+                      <label
+                        key={idx}
+                        className="flex items-center gap-3 cursor-pointer group select-none py-1"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setEditRecipe({
-                        ...editRecipe,
-                        ingredients: [...editRecipe.ingredients, { name: "", quantity: null, unit: "" }]
-                      });
-                    }}
-                    className="mt-2 text-primary border-primary/20 hover:bg-primary/5 self-start w-full md:w-auto"
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    {t("addIngredient")}
-                  </Button>
-                  <p className="text-[11px] text-muted-foreground mt-2 italic">
-                    {t("personalChangesInfo")}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {displayedIngredients && displayedIngredients.length > 0 ? (
-                    displayedIngredients.map((ing: any, idx: number) => {
-                      const baseQty = ing.quantity;
-                      let calculatedQty = baseQty !== null
-                        ? baseQty * (currentServings / baseServings)
-                        : null;
-
-                      let displayedUnit = ing.unit || "";
-
-                      if (calculatedQty !== null && measurementSystem === "imperial" && displayedUnit) {
-                        const converted = convertToImperial(calculatedQty, displayedUnit);
-                        calculatedQty = converted.quantity;
-                        displayedUnit = converted.unit;
-                      }
-
-                      const isChecked = !!checkedIngredients[idx];
-
-                      return (
-                        <label
-                          key={idx}
-                          className="flex items-center gap-3 cursor-pointer group select-none py-1"
-                        >
-                          <Checkbox
-                            checked={isChecked}
-                            onCheckedChange={(checked) => {
-                              setCheckedIngredients(prev => ({
-                                ...prev,
-                                [idx]: !!checked
-                              }));
-                            }}
-                          />
-                          <span className={`text-sm text-foreground transition-all duration-200 ${
-                            isChecked ? "line-through opacity-60 text-muted-foreground" : "group-hover:text-primary"
-                          }`}>
-                            {calculatedQty !== null && (
-                              <span className="font-bold text-primary mr-1">
-                                {formatQuantity(calculatedQty)}
-                              </span>
-                            )}
-                            {displayedUnit && displayedUnit !== "q.b." && (
-                              <span className="text-muted-foreground mr-1">{displayedUnit}</span>
-                            )}
-                            <span>{ing.name}</span>
-                          </span>
-                        </label>
-                      );
-                    })
-                  ) : (
-                    <span className="text-sm text-muted-foreground">{t("noIngredients")}</span>
-                  )}
-                </div>
-              )}
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            setCheckedIngredients(prev => ({
+                              ...prev,
+                              [idx]: !!checked
+                            }));
+                          }}
+                        />
+                        <span className={`text-sm text-foreground transition-all duration-200 ${
+                          isChecked ? "line-through opacity-60 text-muted-foreground" : "group-hover:text-primary"
+                        }`}>
+                          {calculatedQty !== null && (
+                            <span className="font-bold text-primary mr-1">
+                              {formatQuantity(calculatedQty)}
+                            </span>
+                          )}
+                          {displayedUnit && displayedUnit !== "q.b." && (
+                            <span className="text-muted-foreground mr-1">{displayedUnit}</span>
+                          )}
+                          <span>{ing.name}</span>
+                        </span>
+                      </label>
+                    );
+                  })
+                ) : (
+                  <span className="text-sm text-muted-foreground">{t("noIngredients")}</span>
+                )}
+              </div>
             </div>
           </section>
 
@@ -751,116 +492,66 @@ export default function RecipeDetailPage() {
                 <ChefHat className="w-5 h-5 text-primary" />
                 {t("instructionsTitle")}
               </h3>
-              {!isEditing && (
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-                  <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">
-                    {t("activeCooking")}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">
+                  {t("activeCooking")}
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-col gap-6">
-              {isEditing ? (
-                <div className="flex flex-col gap-4">
-                  {editRecipe.instructions.map((step: string, idx: number) => (
-                    <div key={idx} className="flex gap-2 items-start glass-panel rounded-[20px] p-4">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0 mt-1">
-                        {idx + 1}
-                      </div>
-                      <textarea
-                        value={step}
-                        onChange={(e) => {
-                          const updated = [...editRecipe.instructions];
-                          updated[idx] = e.target.value;
-                          setEditRecipe({ ...editRecipe, instructions: updated });
-                        }}
-                        placeholder={t("stepPlaceholder", { count: idx + 1 })}
-                        className="flex-1 min-h-[70px] bg-background/40 rounded-md border border-input px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const updated = editRecipe.instructions.filter((_: any, i: number) => i !== idx);
-                          setEditRecipe({ ...editRecipe, instructions: updated });
-                        }}
-                        className="text-destructive hover:bg-destructive/10 shrink-0 mt-1"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setEditRecipe({
-                        ...editRecipe,
-                        instructions: [...editRecipe.instructions, ""]
-                      });
-                    }}
-                    className="mt-2 text-primary border-primary/20 hover:bg-primary/5 self-start w-full md:w-auto"
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    {t("addInstruction")}
-                  </Button>
-                </div>
-              ) : (
-                displayedInstructions && displayedInstructions.length > 0 ? (
-                  displayedInstructions.map((step: string, idx: number) => {
-                    const isChecked = !!completedSteps[idx];
+              {displayedInstructions && displayedInstructions.length > 0 ? (
+                displayedInstructions.map((step: string, idx: number) => {
+                  const isChecked = !!completedSteps[idx];
 
-                    return (
-                      <div key={idx} className="group flex gap-4 items-start">
-                        <div className="flex flex-col items-center shrink-0">
-                          <button
-                            onClick={() => {
+                  return (
+                    <div key={idx} className="group flex gap-4 items-start">
+                      <div className="flex flex-col items-center shrink-0">
+                        <button
+                          onClick={() => {
+                            setCompletedSteps(prev => ({
+                              ...prev,
+                              [idx]: !prev[idx]
+                            }));
+                          }}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-md transition-all active:scale-90 ${
+                            isChecked
+                              ? "bg-secondary text-white shadow-secondary/20"
+                              : "bg-primary text-white shadow-primary/20"
+                          }`}
+                        >
+                          {idx + 1}
+                        </button>
+                        {idx < displayedInstructions.length - 1 && (
+                          <div className="w-0.5 h-16 bg-border/40 mt-2" />
+                        )}
+                      </div>
+
+                      <div className={`glass-panel rounded-[24px] p-6 flex-1 transition-all duration-300 hover:shadow-lg ${
+                        isChecked ? "opacity-60 line-through text-muted-foreground bg-secondary/5" : ""
+                      }`}>
+                        <p className="text-sm text-on-surface leading-relaxed">
+                          {step}
+                        </p>
+                        <label className="flex items-center gap-2 mt-4 text-xs font-bold text-secondary cursor-pointer select-none">
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
                               setCompletedSteps(prev => ({
                                 ...prev,
-                                [idx]: !prev[idx]
+                                [idx]: !!checked
                               }));
                             }}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-md transition-all active:scale-90 ${
-                              isChecked
-                                ? "bg-secondary text-white shadow-secondary/20"
-                                : "bg-primary text-white shadow-primary/20"
-                            }`}
-                          >
-                            {idx + 1}
-                          </button>
-                          {idx < displayedInstructions.length - 1 && (
-                            <div className="w-0.5 h-16 bg-border/40 mt-2" />
-                          )}
-                        </div>
-
-                        <div className={`glass-panel rounded-[24px] p-6 flex-1 transition-all duration-300 hover:shadow-lg ${
-                          isChecked ? "opacity-60 line-through text-muted-foreground bg-secondary/5" : ""
-                        }`}>
-                          <p className="text-sm text-on-surface leading-relaxed">
-                            {step}
-                          </p>
-                          <label className="flex items-center gap-2 mt-4 text-xs font-bold text-secondary cursor-pointer select-none">
-                            <Checkbox
-                              checked={isChecked}
-                              onCheckedChange={(checked) => {
-                                setCompletedSteps(prev => ({
-                                  ...prev,
-                                  [idx]: !!checked
-                                }));
-                              }}
-                            />
-                            <span>{t("stepCompleted")}</span>
-                          </label>
-                        </div>
+                          />
+                          <span>{t("stepCompleted")}</span>
+                        </label>
                       </div>
-                    );
-                  })
-                ) : (
-                  <span className="text-sm text-muted-foreground">{t("noInstructions")}</span>
-                )
+                    </div>
+                  );
+                })
+              ) : (
+                <span className="text-sm text-muted-foreground">{t("noInstructions")}</span>
               )}
             </div>
           </section>
@@ -868,35 +559,7 @@ export default function RecipeDetailPage() {
         </div>
       </main>
 
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-10 right-10 flex flex-col gap-3 z-50">
-        {isEditing && (
-          <Button
-            onClick={handleCancelEdit}
-            className="w-14 h-14 bg-muted hover:bg-muted-foreground/20 text-muted-foreground rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-all duration-300"
-            size="icon"
-            aria-label={t("cancelChanges")}
-          >
-            <X className="h-6 w-6" />
-          </Button>
-        )}
-        <Button
-          onClick={handleToggleEdit}
-          className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all duration-300 ${
-            isEditing
-              ? "bg-secondary hover:bg-secondary/95 text-white"
-              : "bg-primary hover:bg-primary/95 text-white"
-          }`}
-          size="icon"
-          aria-label={isEditing ? t("saveChanges") : t("editRecipe")}
-        >
-          {isEditing ? (
-            <Save className="h-6 w-6" />
-          ) : (
-            <Edit2 className="h-6 w-6" />
-          )}
-        </Button>
-      </div>
+
 
     </div>
   );
