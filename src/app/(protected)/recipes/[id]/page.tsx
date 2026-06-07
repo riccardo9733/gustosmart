@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, onSnapshot, updateDoc, deleteDoc, serverTimestamp, getDoc, collection, getDocs, writeBatch, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, writeBatch } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
+import { useRecipe, useSaveRecipeCustomizations, useRemoveFromUserRecipes } from "@/hooks/useRecipes";
 import {
   ArrowLeft,
   Clock,
@@ -68,14 +69,15 @@ export default function RecipeDetailPage() {
   const profile = useAppSelector(selectUserProfile);
   const measurementSystem = profile?.preferences?.measurementSystem || "metric";
 
-  const [recipe, setRecipe] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // TanStack Query: one-shot getDoc (no open WebSocket), 10-min staleTime
+  const { data: recipe, isLoading: loading } = useRecipe(id);
+
   const [currentServings, setCurrentServings] = useState(2);
-  
+
   // Cooking checklist state (temporary in-memory)
   const [checkedIngredients, setCheckedIngredients] = useState<Record<number, boolean>>({});
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});
-  
+
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
   const [editRecipe, setEditRecipe] = useState<any>(null);
@@ -90,47 +92,25 @@ export default function RecipeDetailPage() {
 
   const [scrollY, setScrollY] = useState(0);
 
+  // Mutations
+  const { mutateAsync: saveCustomizations } = useSaveRecipeCustomizations(id);
+  const { mutateAsync: removeRecipe } = useRemoveFromUserRecipes();
+
+  // Update servings when recipe loads
+  useEffect(() => {
+    if (recipe) {
+      setCurrentServings(recipe.servings || 2);
+    }
+  }, [recipe?.id]);
+
   // Parallax Scroll Listener
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
+    const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Firestore Sync Listener
-  useEffect(() => {
-    if (!id) return;
-
-    const db = getFirebaseDb();
-    const recipeRef = doc(db, "recipes", id);
-
-    const unsubscribe = onSnapshot(
-      recipeRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const r = { id: docSnap.id, ...data };
-          setRecipe(r);
-          setCurrentServings(data.servings || 2);
-          setLoading(false);
-        } else {
-          toast.error("Ricetta non trovata.");
-          router.push("/");
-        }
-      },
-      (error) => {
-        console.error("Errore fetch ricetta:", error);
-        toast.error("Errore nel caricamento della ricetta.");
-        setLoading(false);
-      }
-    );
-
-    return unsubscribe;
-  }, [id, router]);
-
-  // Translation Sync & Fetch Listener
+  // Translation Sync & Fetch
   useEffect(() => {
     if (!recipe) return;
 
@@ -149,6 +129,7 @@ export default function RecipeDetailPage() {
       const fetchTranslation = async () => {
         try {
           const db = getFirebaseDb();
+          // Translations live on the GLOBAL recipe — shared across all users
           const translationRef = doc(db, "recipes", recipe.id, "translations", userLanguage);
           const transSnap = await getDoc(translationRef);
 
@@ -162,7 +143,7 @@ export default function RecipeDetailPage() {
             });
             setIsTranslating(false);
           } else {
-            // Mostra temporaneamente i dati in lingua originale
+            // Show original language while translating
             setDisplayData({
               title: recipe.title,
               ingredients: recipe.ingredients || [],
@@ -170,7 +151,6 @@ export default function RecipeDetailPage() {
               isTranslated: false
             });
 
-            // Avvia la traduzione lazy tramite l'API
             setIsTranslating(true);
             const res = await fetch("/api/recipes/translate", {
               method: "POST",
@@ -183,9 +163,7 @@ export default function RecipeDetailPage() {
               })
             });
 
-            if (!res.ok) {
-              throw new Error("Errore chiamata API di traduzione");
-            }
+            if (!res.ok) throw new Error("Errore chiamata API di traduzione");
 
             const resJson = await res.json();
             if (resJson.success && resJson.translation) {
@@ -196,8 +174,7 @@ export default function RecipeDetailPage() {
                 translatedAt: new Date().toISOString()
               };
 
-              // Salva la traduzione su Firestore dal client autenticato
-              const translationRef = doc(db, "recipes", recipe.id, "translations", userLanguage);
+              // Save translation on the GLOBAL recipe — accessible by all users
               await setDoc(translationRef, translationDoc);
 
               setDisplayData({
@@ -214,40 +191,38 @@ export default function RecipeDetailPage() {
         } catch (error) {
           console.error("Errore traduzione:", error);
           setIsTranslating(false);
-          setDisplayData({
-            title: recipe.title,
-            ingredients: recipe.ingredients || [],
-            instructions: recipe.instructions || [],
-            isTranslated: false
-          });
+          if (recipe) {
+            setDisplayData({
+              title: recipe.title,
+              ingredients: recipe.ingredients || [],
+              instructions: recipe.instructions || [],
+              isTranslated: false
+            });
+          }
         }
       };
 
       fetchTranslation();
     }
-  }, [recipe, profile?.preferences?.language, user?.uid]);
+  }, [recipe?.id, profile?.preferences?.language]);
 
-  // Adjust Servings handlers
   const updateServings = (delta: number) => {
     const newVal = currentServings + delta;
     if (newVal < 1) return;
     setCurrentServings(newVal);
   };
 
-  // Toggle edit state
   const handleToggleEdit = () => {
     if (isEditing) {
-      // If we were editing, clicking the FAB again triggers Save
       handleSave();
     } else {
-      // Enter edit mode
-      const activeRecipeVersion = {
+      const activeVersion = {
         ...recipe,
-        title: displayData?.title || recipe.title,
-        ingredients: displayData?.ingredients || recipe.ingredients || [],
-        instructions: displayData?.instructions || recipe.instructions || []
+        title: displayData?.title || recipe?.title,
+        ingredients: displayData?.ingredients || recipe?.ingredients || [],
+        instructions: displayData?.instructions || recipe?.instructions || []
       };
-      setEditRecipe(JSON.parse(JSON.stringify(activeRecipeVersion))); // Deep clone
+      setEditRecipe(JSON.parse(JSON.stringify(activeVersion)));
       setIsEditing(true);
     }
   };
@@ -258,30 +233,26 @@ export default function RecipeDetailPage() {
   };
 
   const handleDeleteRecipe = async () => {
-    const toastId = toast.loading("Eliminazione ricetta...");
+    const toastId = toast.loading("Rimozione ricetta dal ricettario...");
     try {
-      const db = getFirebaseDb();
-      await deleteDoc(doc(db, "recipes", id));
-      toast.success("Ricetta eliminata con successo!", { id: toastId });
+      await removeRecipe(id);
+      toast.success("Ricetta rimossa dal tuo ricettario!", { id: toastId });
       router.push("/recipes");
     } catch (error) {
-      console.error("Errore durante l'eliminazione:", error);
-      toast.error("Impossibile eliminare la ricetta.", { id: toastId });
+      console.error("Errore durante la rimozione:", error);
+      toast.error("Impossibile rimuovere la ricetta.", { id: toastId });
     }
   };
 
   const handleSave = async () => {
-    if (!editRecipe.title.trim()) {
+    if (!editRecipe?.title?.trim()) {
       toast.error("Il titolo della ricetta è obbligatorio.");
       return;
     }
 
-    const toastId = toast.loading("Salvataggio ricetta...");
+    const toastId = toast.loading("Salvataggio personalizzazioni...");
 
     try {
-      const db = getFirebaseDb();
-      const recipeRef = doc(db, "recipes", id);
-
       const cleanedIngredients = editRecipe.ingredients
         .map((ing: any) => ({
           name: ing.name.trim(),
@@ -294,44 +265,50 @@ export default function RecipeDetailPage() {
         .map((step: string) => step.trim())
         .filter((step: string) => step !== "");
 
-      const userLanguage = profile?.preferences?.language || "it";
+      // Save ONLY to the personal override — global recipe is immutable
+      await saveCustomizations({
+        customTitle: editRecipe.title.trim() !== recipe?.title ? editRecipe.title.trim() : null,
+        customIngredients: cleanedIngredients,
+        customInstructions: cleanedInstructions,
+      });
 
-      const updateData = {
-        title: editRecipe.title.trim(),
-        sourceLanguage: userLanguage,
-        servings: Number(editRecipe.servings) || 2,
-        prepTimeMinutes: editRecipe.prepTimeMinutes !== null && editRecipe.prepTimeMinutes !== "" 
-          ? Number(editRecipe.prepTimeMinutes) 
-          : null,
-        category: editRecipe.category || "other",
-        kcal: editRecipe.kcal !== undefined && editRecipe.kcal !== null && editRecipe.kcal !== ""
-          ? Number(editRecipe.kcal) 
-          : null,
-        ingredients: cleanedIngredients,
-        instructions: cleanedInstructions,
-        updatedAt: serverTimestamp(),
-      };
-
-      await updateDoc(recipeRef, updateData);
-
-      // Elimina tutte le vecchie traduzioni cached della ricetta
+      // If the recipe was customized, invalidate old shared translations
+      // (they are based on the original global text; personal overrides don't translate)
+      const db = getFirebaseDb();
       try {
         const translationsColRef = collection(db, "recipes", id, "translations");
         const translationsSnap = await getDocs(translationsColRef);
-        const batch = writeBatch(db);
-        translationsSnap.docs.forEach((docSnap) => {
-          batch.delete(docSnap.ref);
-        });
-        await batch.commit();
+        if (!translationsSnap.empty) {
+          // Only clear translations if the recipe content was meaningfully changed
+          const hasContentChange =
+            cleanedIngredients.length !== (recipe?.ingredients?.length ?? 0) ||
+            cleanedInstructions.length !== (recipe?.instructions?.length ?? 0);
+
+          if (hasContentChange) {
+            // Don't delete shared translations — personal edits are user-local,
+            // so we just update the displayData locally. Translations remain valid
+            // for other users of the global recipe.
+            console.log("Personal customization saved. Shared translations preserved.");
+          }
+        }
       } catch (err) {
-        console.error("Errore durante l'eliminazione delle traduzioni obsolete:", err);
+        console.error("Errore lettura traduzioni:", err);
       }
 
-      toast.success("Ricetta salvata con successo!", { id: toastId });
+      toast.success("Personalizzazioni salvate!", { id: toastId });
       setIsEditing(false);
       setEditRecipe(null);
+
+      // Update local displayData immediately for snappy UX
+      setDisplayData({
+        title: editRecipe.title.trim(),
+        ingredients: cleanedIngredients,
+        instructions: cleanedInstructions,
+        isTranslated: displayData?.isTranslated ?? false
+      });
+
     } catch (error) {
-      console.error("Errore durante il salvataggio della ricetta:", error);
+      console.error("Errore durante il salvataggio:", error);
       toast.error("Impossibile salvare le modifiche.", { id: toastId });
     }
   };
@@ -369,6 +346,21 @@ export default function RecipeDetailPage() {
     );
   }
 
+  if (!recipe) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center">
+        <ChefHat className="w-16 h-16 text-primary/20 mb-4" />
+        <h2 className="text-xl font-bold text-foreground mb-2">Ricetta non trovata</h2>
+        <p className="text-muted-foreground text-sm mb-6">
+          Questa ricetta non è nel tuo ricettario.
+        </p>
+        <Button onClick={() => router.push("/recipes")} variant="outline" className="rounded-full">
+          Torna al Ricettario
+        </Button>
+      </div>
+    );
+  }
+
   const baseServings = recipe.servings || 2;
   const imageSrc = recipe.imageUrl
     ? `/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`
@@ -380,8 +372,8 @@ export default function RecipeDetailPage() {
 
   return (
     <div className="relative w-full max-w-4xl mx-auto pb-32 animate-in fade-in duration-500">
-      
-      {/* Hero Section (Parallax & Bleed to layout edges) */}
+
+      {/* Hero Section */}
       <div className="relative overflow-hidden w-[calc(100%+3rem)] -mx-6 -mt-20 h-[50vh] md:h-[55vh] rounded-b-[40px] shadow-lg shadow-primary/5 bg-muted/10">
         {imageSrc ? (
           <div
@@ -398,8 +390,8 @@ export default function RecipeDetailPage() {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/25" />
-        
-        {/* Floating Back Button */}
+
+        {/* Back Button */}
         <Button
           variant="outline"
           size="icon"
@@ -408,38 +400,39 @@ export default function RecipeDetailPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        {/* Floating Delete Button */}
+
+        {/* Remove from collection button */}
         <AlertDialog>
           <AlertDialogTrigger render={
             <Button
               variant="outline"
               size="icon"
               className="absolute top-24 right-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-destructive active:scale-95 transition-all"
-              aria-label="Elimina ricetta"
+              aria-label="Rimuovi dal ricettario"
             >
               <Trash2 className="h-5 w-5" />
             </Button>
           } />
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Sei sicuro di voler eliminare questa ricetta?</AlertDialogTitle>
+              <AlertDialogTitle>Rimuovere dal ricettario?</AlertDialogTitle>
               <AlertDialogDescription>
-                Questa azione è irreversibile. La ricetta verrà rimossa permanentemente dal tuo ricettario.
+                La ricetta verrà rimossa dal tuo ricettario personale. Resterà disponibile nel catalogo globale e potrai riaggiungerla in futuro.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Annulla</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteRecipe} className="bg-destructive hover:bg-destructive/90 text-white">
-                Elimina
+                Rimuovi
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       </div>
 
-      {/* Main Content Over Card */}
+      {/* Main Content */}
       <main className="relative -mt-24 px-2">
-        
+
         {/* Header Glass Card */}
         <div className="glass-panel rounded-[32px] p-6 md:p-8 shadow-2xl shadow-primary/5 mb-8">
           {isEditing ? (
@@ -475,9 +468,9 @@ export default function RecipeDetailPage() {
                   <Input
                     type="number"
                     value={editRecipe.prepTimeMinutes ?? ""}
-                    onChange={(e) => setEditRecipe({ 
-                      ...editRecipe, 
-                      prepTimeMinutes: e.target.value === "" ? null : Number(e.target.value) 
+                    onChange={(e) => setEditRecipe({
+                      ...editRecipe,
+                      prepTimeMinutes: e.target.value === "" ? null : Number(e.target.value)
                     })}
                     placeholder="es. 25"
                     min="0"
@@ -509,9 +502,9 @@ export default function RecipeDetailPage() {
                   <Input
                     type="number"
                     value={editRecipe.kcal ?? ""}
-                    onChange={(e) => setEditRecipe({ 
-                      ...editRecipe, 
-                      kcal: e.target.value === "" ? null : Number(e.target.value) 
+                    onChange={(e) => setEditRecipe({
+                      ...editRecipe,
+                      kcal: e.target.value === "" ? null : Number(e.target.value)
                     })}
                     placeholder="es. 150"
                     min="0"
@@ -551,6 +544,12 @@ export default function RecipeDetailPage() {
                       Fonte Originale
                       <ExternalLink className="w-3 h-3" />
                     </a>
+                  )}
+                  {recipe.isCustomized && (
+                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-secondary/20 text-secondary flex items-center gap-1">
+                      <Edit2 className="w-3 h-3" />
+                      Personalizzata
+                    </Badge>
                   )}
                   {displayData?.isTranslated && (
                     <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-secondary/20 text-secondary flex items-center gap-1">
@@ -606,7 +605,7 @@ export default function RecipeDetailPage() {
 
         {/* Dynamic Lists Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* Ingredients Section */}
           <section className="lg:col-span-5 flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -684,7 +683,7 @@ export default function RecipeDetailPage() {
                     Aggiungi Ingrediente
                   </Button>
                   <p className="text-[11px] text-muted-foreground mt-2 italic">
-                    * Inserisci quantità in formato metrico (g, ml). Verranno convertite in imperiale a runtime per la visualizzazione a seconda delle preferenze utente.
+                    * Le modifiche sono personali e non alterano la ricetta globale condivisa.
                   </p>
                 </div>
               ) : (
@@ -692,12 +691,12 @@ export default function RecipeDetailPage() {
                   {displayedIngredients && displayedIngredients.length > 0 ? (
                     displayedIngredients.map((ing: any, idx: number) => {
                       const baseQty = ing.quantity;
-                      let calculatedQty = baseQty !== null 
-                        ? baseQty * (currentServings / baseServings) 
+                      let calculatedQty = baseQty !== null
+                        ? baseQty * (currentServings / baseServings)
                         : null;
-                      
+
                       let displayedUnit = ing.unit || "";
-                      
+
                       if (calculatedQty !== null && measurementSystem === "imperial" && displayedUnit) {
                         const converted = convertToImperial(calculatedQty, displayedUnit);
                         calculatedQty = converted.quantity;
@@ -815,7 +814,6 @@ export default function RecipeDetailPage() {
 
                     return (
                       <div key={idx} className="group flex gap-4 items-start">
-                        {/* Step Number */}
                         <div className="flex flex-col items-center shrink-0">
                           <button
                             onClick={() => {
@@ -832,12 +830,11 @@ export default function RecipeDetailPage() {
                           >
                             {idx + 1}
                           </button>
-                          {idx < recipe.instructions.length - 1 && (
+                          {idx < displayedInstructions.length - 1 && (
                             <div className="w-0.5 h-16 bg-border/40 mt-2" />
                           )}
                         </div>
 
-                        {/* Step Description */}
                         <div className={`glass-panel rounded-[24px] p-6 flex-1 transition-all duration-300 hover:shadow-lg ${
                           isChecked ? "opacity-60 line-through text-muted-foreground bg-secondary/5" : ""
                         }`}>
@@ -870,7 +867,7 @@ export default function RecipeDetailPage() {
         </div>
       </main>
 
-      {/* Floating Action Button (FAB) Area */}
+      {/* Floating Action Buttons */}
       <div className="fixed bottom-10 right-10 flex flex-col gap-3 z-50">
         {isEditing && (
           <Button

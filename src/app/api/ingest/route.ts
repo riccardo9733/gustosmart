@@ -37,13 +37,17 @@ export async function POST(request: Request) {
     // Al momento supportiamo solo Instagram Reel
     if (platform !== "instagram") {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: "Al momento supportiamo solo l'importazione da Instagram Reel. Il supporto ad altre piattaforme arriverà presto!" 
+        {
+          success: false,
+          error: "Al momento supportiamo solo l'importazione da Instagram Reel. Il supporto ad altre piattaforme arriverà presto!",
         },
         { status: 400 }
       );
     }
+
+    // NOTE: La deduplicazione per sourceUrl viene eseguita lato client (page.tsx)
+    // prima di chiamare questa route, dove l'utente è già autenticato e può
+    // interrogare Firestore. Il client SDK lato server non ha auth context.
 
     // 2. Pre-genera l'ID della ricetta su Firestore
     const db = getFirebaseDb();
@@ -59,10 +63,11 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
+        alreadyExists: false,
         runId,
         datasetId,
         recipeId,
-        message: "Scraping avviato con successo"
+        message: "Scraping avviato con successo",
       },
       { status: 202 }
     );

@@ -2,77 +2,42 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { doc, onSnapshot, setDoc, serverTimestamp, collection, query, where } from "firebase/firestore";
+import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
-import { 
-  Sparkles, 
-  Film, 
-  Video, 
-  Link as LinkIcon, 
-  Clock, 
-  ArrowRight, 
+import { useRecipes, useAddToUserRecipes } from "@/hooks/useRecipes";
+import {
+  Sparkles,
+  Film,
+  Video,
+  Link as LinkIcon,
+  Clock,
+  ArrowRight,
   ChefHat,
   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter, CardAction } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   const [videoUrl, setVideoUrl] = useState("");
   const [isImporting, setIsImporting] = useState(false);
-  const [recipes, setRecipes] = useState<any[]>([]);
-  const [recipesLoading, setRecipesLoading] = useState(true);
   const [activeCleanup, setActiveCleanup] = useState<(() => void) | null>(null);
-  
+
   const { user } = useAuth();
   const router = useRouter();
 
-  // Effetto per ascoltare le ricette reali dell'utente
-  useEffect(() => {
-    if (!user) {
-      setRecipes([]);
-      setRecipesLoading(false);
-      return;
-    }
+  // TanStack Query: condivide la stessa cache con /recipes page → zero letture extra
+  const { data: recipes = [], isLoading: recipesLoading } = useRecipes();
 
-    const db = getFirebaseDb();
-    const q = query(
-      collection(db, "recipes"),
-      where("userId", "==", user.uid)
-    );
+  // Mutation per aggiungere una ricetta già esistente al ricettario
+  const { mutateAsync: addToUserRecipes } = useAddToUserRecipes();
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedRecipes = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          ...data,
-          createdAtMs: data.createdAt?.toMillis ? data.createdAt.toMillis() : 0
-        };
-      });
-
-      // Ordina client-side decrescente per createdAtMs
-      fetchedRecipes.sort((a: any, b: any) => b.createdAtMs - a.createdAtMs);
-
-      // Limita a 10 elementi
-      setRecipes(fetchedRecipes.slice(0, 10));
-      setRecipesLoading(false);
-    }, (error) => {
-      console.error("Errore ascolto ricette:", error);
-      setRecipesLoading(false);
-    });
-
-    return unsubscribe;
-  }, [user]);
-
-  // Effetto di pulizia per evitare memory leak se l'utente naviga via durante l'importazione
+  // Cleanup listener on unmount
   useEffect(() => {
     return () => {
       if (activeCleanup) activeCleanup();
@@ -89,9 +54,8 @@ export default function Home() {
 
     setIsImporting(true);
     const targetUrl = videoUrl;
-    setVideoUrl(""); // Svuota l'input per lasciare libero l'utente
+    setVideoUrl("");
 
-    // Mostra il toast di caricamento iniziale persistente
     const toastId = toast.loading("Importazione in corso", {
       description: "Stiamo elaborando il video. La ricetta sarà disponibile a breve.",
       duration: Infinity,
@@ -107,11 +71,32 @@ export default function Home() {
       setActiveCleanup(null);
     };
 
-    // Salva la funzione di cleanup nello stato
     setActiveCleanup(() => cleanup);
 
     try {
-      // 1. Invia il trigger al backend
+      // 0. Check client-side: esiste già una ricetta globale con questo URL?
+      //    Questo deve avvenire lato client dove l'utente è autenticato e
+      //    le Firestore Security Rules permettono la lettura.
+      const { checkRecipeExistsByUrl } = await import("@/lib/firestore/recipes");
+      const existingRecipeId = await checkRecipeExistsByUrl(targetUrl);
+
+      if (existingRecipeId) {
+        // Ricetta già nel catalogo globale → aggiungila direttamente al ricettario
+        await addToUserRecipes(existingRecipeId);
+        cleanup();
+        toast.success("Ricetta già nel catalogo!", {
+          id: toastId,
+          description: "La ricetta è stata aggiunta al tuo ricettario.",
+          duration: 6000,
+          action: {
+            label: "Visualizza",
+            onClick: () => router.push(`/recipes/${existingRecipeId}`),
+          },
+        });
+        return;
+      }
+
+      // 1. Invia il trigger al backend (solo se la ricetta non esiste già)
       const response = await fetch("/api/ingest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,20 +108,20 @@ export default function Home() {
         throw new Error(errJson.error || "Impossibile avviare l'importazione.");
       }
 
-      const { runId, datasetId, recipeId } = await response.json();
+      const json = await response.json();
 
-      // 2. Ascolta in tempo reale la creazione della ricetta in Firestore
+      // Nuova ricetta: avvia polling Apify e ascolta Firestore per il completamento
+      const { runId, datasetId, recipeId } = json;
+
+      // Listener one-shot su /users/{uid}/recipes/{recipeId}: si attiva quando
+      // il client scrive il documento personale dopo aver salvato la ricetta globale.
       const db = getFirebaseDb();
-      unsubscribeFirestore = onSnapshot(doc(db, "recipes", recipeId), (docSnap) => {
+      unsubscribeFirestore = onSnapshot(doc(db, "users", user.uid, "recipes", recipeId), (docSnap) => {
         if (docSnap.exists()) {
-          const recipeData = docSnap.data();
-          const recipeTitle = recipeData.title || "Nuova Ricetta";
-
           cleanup();
-
           toast.success("Ricetta Importata!", {
-            id: toastId, // Sostituisce il toast precedente
-            description: `"${recipeTitle}" è pronta!`,
+            id: toastId,
+            description: "La ricetta è pronta nel tuo ricettario!",
             duration: 8000,
             action: {
               label: "Visualizza",
@@ -146,7 +131,7 @@ export default function Home() {
         }
       });
 
-      // 3. Esegui il polling lato client per far progredire lo scraping in serverless
+      // 3. Polling per far progredire lo scraping Apify
       pollingIntervalId = setInterval(async () => {
         try {
           const statusRes = await fetch(
@@ -165,29 +150,31 @@ export default function Home() {
           }
 
           if (statusJson.status === "succeeded") {
-            // Abbiamo i dati della ricetta! Ora li salviamo con le credenziali del client
-            console.log("Salvataggio ricetta su Firestore...");
+            // Salva la ricetta globale in /recipes/{recipeId} (senza userId)
             const recipeDoc = {
-              id: recipeId,
-              userId: user.uid,
-              title: statusJson.recipe.title,
               sourceUrl: targetUrl,
-              sourceLanguage: statusJson.recipe.sourceLanguage || "it",
               sourcePlatform: "instagram",
+              title: statusJson.recipe.title,
+              sourceLanguage: statusJson.recipe.sourceLanguage || "it",
               servings: statusJson.recipe.servings,
               ingredients: statusJson.recipe.ingredients,
               instructions: statusJson.recipe.instructions,
               imageUrl: statusJson.recipe.imageUrl || null,
               prepTimeMinutes: statusJson.recipe.prepTimeMinutes,
               category: statusJson.recipe.category || "other",
-              kcal: statusJson.recipe.kcal !== undefined && statusJson.recipe.kcal !== null ? statusJson.recipe.kcal : null,
+              kcal: statusJson.recipe.kcal !== undefined && statusJson.recipe.kcal !== null
+                ? statusJson.recipe.kcal
+                : null,
               createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp()
+              createdBy: user.uid,  // attribuzione (non ownership esclusiva)
             };
 
             await setDoc(doc(db, "recipes", recipeId), recipeDoc);
-            console.log("Salvataggio completato lato client.");
-            // onSnapshot intercetterà la scrittura e farà scattare il cleanup + toast di successo
+
+            // Crea il documento personale in /users/{uid}/recipes/{recipeId}
+            // onSnapshot lo intercetterà e farà scattare il toast di successo
+            const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
+            await addFn(user.uid, recipeId);
           }
         } catch (pollErr) {
           console.error("Errore nel polling dello stato:", pollErr);
@@ -214,6 +201,9 @@ export default function Home() {
     }
   };
 
+  // Mostra solo le ultime 10 ricette nella home
+  const recentRecipes = recipes.slice(0, 10);
+
   return (
     <div className="flex flex-col gap-10 animate-in fade-in duration-500">
       {/* Hero Section */}
@@ -221,21 +211,21 @@ export default function Home() {
         <h2 className="font-heading text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:max-w-2xl">
           Trasforma i tuoi Reel in <span className="text-primary">ricette reali</span>
         </h2>
-        
+
         {/* URL Import Input */}
         <form onSubmit={handleImport} className="relative group w-full max-w-lg mt-8">
           <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full -z-10 transition-all duration-500 group-focus-within:bg-primary/20"></div>
           <div className="flex items-center glass-panel rounded-full p-1.5 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all">
-            <Input 
+            <Input
               type="text"
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder="Incolla il link del video qui..." 
+              placeholder="Incolla il link del video qui..."
               className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-5 text-sm h-11"
               disabled={isImporting}
             />
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               size="icon"
               disabled={isImporting}
               className="bg-primary hover:bg-primary/95 text-white rounded-full h-11 w-11 shadow-lg active:scale-95 transition-all"
@@ -251,21 +241,21 @@ export default function Home() {
 
         {/* Suggestion Badges */}
         <div className="flex flex-wrap justify-center gap-3 mt-6">
-          <button 
+          <button
             onClick={() => setPlatformUrl("instagram")}
             className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all"
           >
             <Film className="h-4 w-4 text-primary" />
             Instagram Reel
           </button>
-          <button 
+          <button
             onClick={() => setPlatformUrl("tiktok")}
             className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all"
           >
             <Video className="h-4 w-4 text-primary" />
             TikTok Video
           </button>
-          <button 
+          <button
             onClick={() => setPlatformUrl("web")}
             className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all"
           >
@@ -283,11 +273,10 @@ export default function Home() {
             Vedi tutto <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        
+
         {/* Carousel Container */}
         <div className="flex overflow-x-auto gap-6 snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6">
           {recipesLoading ? (
-            // Skeleton Loader
             Array.from({ length: 3 }).map((_, idx) => (
               <Card key={idx} className="min-w-[280px] max-w-[280px] snap-start relative pt-0 border border-white/40 dark:border-white/10 shadow-xl shadow-primary/5 flex flex-col justify-between">
                 <div className="relative w-full aspect-video bg-muted/20 overflow-hidden">
@@ -305,8 +294,7 @@ export default function Home() {
                 </CardHeader>
               </Card>
             ))
-          ) : recipes.length === 0 ? (
-            // Premium Empty State
+          ) : recentRecipes.length === 0 ? (
             <div className="w-full flex flex-col items-center justify-center text-center p-8 glass-panel rounded-[24px] border border-white/40 dark:border-white/10 shadow-lg max-w-lg mx-auto py-12">
               <ChefHat className="h-12 w-12 text-primary/60 mb-4" />
               <h4 className="text-lg font-bold text-foreground mb-2">Ancora nessuna ricetta</h4>
@@ -315,9 +303,7 @@ export default function Home() {
               </p>
             </div>
           ) : (
-            // Real User Recipes
-            recipes.map((recipe) => {
-              // Calcolo dei tag dinamici
+            recentRecipes.map((recipe) => {
               const tags = [];
               if (recipe.prepTimeMinutes && recipe.prepTimeMinutes <= 20) {
                 tags.push("Rapido");
@@ -329,18 +315,17 @@ export default function Home() {
                 tags.push(recipe.sourcePlatform.charAt(0).toUpperCase() + recipe.sourcePlatform.slice(1));
               }
 
-              const mainTag = tags[0] || "Ricetta";
               const descText = `${recipe.ingredients?.length || 0} ingredienti · ${recipe.instructions?.length || 0} passaggi`;
 
               return (
-                <Card 
-                  key={recipe.id} 
+                <Card
+                  key={recipe.id}
                   onClick={() => router.push(`/recipes/${recipe.id}`)}
                   className="min-w-[280px] max-w-[280px] snap-start relative pt-0 border border-white/40 dark:border-white/10 shadow-xl shadow-primary/5 hover:scale-[1.02] transition-transform duration-300 cursor-pointer flex flex-col justify-between"
                 >
                   <div className="relative w-full aspect-video bg-muted/20 overflow-hidden">
                     {recipe.imageUrl ? (
-                      <img 
+                      <img
                         src={`/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`}
                         alt={recipe.title}
                         className="relative z-20 aspect-video w-full object-cover"
@@ -351,7 +336,7 @@ export default function Home() {
                       </div>
                     )}
                   </div>
-                  
+
                   <CardHeader>
                     <CardTitle className="font-heading text-base font-bold text-foreground leading-snug line-clamp-2 min-h-[44px] tracking-tight">
                       {recipe.title}

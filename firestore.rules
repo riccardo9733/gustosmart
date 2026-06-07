@@ -11,42 +11,44 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function isDocumentOwner() {
-      return isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
-    }
-
-    function willBeDocumentOwner() {
-      return isAuthenticated() && request.resource.data.userId == request.auth.uid;
-    }
-
-    // 1. Users collection
+    // 1. Users collection (private to the owner)
     match /users/{userId} {
       allow read, write: if isOwner(userId);
-    }
 
-    // 2. Recipes collection
-    match /recipes/{recipeId} {
-      // Allow read/update/delete only if user owns the recipe
-      allow read, update, delete: if isDocumentOwner();
-      // Allow creation if the user is assigning the recipe to themselves
-      allow create: if willBeDocumentOwner();
-
-      // Subcollection for translations
-      match /translations/{langCode} {
-        allow read, write: if isAuthenticated() && 
-          get(/databases/$(database)/documents/recipes/$(recipeId)).data.userId == request.auth.uid;
+      // Personal recipe subcollection — only the owner can manage their own collection
+      match /recipes/{recipeId} {
+        allow read, write: if isOwner(userId);
       }
     }
 
-    // 3. Shopping Lists collection
-    match /shopping_lists/{listId} {
-      // Allow read/update/delete only if user owns the shopping list
-      allow read, update, delete: if isDocumentOwner();
-      // Allow creation if the user is assigning the list to themselves
-      allow create: if willBeDocumentOwner();
+    // 2. Global Recipes collection — shared, public catalog
+    match /recipes/{recipeId} {
+      // Any authenticated user can read any global recipe
+      allow read: if isAuthenticated();
+
+      // Any authenticated user can create a new global recipe (during ingest)
+      // The createdBy field must match the requesting user's UID
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+
+      // Global recipes are immutable after creation (no update/delete from clients)
+      // Updates and deletions are not allowed on the global recipe document
+      allow update, delete: if false;
+
+      // Translations subcollection — any authenticated user can read and contribute
+      // translations (they are shared across all users for the same recipe)
+      match /translations/{langCode} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+      }
     }
 
-    // 4. Global Language collection
+    // 3. Shopping Lists collection (private to the owner)
+    match /shopping_lists/{listId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // 4. Global Language collection (read-only for clients)
     match /language/{langId} {
       allow read: if isAuthenticated();
       allow write: if false;
