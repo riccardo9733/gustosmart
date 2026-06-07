@@ -170,5 +170,25 @@
     "ingredientPlaceholder": "Ingrediente",
     "stepPlaceholder": "Describe el paso {count}",
     "personalChangesInfo": "* Los cambios son personales y no alteran la receta global compartida."
+  },
+  "Shopping": {
+    "title": "Compra Inteligente",
+    "description": "{count} artículos restantes",
+    "reset": "Restablecer",
+    "empty": "Vaciar",
+    "completed": "Completado",
+    "addCustomPlaceholder": "Añadir artículo personalizado...",
+    "addBtn": "Añadir",
+    "noItems": "No hay artículos para comprar. ¡Selecciona recetas arriba o añade un artículo manual!",
+    "recipesCollapsible": "Recetas para cocinar ({count})",
+    "servings": "porciones",
+    "manualItem": "Artículo manual",
+    "unifiedFrom": "Unificado de: {recipes}",
+    "addToShopping": "Añadir a la compra",
+    "removeFromShopping": "Quitar de la compra",
+    "inShoppingList": "En la compra",
+    "addToShoppingSuccess": "¡Receta añadida a la compra!",
+    "removeFromShoppingSuccess": "¡Receta quitada de la compra!",
+    "searchRecipesPlaceholder": "Buscar recetas..."
   }
 }

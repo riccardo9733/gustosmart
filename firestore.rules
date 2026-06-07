@@ -44,8 +44,7 @@ service cloud.firestore {
 
     // 3. Shopping Lists collection (private to the owner)
     match /shopping_lists/{listId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read, write: if isOwner(listId);
     }
 
     // 4. Global Language collection (read-only for clients)

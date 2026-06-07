@@ -7,7 +7,9 @@ import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
-import { useRecipe, useRemoveFromUserRecipes } from "@/hooks/useRecipes";
+import { useRecipe, useRemoveFromUserRecipes, useRecipes } from "@/hooks/useRecipes";
+import { useShoppingList, useUpdateShoppingList } from "@/hooks/useShoppingList";
+import { recalculateShoppingItems } from "@/lib/firestore/shopping-list";
 import {
   ArrowLeft,
   Clock,
@@ -17,6 +19,7 @@ import {
   ChefHat,
   Sparkles,
   ShoppingBag,
+  ShoppingCart,
   ExternalLink,
   Flame,
   Loader2
@@ -50,9 +53,13 @@ export default function RecipeDetailPage() {
 
   const t = useTranslations("Details");
   const tRecipes = useTranslations("Recipes");
+  const tShopping = useTranslations("Shopping");
 
   // TanStack Query: one-shot getDoc (no open WebSocket), 10-min staleTime
   const { data: recipe, isLoading: loading } = useRecipe(id);
+  const { data: shoppingList } = useShoppingList();
+  const { data: allRecipes = [] } = useRecipes();
+  const updateShoppingList = useUpdateShoppingList();
 
   const [currentServings, setCurrentServings] = useState(2);
 
@@ -72,6 +79,40 @@ export default function RecipeDetailPage() {
 
   // Mutations
   const { mutateAsync: removeRecipe } = useRemoveFromUserRecipes();
+
+  const isSelectedInShopping = shoppingList?.selectedRecipes.some(
+    (r) => r.recipeId === id
+  ) ?? false;
+
+  const handleToggleShoppingList = () => {
+    if (!shoppingList) return;
+
+    let updatedRecipes = [...shoppingList.selectedRecipes];
+    if (isSelectedInShopping) {
+      updatedRecipes = updatedRecipes.filter((r) => r.recipeId !== id);
+    } else {
+      updatedRecipes.push({ recipeId: id, servings: currentServings });
+    }
+
+    const newItems = recalculateShoppingItems(updatedRecipes, shoppingList.items, allRecipes);
+    
+    updateShoppingList.mutate({
+      selectedRecipes: updatedRecipes,
+      items: newItems,
+    }, {
+      onSuccess: () => {
+        if (isSelectedInShopping) {
+          toast.success(tShopping("removeFromShoppingSuccess"));
+        } else {
+          toast.success(tShopping("addToShoppingSuccess"));
+        }
+      },
+      onError: (err) => {
+        console.error("Errore aggiornamento spesa:", err);
+        toast.error("Impossibile aggiornare la lista della spesa.");
+      }
+    });
+  };
 
   // Update servings when recipe loads
   useEffect(() => {
@@ -187,6 +228,21 @@ export default function RecipeDetailPage() {
     const newVal = currentServings + delta;
     if (newVal < 1) return;
     setCurrentServings(newVal);
+
+    // Se la ricetta è già in spesa, aggiorna le porzioni anche lì!
+    if (isSelectedInShopping && shoppingList) {
+      const updatedRecipes = shoppingList.selectedRecipes.map((r) => {
+        if (r.recipeId === id) {
+          return { ...r, servings: newVal };
+        }
+        return r;
+      });
+      const newItems = recalculateShoppingItems(updatedRecipes, shoppingList.items, allRecipes);
+      updateShoppingList.mutate({
+        selectedRecipes: updatedRecipes,
+        items: newItems,
+      });
+    }
   };
 
   const handleDeleteRecipe = async () => {
@@ -389,29 +445,42 @@ export default function RecipeDetailPage() {
                 </p>
               </div>
 
-              {/* Servings Counter */}
-              <div className="bg-surface-container rounded-full p-2 flex items-center gap-4 shadow-inner border border-white/5 shrink-0 self-center md:self-start">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary hover:bg-primary/10 active:scale-90 transition-all shrink-0"
-                  onClick={() => updateServings(-1)}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <div className="flex flex-col items-center min-w-[48px]">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t("servings")}</span>
-                  <span className="font-heading text-xl font-bold text-primary leading-none mt-0.5">
-                    {currentServings}
-                  </span>
+              {/* Servings Counter & Shopping List Toggle */}
+              <div className="flex flex-col sm:flex-row md:flex-col items-stretch gap-3 shrink-0 self-center md:self-start w-full sm:w-auto md:w-auto">
+                <div className="bg-surface-container rounded-full p-2 flex items-center justify-between gap-4 shadow-inner border border-white/5 shrink-0 h-14">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary hover:bg-primary/10 active:scale-90 transition-all shrink-0"
+                    onClick={() => updateServings(-1)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <div className="flex flex-col items-center min-w-[48px]">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t("servings")}</span>
+                    <span className="font-heading text-xl font-bold text-primary leading-none mt-0.5">
+                      {currentServings}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary hover:bg-primary/10 active:scale-90 transition-all shrink-0"
+                    onClick={() => updateServings(1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
+
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary hover:bg-primary/10 active:scale-90 transition-all shrink-0"
-                  onClick={() => updateServings(1)}
+                  onClick={handleToggleShoppingList}
+                  variant={isSelectedInShopping ? "secondary" : "default"}
+                  className="rounded-full w-full flex items-center justify-center gap-2 h-14 px-6 active:scale-95 transition-transform"
                 >
-                  <Plus className="h-4 w-4" />
+                  <ShoppingCart className="w-5 h-5" />
+                  <span>
+                    {isSelectedInShopping ? tShopping("inShoppingList") : tShopping("addToShopping")}
+                  </span>
                 </Button>
               </div>
             </div>

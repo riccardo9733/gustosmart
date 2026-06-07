@@ -170,5 +170,25 @@
     "ingredientPlaceholder": "Ingredient",
     "stepPlaceholder": "Describe step {count}",
     "personalChangesInfo": "* Changes are personal and do not alter the shared global recipe."
+  },
+  "Shopping": {
+    "title": "Smart Shopping",
+    "description": "{count} items remaining",
+    "reset": "Reset",
+    "empty": "Empty",
+    "completed": "Completed",
+    "addCustomPlaceholder": "Add custom item...",
+    "addBtn": "Add",
+    "noItems": "No items to buy. Select recipes above or add a manual item!",
+    "recipesCollapsible": "Recipes to cook ({count})",
+    "servings": "servings",
+    "manualItem": "Manual item",
+    "unifiedFrom": "Unified from: {recipes}",
+    "addToShopping": "Add to shopping list",
+    "removeFromShopping": "Remove from shopping list",
+    "inShoppingList": "In shopping list",
+    "addToShoppingSuccess": "Recipe added to shopping list!",
+    "removeFromShoppingSuccess": "Recipe removed from shopping list!",
+    "searchRecipesPlaceholder": "Search recipes..."
   }
 }
