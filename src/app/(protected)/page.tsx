@@ -102,15 +102,24 @@ export default function Home() {
         return;
       }
 
-      // Controlla la disponibilità dei token prima dell'ingest (se la ricetta non esiste già)
-      const tokens = profile?.tokens ?? 10;
-      if (tokens <= 0) {
-        cleanup();
-        toast.error(t("noTokensErrorTitle"), {
-          id: toastId,
-          description: t("noTokensErrorDesc"),
-        });
-        return;
+      // Controlla la disponibilità dei token prima dell'ingest (se la ricetta non esiste già e non è web)
+      let detectedPlatform = "web";
+      try {
+        detectedPlatform = identifyPlatform(targetUrl);
+      } catch (e) {
+        console.error("Errore identificazione piattaforma:", e);
+      }
+
+      if (detectedPlatform !== "web") {
+        const tokens = profile?.tokens ?? 10;
+        if (tokens <= 0) {
+          cleanup();
+          toast.error(t("noTokensErrorTitle"), {
+            id: toastId,
+            description: t("noTokensErrorDesc"),
+          });
+          return;
+        }
       }
 
       // 1. Invia il trigger al backend (solo se la ricetta non esiste già)
@@ -207,12 +216,14 @@ export default function Home() {
               const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
               await addFn(user.uid, recipeId);
 
-              // Detrai 1 token all'utente per aver scansionato una nuova ricetta
-              const userRef = doc(db, "users", user.uid);
-              await updateDoc(userRef, {
-                tokens: increment(-1),
-                updatedAt: new Date().toISOString(),
-              });
+              // Detrai 1 token all'utente per aver scansionato una nuova ricetta (solo se non è web)
+              if (detectedPlatform !== "web") {
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, {
+                  tokens: increment(-1),
+                  updatedAt: new Date().toISOString(),
+                });
+              }
             } catch (dbErr: any) {
               console.error("Errore salvataggio dati ricetta su Firestore:", dbErr);
               cleanup();

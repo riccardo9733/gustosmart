@@ -191,6 +191,8 @@
     "personalChangesInfo": "* Le modifiche sono personali e non alterano la ricetta globale condivisa.",
     "creatorCreditTitle": "Attribuzione dell'Autore",
     "creatorCreditDisclaimer": "Questa ricetta è stata scansionata e ottimizzata automaticamente a partire da un video pubblico condiviso da {creator}. Tutti i diritti d'autore e di proprietà intellettuale relativi al contenuto originale appartengono al rispettivo proprietario. GustoSmart riproduce questi dati esclusivamente per scopi di organizzazione personale e uso culinario dell'utente, senza rivendicarne alcun diritto.",
+    "webCreatorCreditDisclaimer": "Questa ricetta è stata scansionata e ottimizzata automaticamente a partire da una pagina web pubblicata da {creator}. Tutti i diritti d'autore e di proprietà intellettuale relativi al contenuto originale appartengono al rispettivo proprietario. GustoSmart riproduce questi dati esclusivamente per scopi di organizzazione personale e uso culinario dell'utente, senza rivendicarne alcun diritto.",
+    "visitWebsite": "Visita il Sito",
     "viewOriginalProfile": "Profilo del Creator",
     "viewOriginalPost": "Reel Originale"
   },

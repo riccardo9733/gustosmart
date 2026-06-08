@@ -191,6 +191,8 @@
     "personalChangesInfo": "* Changes are personal and do not alter the shared global recipe.",
     "creatorCreditTitle": "Creator Attribution",
     "creatorCreditDisclaimer": "This recipe was automatically scanned and optimized from a public video shared by {creator}. All copyrights and intellectual property rights relating to the original content belong to the respective owner. GustoSmart reproduces this data solely for the user's personal culinary organization and use, without claiming any rights over it.",
+    "webCreatorCreditDisclaimer": "This recipe was automatically scanned and optimized from a web page published by {creator}. All copyrights and intellectual property rights relating to the original content belong to the respective owner. GustoSmart reproduces this data solely for the user's personal culinary organization and use, without claiming any rights over it.",
+    "visitWebsite": "Visit Website",
     "viewOriginalProfile": "Creator Profile",
     "viewOriginalPost": "Original Reel"
   },

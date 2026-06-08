@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { identifyPlatform } from "@/lib/scraping/detector";
-import { startInstagramScraper, startTikTokScraper } from "@/lib/scraping/apify";
 import { getFirebaseDb } from "@/lib/firebase";
 import { collection, doc } from "firebase/firestore";
 
@@ -23,6 +22,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verifica la chiave API ScrapeCreators all'avvio
+    const apiKey = process.env.SCRAPECREATORS_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { success: false, error: "Servizio di scraping non configurato: manca SCRAPECREATORS_API_KEY in .env.local" },
+        { status: 500 }
+      );
+    }
+
     // 1. Identifica la piattaforma
     let platform: string;
     try {
@@ -34,12 +42,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Supportiamo Instagram Reel e TikTok
-    if (platform !== "instagram" && platform !== "tiktok") {
+    // Supportiamo Instagram Reel, TikTok e Pagine Web di ricette
+    if (platform !== "instagram" && platform !== "tiktok" && platform !== "web") {
       return NextResponse.json(
         {
           success: false,
-          error: "Al momento supportiamo solo l'importazione da Instagram Reel e TikTok.",
+          error: "Al momento supportiamo solo l'importazione da Instagram Reel, TikTok e siti web di ricette.",
         },
         { status: 400 }
       );
@@ -54,14 +62,11 @@ export async function POST(request: Request) {
     const newRecipeRef = doc(collection(db, "recipes"));
     const recipeId = newRecipeRef.id;
 
-    // 3. Avvia Apify in modo asincrono
-    console.log(`Avvio scraping Apify (${platform}) per URL: ${url} per utente: ${userId}`);
-    const { runId, datasetId } = platform === "instagram"
-      ? await startInstagramScraper(url)
-      : await startTikTokScraper(url);
-    console.log(`Scraping Apify avviato con successo. Run ID: ${runId}, Dataset ID: ${datasetId}`);
+    console.log(`Inizializzazione sessione scraping ScrapeCreators (${platform}) per URL: ${url} per utente: ${userId}`);
+    const runId = recipeId;
+    const datasetId = recipeId;
 
-    // 4. Risponde immediatamente al client
+    // 4. Risponde immediatamente al client per avviare il polling
     return NextResponse.json(
       {
         success: true,
@@ -69,7 +74,7 @@ export async function POST(request: Request) {
         runId,
         datasetId,
         recipeId,
-        message: "Scraping avviato con successo",
+        message: "Scraping inizializzato con successo",
       },
       { status: 202 }
     );

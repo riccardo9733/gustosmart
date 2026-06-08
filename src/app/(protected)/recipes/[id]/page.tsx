@@ -22,7 +22,8 @@ import {
   ShoppingCart,
   ExternalLink,
   Flame,
-  Loader2
+  Loader2,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -382,7 +383,7 @@ export default function RecipeDetailPage() {
 
   const platform = recipe.sourcePlatform?.toLowerCase() || "instagram";
   let bgClass = "bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 text-white shadow-pink-500/10";
-  let SocialIcon = InstagramIcon;
+  let SocialIcon: React.ComponentType<{ className?: string }> = InstagramIcon;
   let profileUrl = recipe.creatorUsername ? `https://www.instagram.com/${recipe.creatorUsername}` : "#";
 
   if (platform === "tiktok") {
@@ -393,6 +394,10 @@ export default function RecipeDetailPage() {
     bgClass = "bg-red-600 text-white shadow-red-600/10";
     SocialIcon = YouTubeIcon;
     profileUrl = recipe.creatorUsername ? `https://www.youtube.com/@${recipe.creatorUsername}` : "#";
+  } else if (platform === "web") {
+    bgClass = "bg-teal-600 text-white shadow-teal-600/10";
+    SocialIcon = Globe;
+    profileUrl = recipe.sourceUrl || "#";
   }
 
   return (
@@ -697,7 +702,7 @@ export default function RecipeDetailPage() {
         </div>
 
         {/* Creator Attribution Section */}
-        {recipe.creatorUsername && (
+        {(recipe.creatorUsername || (platform === "web" && recipe.creatorFullName)) && (
           <div className="glass-panel rounded-[24px] p-6 mt-8 border border-primary/10 bg-primary/5 dark:bg-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl shadow-primary/5 animate-in fade-in duration-300">
             <div className="flex-1 flex gap-4 items-start">
               <div className={`p-2.5 rounded-2xl ${bgClass} shrink-0`}>
@@ -709,43 +714,71 @@ export default function RecipeDetailPage() {
                 </h4>
                 <div className="text-xs font-semibold text-primary flex items-center gap-1.5 mb-1.5">
                   <span className="font-bold">{recipe.creatorFullName || recipe.creatorUsername}</span>
-                  <a
-                    href={profileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline flex items-center gap-0.5 text-muted-foreground"
-                  >
-                    @{recipe.creatorUsername}
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                  {platform !== "web" ? (
+                    <a
+                      href={profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline flex items-center gap-0.5 text-muted-foreground"
+                    >
+                      @{recipe.creatorUsername}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <a
+                      href={profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline flex items-center gap-0.5 text-muted-foreground"
+                    >
+                      {recipe.creatorFullName}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  {t("creatorCreditDisclaimer", { creator: recipe.creatorFullName || `@${recipe.creatorUsername}` })}
+                  {platform === "web"
+                    ? t("webCreatorCreditDisclaimer", { creator: recipe.creatorFullName || "" })
+                    : t("creatorCreditDisclaimer", { creator: recipe.creatorFullName || `@${recipe.creatorUsername}` })}
                 </p>
               </div>
             </div>
             <div className="flex flex-row md:flex-col gap-3 shrink-0 w-full md:w-auto">
-              <Button
-                variant="outline"
-                className="rounded-full flex-1 md:flex-initial flex items-center gap-2 hover:bg-primary/5 hover:text-primary transition-all text-xs font-bold"
-                onClick={() => window.open(profileUrl, "_blank")}
-              >
-                <SocialIcon className="w-4 h-4 text-primary" />
-                {t("viewOriginalProfile")}
-              </Button>
-              {recipe.sourceUrl && (
+              {platform === "web" ? (
                 <Button
                   variant="outline"
                   className="rounded-full flex-1 md:flex-initial flex items-center gap-2 hover:bg-primary/5 hover:text-primary transition-all text-xs font-bold"
-                  onClick={() => window.open(recipe.sourceUrl, "_blank")}
+                  onClick={() => window.open(profileUrl, "_blank")}
                 >
-                  <ExternalLink className="w-4 h-4 text-primary" />
-                  {t("originalSource")}
+                  <Globe className="w-4 h-4 text-primary" />
+                  {t("visitWebsite")}
                 </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    className="rounded-full flex-1 md:flex-initial flex items-center gap-2 hover:bg-primary/5 hover:text-primary transition-all text-xs font-bold"
+                    onClick={() => window.open(profileUrl, "_blank")}
+                  >
+                    <SocialIcon className="w-4 h-4 text-primary" />
+                    {t("viewOriginalProfile")}
+                  </Button>
+                  {recipe.sourceUrl && (
+                    <Button
+                      variant="outline"
+                      className="rounded-full flex-1 md:flex-initial flex items-center gap-2 hover:bg-primary/5 hover:text-primary transition-all text-xs font-bold"
+                      onClick={() => window.open(recipe.sourceUrl, "_blank")}
+                    >
+                      <ExternalLink className="w-4 h-4 text-primary" />
+                      {t("originalSource")}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
         )}
+
       </main>
 
 
