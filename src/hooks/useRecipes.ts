@@ -13,7 +13,10 @@ import {
   mergeRecipe,
   type MergedRecipe,
   type Ingredient,
+  type GlobalRecipe,
 } from "@/lib/firestore/recipes";
+import { collection, query, orderBy, getDocs, doc, getDoc } from "firebase/firestore";
+import { getFirebaseDb } from "@/lib/firebase";
 
 // ---------------------------------------------------------------------------
 // Query Keys
@@ -177,5 +180,42 @@ export function useSaveRecipeCustomizations(recipeId: string) {
         });
       }
     },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// useGlobalRecipes — lista di tutte le ricette nel catalogo globale
+// ---------------------------------------------------------------------------
+export function useGlobalRecipes() {
+  return useQuery<GlobalRecipe[]>({
+    queryKey: ["global-recipes"],
+    queryFn: async () => {
+      const db = getFirebaseDb();
+      const q = query(collection(db, "recipes"), orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() } as GlobalRecipe));
+    },
+    staleTime: 2 * 60 * 1000, // 2 minuti
+  });
+}
+
+// ---------------------------------------------------------------------------
+// useUserProfile — recupera il profilo utente (displayName, photoURL) da ID
+// ---------------------------------------------------------------------------
+export function useUserProfile(uid: string) {
+  return useQuery({
+    queryKey: ["user-profile", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const db = getFirebaseDb();
+      const snap = await getDoc(doc(db, "users", uid));
+      if (!snap.exists()) return null;
+      const data = snap.data();
+      return {
+        displayName: data.displayName || "Chef Gusto",
+        photoURL: data.photoURL || null,
+      };
+    },
+    staleTime: 24 * 60 * 60 * 1000, // cache 24 ore
   });
 }

@@ -71,7 +71,15 @@
     "importFailed": "Errore di importazione",
     "importFailedDesc": "Impossibile completare lo scraping. Riprova più tardi.",
     "noTokensErrorTitle": "Token esauriti",
-    "noTokensErrorDesc": "Hai esaurito i token! La ricetta che hai cercato di importare non fa ancora parte del catalogo e serve ricaricare i token."
+    "noTokensErrorDesc": "Hai esaurito i token! La ricetta che hai cercato di importare non fa ancora parte del catalogo e serve ricaricare i token.",
+    "feedTitle": "Cosa si cucina oggi?",
+    "feedSubtitle": "Scopri le ricette scansionate dagli altri utenti della community",
+    "feedSearchPlaceholder": "Cerca ricette o ingredienti...",
+    "scannedBy": "Ha scansionato questa ricetta",
+    "drawerTitle": "Importa una Ricetta",
+    "drawerDesc": "Incolla il link di un Reel di Instagram, un video TikTok o una ricetta web per scansionarla e aggiungerla al catalogo.",
+    "saveSuccess": "Ricetta salvata nel ricettario!",
+    "removeSuccess": "Ricetta rimossa dal ricettario!"
   },
   "Profile": {
     "title": "Profilo",

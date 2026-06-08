@@ -1,427 +1,477 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { doc, onSnapshot, serverTimestamp, setDoc, updateDoc, increment } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
-import { useRecipes, useAddToUserRecipes } from "@/hooks/useRecipes";
-import { useAppSelector } from "@/store/hooks";
-import { selectUserProfile } from "@/store/userSlice";
-import { identifyPlatform } from "@/lib/scraping/detector";
 import {
-  Sparkles,
+  useGlobalRecipes,
+  useRecipes,
+  useUserProfile,
+  useAddToUserRecipes,
+  useRemoveFromUserRecipes,
+} from "@/hooks/useRecipes";
+import {
+  Search,
+  Clock,
+  Flame,
+  Users,
   Film,
   Video,
   Link as LinkIcon,
-  Clock,
-  ArrowRight,
   ChefHat,
-  Loader2
+  Bookmark,
+  BookmarkCheck,
+  ArrowUpRight,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import type { GlobalRecipe } from "@/lib/firestore/recipes";
 
-export default function Home() {
-  const [videoUrl, setVideoUrl] = useState("");
-  const [isImporting, setIsImporting] = useState(false);
-  const [activeCleanup, setActiveCleanup] = useState<(() => void) | null>(null);
+// sub-component to fetch and render the user who scanned/imported the recipe
+function ScannerHeader({ userId }: { userId: string }) {
+  const { data: profile, isLoading } = useUserProfile(userId);
+  const t = useTranslations("Home");
 
-  const { user } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-9 w-9 rounded-full bg-muted/20 animate-pulse" />
+        <div className="flex flex-col gap-1.5">
+          <Skeleton className="h-3 w-24 bg-muted/20 animate-pulse" />
+          <Skeleton className="h-2.5 w-16 bg-muted/20 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  const name = profile?.displayName || "Chef Gusto";
+  const photo = profile?.photoURL;
+  const initials = name
+    .split(" ")
+    .map((n: string) => n[0] || "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="flex items-center gap-3">
+      {photo ? (
+        <img
+          src={photo}
+          alt={name}
+          className="h-9 w-9 rounded-full object-cover border border-white/10 shadow-sm"
+        />
+      ) : (
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs shadow-sm">
+          {initials || "CG"}
+        </div>
+      )}
+      <div className="flex flex-col text-left">
+        <span className="text-xs font-semibold text-foreground leading-tight">{name}</span>
+        <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
+          {t("scannedBy") || "Ha scansionato questa ricetta"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+interface FeedCardProps {
+  recipe: GlobalRecipe;
+  isSaved: boolean;
+  onToggleSave: () => void;
+  onViewDetails: () => void;
+  tRecipes: any;
+  tDetails: any;
+}
+
+function FeedCard({
+  recipe,
+  isSaved,
+  onToggleSave,
+  onViewDetails,
+  tRecipes,
+  tDetails,
+}: FeedCardProps) {
+  const [showSplash, setShowSplash] = useState(false);
+  const imageSrc = recipe.imageUrl
+    ? `/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`
+    : null;
+
+  const handleDoubleClick = () => {
+    if (!isSaved) {
+      onToggleSave();
+      setShowSplash(true);
+      setTimeout(() => setShowSplash(false), 800);
+    }
+  };
+
+  const isSocial =
+    recipe.sourcePlatform === "instagram" ||
+    recipe.sourcePlatform === "tiktok" ||
+    !recipe.sourceUrl?.includes(".");
+
+  return (
+    <Card className="w-full max-w-md mx-auto overflow-hidden rounded-[24px] border border-white/10 dark:border-white/5 bg-surface-container/30 shadow-xl shadow-primary/2 flex flex-col">
+      {/* Card Header */}
+      <div className="flex items-center justify-between p-4 border-b border-white/5 bg-background/20 backdrop-blur-sm">
+        <ScannerHeader userId={recipe.createdBy} />
+
+        {/* Source badge */}
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 dark:bg-black/10 border border-white/10 text-[10px] font-semibold text-muted-foreground shadow-sm">
+          {recipe.sourcePlatform === "instagram" ? (
+            <Film className="h-3 w-3 text-pink-500 fill-pink-500/20" />
+          ) : recipe.sourcePlatform === "tiktok" ? (
+            <Video className="h-3 w-3 text-teal-400" />
+          ) : (
+            <LinkIcon className="h-3 w-3 text-primary" />
+          )}
+          <span className="capitalize">{recipe.sourcePlatform || "Web"}</span>
+        </div>
+      </div>
+
+      {/* Card Image with Double Click Save */}
+      <div
+        className="relative w-full aspect-square bg-muted/10 overflow-hidden cursor-pointer select-none"
+        onDoubleClick={handleDoubleClick}
+      >
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            alt={recipe.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/5 to-primary/10 flex flex-col items-center justify-center text-primary/20">
+            <ChefHat className="w-20 h-20 stroke-[1.2]" />
+          </div>
+        )}
+
+        {/* Double click animated splash */}
+        {showSplash && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25 animate-in fade-in-0 duration-200">
+            <div className="p-5 rounded-full bg-white/90 dark:bg-black/80 shadow-2xl scale-0 animate-bounce">
+              <BookmarkCheck className="h-12 w-12 text-primary" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Action Bar */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/10">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleSave}
+          className={cn(
+            "h-10 w-10 rounded-full transition-all active:scale-90",
+            isSaved
+              ? "text-primary hover:text-primary/80 hover:bg-primary/5"
+              : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+          )}
+        >
+          {isSaved ? (
+            <BookmarkCheck className="h-6 w-6 fill-primary" />
+          ) : (
+            <Bookmark className="h-6 w-6" />
+          )}
+        </Button>
+
+        <Button
+          onClick={onViewDetails}
+          variant="outline"
+          size="sm"
+          className="border-primary/20 text-primary hover:bg-primary/5 rounded-full font-semibold px-4 flex items-center gap-1 group transition-all"
+        >
+          {tDetails("view") || "Visualizza"}
+          <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+        </Button>
+      </div>
+
+      {/* Recipe Info */}
+      <div className="p-4 flex flex-col gap-3">
+        <h4
+          onClick={onViewDetails}
+          className="font-heading text-lg font-bold text-foreground leading-snug cursor-pointer hover:text-primary transition-colors text-left"
+        >
+          {recipe.title}
+        </h4>
+
+        {/* Tags Row */}
+        <div className="flex flex-wrap gap-2 items-center text-xs font-medium">
+          {recipe.prepTimeMinutes && (
+            <span className="flex items-center gap-1.5 bg-muted/10 border border-white/5 px-2.5 py-1 rounded-full text-muted-foreground">
+              <Clock className="h-3.5 w-3.5 text-primary" />
+              {tRecipes("minCount", { count: recipe.prepTimeMinutes })}
+            </span>
+          )}
+          <span className="flex items-center gap-1.5 bg-muted/10 border border-white/5 px-2.5 py-1 rounded-full text-muted-foreground">
+            <Users className="h-3.5 w-3.5 text-primary" />
+            {tRecipes("servingsCount", { count: recipe.servings || 2 })}
+          </span>
+          {recipe.kcal && (
+            <span className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full text-primary">
+              <Flame className="h-3.5 w-3.5 fill-primary/20" />
+              {tDetails("kcalCount", { count: recipe.kcal })}
+            </span>
+          )}
+        </div>
+
+        {/* Footer counts summary */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 border-t border-white/5 pt-3">
+          <span>{tRecipes("ingredients", { count: recipe.ingredients?.length || 0 })}</span>
+          <span className="size-1 rounded-full bg-muted-foreground/30" />
+          <span>{tRecipes("instructions", { count: recipe.instructions?.length || 0 })}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+export default function HomeFeed() {
   const router = useRouter();
-  const profile = useAppSelector(selectUserProfile);
+  const { user } = useAuth();
   
   const t = useTranslations("Home");
   const tRecipes = useTranslations("Recipes");
+  const tDetails = useTranslations("Details");
 
-  // TanStack Query: condivide la stessa cache con /recipes page → zero letture extra
-  const { data: recipes = [], isLoading: recipesLoading } = useRecipes();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedSource, setSelectedSource] = useState("all");
 
-  // Mutation per aggiungere una ricetta già esistente al ricettario
-  const { mutateAsync: addToUserRecipes } = useAddToUserRecipes();
+  // Fetch all global recipes
+  const { data: globalRecipes = [], isLoading: globalLoading } = useGlobalRecipes();
 
-  // Cleanup listener on unmount
-  useEffect(() => {
-    return () => {
-      if (activeCleanup) activeCleanup();
-    };
-  }, [activeCleanup]);
+  // Fetch user's saved recipes to determine bookmark state
+  const { data: userRecipes = [], isLoading: userLoading } = useRecipes();
 
-  const handleImport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!videoUrl) return;
+  // Mutations
+  const { mutateAsync: saveRecipe } = useAddToUserRecipes();
+  const { mutateAsync: unsaveRecipe } = useRemoveFromUserRecipes();
+
+  const CATEGORIES = [
+    { key: "all", label: tRecipes("all") },
+    { key: "first_courses", label: tRecipes("primi") },
+    { key: "second_courses", label: tRecipes("secondi") },
+    { key: "desserts", label: tRecipes("dolci") },
+    { key: "appetizers", label: tRecipes("antipasti") },
+    { key: "sides", label: tRecipes("contorni") },
+    { key: "single_dishes", label: tRecipes("singleDishes") },
+    { key: "other", label: tRecipes("other") },
+  ];
+
+  const handleToggleSave = async (recipe: GlobalRecipe, isSaved: boolean) => {
     if (!user) {
-      toast.error("Utente non autenticato.");
+      toast.error("Effettua l'accesso per salvare le ricette.");
       return;
     }
-
-    setIsImporting(true);
-    const targetUrl = videoUrl;
-    setVideoUrl("");
-
-    const toastId = toast.loading(t("importing"), {
-      description: t("importingDesc"),
-      duration: Infinity,
-    });
-
-    let pollingIntervalId: NodeJS.Timeout | null = null;
-    let unsubscribeFirestore: (() => void) | null = null;
-
-    const cleanup = () => {
-      if (pollingIntervalId) clearInterval(pollingIntervalId);
-      if (unsubscribeFirestore) unsubscribeFirestore();
-      setIsImporting(false);
-      setActiveCleanup(null);
-    };
-
-    setActiveCleanup(() => cleanup);
-
+    const toastId = toast.loading(isSaved ? "Rimozione..." : "Salvataggio...");
     try {
-      // 0. Check client-side: esiste già una ricetta globale con questo URL?
-      const { checkRecipeExistsByUrl } = await import("@/lib/firestore/recipes");
-      const existingRecipeId = await checkRecipeExistsByUrl(targetUrl);
-
-      if (existingRecipeId) {
-        // Ricetta già nel catalogo globale → aggiungila direttamente al ricettario
-        await addToUserRecipes(existingRecipeId);
-        cleanup();
-        toast.success(t("recipeExists"), {
-          id: toastId,
-          description: t("recipeExistsDesc"),
-          duration: 6000,
-          action: {
-            label: t("view"),
-            onClick: () => router.push(`/recipes/${existingRecipeId}`),
-          },
-        });
-        return;
+      if (isSaved) {
+        await unsaveRecipe(recipe.id);
+        toast.success(t("removeSuccess") || "Ricetta rimossa dal ricettario!", { id: toastId });
+      } else {
+        await saveRecipe(recipe.id);
+        toast.success(t("saveSuccess") || "Ricetta salvata nel ricettario!", { id: toastId });
       }
-
-      // Controlla la disponibilità dei token prima dell'ingest (se la ricetta non esiste già e non è web)
-      let detectedPlatform = "web";
-      try {
-        detectedPlatform = identifyPlatform(targetUrl);
-      } catch (e) {
-        console.error("Errore identificazione piattaforma:", e);
-      }
-
-      if (detectedPlatform !== "web") {
-        const tokens = profile?.tokens ?? 10;
-        if (tokens <= 0) {
-          cleanup();
-          toast.error(t("noTokensErrorTitle"), {
-            id: toastId,
-            description: t("noTokensErrorDesc"),
-          });
-          return;
-        }
-      }
-
-      // 1. Invia il trigger al backend (solo se la ricetta non esiste già)
-      const response = await fetch("/api/ingest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl, userId: user.uid }),
-      });
-
-      if (!response.ok) {
-        const errJson = await response.json();
-        throw new Error(errJson.error || "Impossibile avviare l'importazione.");
-      }
-
-      const json = await response.json();
-
-      // Nuova ricetta: avvia polling Apify e ascolta Firestore per il completamento
-      const { runId, datasetId, recipeId } = json;
-
-      // Listener one-shot su /users/{uid}/recipes/{recipeId}
-      const db = getFirebaseDb();
-      unsubscribeFirestore = onSnapshot(doc(db, "users", user.uid, "recipes", recipeId), (docSnap) => {
-        if (docSnap.exists()) {
-          cleanup();
-          toast.success(t("importedSuccess"), {
-            id: toastId,
-            description: t("importedSuccessDesc"),
-            duration: 8000,
-            action: {
-              label: t("view"),
-              onClick: () => router.push(`/recipes/${recipeId}`),
-            },
-          });
-        }
-      });
-
-      // 3. Polling per far progredire lo scraping Apify
-      pollingIntervalId = setInterval(async () => {
-        try {
-          const statusRes = await fetch(
-            `/api/ingest/status?runId=${runId}&datasetId=${datasetId}&recipeId=${recipeId}&userId=${user.uid}&sourceUrl=${encodeURIComponent(targetUrl)}`
-          );
-          if (!statusRes.ok) return;
-
-          const statusJson = await statusRes.json();
-          if (statusJson.status === "failed") {
-            cleanup();
-            toast.error(t("importFailed"), {
-              id: toastId,
-              description: statusJson.error || t("importFailedDesc"),
-            });
-            return;
-          }
-
-          if (statusJson.status === "succeeded") {
-            // Ferma subito il polling per evitare chiamate concorrenti/multiple
-            if (pollingIntervalId) {
-              clearInterval(pollingIntervalId);
-            }
-
-            try {
-              // Salva la ricetta globale in /recipes/{recipeId} (senza userId)
-              let detectedPlatform = "web";
-              try {
-                detectedPlatform = identifyPlatform(targetUrl);
-              } catch (e) {
-                console.error("Errore identificazione piattaforma:", e);
-              }
-
-              const recipeDoc = {
-                sourceUrl: targetUrl,
-                sourcePlatform: detectedPlatform,
-                title: statusJson.recipe.title,
-                sourceLanguage: statusJson.recipe.sourceLanguage || "it",
-                servings: statusJson.recipe.servings,
-                ingredients: statusJson.recipe.ingredients,
-                instructions: statusJson.recipe.instructions,
-                imageUrl: statusJson.recipe.imageUrl || null,
-                prepTimeMinutes: statusJson.recipe.prepTimeMinutes,
-                category: statusJson.recipe.category || "other",
-                kcal: statusJson.recipe.kcal !== undefined && statusJson.recipe.kcal !== null
-                  ? statusJson.recipe.kcal
-                  : null,
-                createdAt: serverTimestamp(),
-                createdBy: user.uid,
-                creatorUsername: statusJson.recipe.creatorUsername || null,
-                creatorFullName: statusJson.recipe.creatorFullName || null,
-                creatorId: statusJson.recipe.creatorId || null,
-              };
-
-              await setDoc(doc(db, "recipes", recipeId), recipeDoc);
-
-              // Crea il documento personale in /users/{uid}/recipes/{recipeId}
-              const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
-              await addFn(user.uid, recipeId);
-
-              // Detrai 1 token all'utente per aver scansionato una nuova ricetta (solo se non è web)
-              if (detectedPlatform !== "web") {
-                const userRef = doc(db, "users", user.uid);
-                await updateDoc(userRef, {
-                  tokens: increment(-1),
-                  updatedAt: new Date().toISOString(),
-                });
-              }
-            } catch (dbErr: any) {
-              console.error("Errore salvataggio dati ricetta su Firestore:", dbErr);
-              cleanup();
-              toast.error(t("importFailed"), {
-                id: toastId,
-                description: dbErr.message || t("importFailedDesc"),
-              });
-            }
-          }
-        } catch (pollErr) {
-          console.error("Errore nel polling dello stato:", pollErr);
-        }
-      }, 4000);
-
-    } catch (error: any) {
-      console.error("Errore durante il flusso di importazione:", error);
-      cleanup();
-      toast.error(t("importFailed"), {
-        id: toastId,
-        description: error.message || t("importFailedDesc"),
-      });
+    } catch (e) {
+      console.error(e);
+      toast.error("Errore durante l'operazione.", { id: toastId });
     }
   };
 
-  const setPlatformUrl = (platform: string) => {
-    if (platform === "instagram") {
-      setVideoUrl("https://www.instagram.com/reel/example");
-    } else if (platform === "tiktok") {
-      setVideoUrl("https://www.tiktok.com/@example/video/12345");
-    } else {
-      setVideoUrl("https://giallozafferano.it/ricette/example");
-    }
+  const resetFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setSelectedSource("all");
   };
 
-  // Mostra solo le ultime 10 ricette nella home
-  const recentRecipes = recipes.slice(0, 10);
+  // Client-side filtering
+  const filteredRecipes = globalRecipes.filter((recipe) => {
+    const matchesSearch =
+      searchQuery.trim() === "" ||
+      recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      recipe.ingredients?.some((ing) =>
+        ing.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+    const matchesCategory =
+      selectedCategory === "all" || recipe.category === selectedCategory;
+
+    let matchesSource = true;
+    if (selectedSource === "social") {
+      matchesSource =
+        recipe.sourcePlatform === "instagram" ||
+        recipe.sourcePlatform === "tiktok" ||
+        !recipe.sourceUrl?.includes(".");
+    } else if (selectedSource === "web") {
+      matchesSource =
+        recipe.sourcePlatform === "web" ||
+        !!(recipe.sourceUrl &&
+          !recipe.sourceUrl.includes("instagram.com") &&
+          !recipe.sourceUrl.includes("tiktok.com"));
+    }
+
+    return matchesSearch && matchesCategory && matchesSource;
+  });
+
+  const loading = globalLoading || userLoading;
 
   return (
-    <div className="flex flex-col gap-10 animate-in fade-in duration-500">
-      {/* Hero Section */}
-      <section className="flex flex-col items-center text-center">
-        <h2 className="font-heading text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:max-w-2xl">
-          {t.rich("title", {
-            highlight: (chunks) => <span className="text-primary">{chunks}</span>
-          })}
+    <div className="flex flex-col gap-8 animate-in fade-in duration-500 relative max-w-xl mx-auto pb-16">
+      {/* Header Info */}
+      <section className="flex flex-col gap-2 text-center items-center mt-2">
+        <h2 className="font-heading text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2 justify-center">
+          <Sparkles className="h-7 w-7 text-primary fill-primary/15" />
+          <span>{t("feedTitle") || "Cosa si cucina oggi?"}</span>
         </h2>
+        <p className="text-sm text-muted-foreground">
+          {t("feedSubtitle") || "Scopri le ricette scansionate dagli altri utenti della community"}
+        </p>
+      </section>
 
-        {/* URL Import Input */}
-        <form onSubmit={handleImport} className="relative group w-full max-w-lg mt-8">
-          <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full -z-10 transition-all duration-500 group-focus-within:bg-primary/20"></div>
-          <div className="flex items-center glass-panel rounded-full p-1.5 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all">
-            <Input
-              type="text"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder={t("placeholder")}
-              className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-5 text-sm h-11"
-              disabled={isImporting}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={isImporting}
-              className="bg-primary hover:bg-primary/95 text-white rounded-full h-11 w-11 shadow-lg active:scale-95 transition-all"
-            >
-              {isImporting ? (
-                <Loader2 className="animate-spin" data-icon="inline-start" />
-              ) : (
-                <Sparkles className="fill-white" data-icon="inline-start" />
+      {/* Search and Filters */}
+      <section className="flex flex-col gap-4">
+        {/* Search Input */}
+        <div className="relative w-full group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5 transition-colors group-focus-within:text-primary" />
+          <Input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t("feedSearchPlaceholder") || "Cerca ricette o ingredienti..."}
+            className="w-full pl-12 pr-4 py-6 rounded-2xl bg-surface-container/60 border-0 focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
+          />
+        </div>
+
+        {/* Filters Panel */}
+        <div className="flex flex-col gap-3 py-1">
+          {/* Categories Horizontal Scroller */}
+          <div className="flex overflow-x-auto gap-2 scrollbar-none pb-1 shrink-0">
+            {CATEGORIES.map((cat) => {
+              const isActive = selectedCategory === cat.key;
+              return (
+                <button
+                  key={cat.key}
+                  onClick={() => setSelectedCategory(cat.key)}
+                  className={cn(
+                    "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border border-white/5",
+                    isActive
+                      ? "bg-primary text-white shadow-md shadow-primary/25"
+                      : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
+                  )}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Source Filter Badges */}
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setSelectedSource("all")}
+              className={cn(
+                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all active:scale-95 border border-white/5",
+                selectedSource === "all"
+                  ? "bg-primary text-white shadow-sm shadow-primary/20"
+                  : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
               )}
+            >
+              {tRecipes("allSources")}
+            </button>
+            <button
+              onClick={() => setSelectedSource("social")}
+              className={cn(
+                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-white/5",
+                selectedSource === "social"
+                  ? "bg-primary text-white shadow-sm shadow-primary/20"
+                  : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
+              )}
+            >
+              <Film className="h-3 w-3" />
+              {tRecipes("socialSource")}
+            </button>
+            <button
+              onClick={() => setSelectedSource("web")}
+              className={cn(
+                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-white/5",
+                selectedSource === "web"
+                  ? "bg-primary text-white shadow-sm shadow-primary/20"
+                  : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
+              )}
+            >
+              <LinkIcon className="h-3 w-3" />
+              {tRecipes("webSource")}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Feed List */}
+      <section className="w-full flex flex-col gap-8 mt-2">
+        {loading ? (
+          Array.from({ length: 3 }).map((_, idx) => (
+            <Card key={idx} className="w-full max-w-md mx-auto overflow-hidden rounded-[24px] border border-white/10 bg-muted/10 flex flex-col gap-4 p-4 aspect-[4/5]">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-9 w-9 rounded-full bg-muted/20 animate-pulse" />
+                <Skeleton className="h-4 w-28 bg-muted/20 animate-pulse" />
+              </div>
+              <Skeleton className="flex-1 w-full rounded-xl bg-muted/20 animate-pulse" />
+              <Skeleton className="h-6 w-3/4 bg-muted/20 animate-pulse" />
+            </Card>
+          ))
+        ) : globalRecipes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-700 max-w-md mx-auto">
+            <div className="w-48 h-48 mb-8 rounded-full bg-primary/5 flex items-center justify-center relative shadow-inner">
+              <ChefHat className="w-24 h-24 stroke-[1] text-primary/20 relative z-10" />
+            </div>
+            <h3 className="font-heading text-xl font-bold text-foreground mb-2">
+              {t("noRecipesYet") || "Nessuna ricetta globale"}
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              {t("noRecipesYetDesc") || "Nessuna ricetta è stata scansionata sul server. Usa il tasto '+' in basso per importare la prima!"}
+            </p>
+          </div>
+        ) : filteredRecipes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-500 max-w-sm mx-auto">
+            <ChefHat className="h-16 w-16 text-primary/40 mb-4 stroke-[1.2]" />
+            <h3 className="text-lg font-bold text-foreground mb-2">{tRecipes("noResultsTitle")}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              {tRecipes("noResultsDesc")}
+            </p>
+            <Button
+              onClick={resetFilters}
+              variant="outline"
+              className="border-primary/20 text-primary hover:bg-primary/5 rounded-full px-6"
+            >
+              {tRecipes("clearFilters")}
             </Button>
           </div>
-        </form>
-
-        {/* Suggestion Badges */}
-        <div className="flex flex-wrap justify-center gap-3 mt-6">
-          <button
-            onClick={() => setPlatformUrl("instagram")}
-            className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all"
-          >
-            <Film className="h-4 w-4 text-primary" />
-            {t("instagram")}
-          </button>
-          <button
-            onClick={() => setPlatformUrl("tiktok")}
-            className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all"
-          >
-            <Video className="h-4 w-4 text-primary" />
-            {t("tiktok")}
-          </button>
-          <button
-            onClick={() => setPlatformUrl("web")}
-            className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all"
-          >
-            <LinkIcon className="h-4 w-4 text-primary" />
-            {t("web")}
-          </button>
-        </div>
-      </section>
-
-      {/* Ultimi Arrivi Carousel */}
-      <section className="w-full">
-        <div className="flex justify-between items-end mb-6">
-          <h3 className="font-heading text-xl font-semibold text-foreground">{t("recent")}</h3>
-          <Link href="/recipes" className="text-primary font-semibold text-sm flex items-center gap-1 hover:underline">
-            {t("seeAll")} <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        {/* Carousel Container */}
-        <div className="flex overflow-x-auto gap-6 snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6">
-          {recipesLoading ? (
-            Array.from({ length: 3 }).map((_, idx) => (
-              <Card key={idx} className="min-w-[280px] max-w-[280px] snap-start relative pt-0 border border-white/40 dark:border-white/10 shadow-xl shadow-primary/5 flex flex-col justify-between">
-                <div className="relative w-full aspect-video bg-muted/20 overflow-hidden">
-                  <div className="absolute inset-0 z-30 bg-black/35 pointer-events-none" />
-                  <Skeleton className="relative z-20 aspect-video w-full h-full rounded-none animate-pulse bg-muted brightness-60 grayscale dark:brightness-40" />
-                </div>
-                <CardHeader>
-                  <CardTitle className="min-h-[44px]">
-                    <Skeleton className="h-5 w-5/6 animate-pulse bg-muted mb-1" />
-                    <Skeleton className="h-5 w-2/3 animate-pulse bg-muted" />
-                  </CardTitle>
-                  <CardDescription>
-                    <Skeleton className="h-3 w-1/2 animate-pulse bg-muted" />
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            ))
-          ) : recentRecipes.length === 0 ? (
-            <div className="w-full flex flex-col items-center justify-center text-center p-8 glass-panel rounded-[24px] border border-white/40 dark:border-white/10 shadow-lg max-w-lg mx-auto py-12">
-              <ChefHat className="h-12 w-12 text-primary/60 mb-4" />
-              <h4 className="text-lg font-bold text-foreground mb-2">{t("noRecipesTitle")}</h4>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                {t("noRecipesDesc")}
-              </p>
-            </div>
-          ) : (
-            recentRecipes.map((recipe) => {
-              const tags = [];
-              if (recipe.prepTimeMinutes && recipe.prepTimeMinutes <= 20) {
-                tags.push(tRecipes("fast"));
-              }
-              if (recipe.ingredients && recipe.ingredients.length > 0) {
-                tags.push(tRecipes("ingredients", { count: recipe.ingredients.length }));
-              }
-              if (recipe.sourcePlatform) {
-                tags.push(recipe.sourcePlatform.charAt(0).toUpperCase() + recipe.sourcePlatform.slice(1));
-              }
-
-              const descText = `${tRecipes("ingredients", { count: recipe.ingredients?.length || 0 })} · ${tRecipes("instructions", { count: recipe.instructions?.length || 0 })}`;
-
-              return (
-                <Card
-                  key={recipe.id}
-                  onClick={() => router.push(`/recipes/${recipe.id}`)}
-                  className="min-w-[280px] max-w-[280px] snap-start relative pt-0 border border-white/40 dark:border-white/10 shadow-xl shadow-primary/5 hover:scale-[1.02] transition-transform duration-300 cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="relative w-full aspect-video bg-muted/20 overflow-hidden">
-                    {recipe.imageUrl ? (
-                      <img
-                        src={`/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`}
-                        alt={recipe.title}
-                        className="relative z-20 aspect-video w-full object-cover"
-                      />
-                    ) : (
-                      <div className="relative z-20 w-full h-full flex items-center justify-center text-muted-foreground/30 aspect-video">
-                        <ChefHat className="h-10 w-10 text-primary/20" />
-                      </div>
-                    )}
-                  </div>
-
-                  <CardHeader>
-                    <CardTitle className="font-heading text-base font-bold text-foreground leading-snug line-clamp-2 min-h-[44px] tracking-tight">
-                      {recipe.title}
-                    </CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                      {descText}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              );
-            })
-          )}
-        </div>
-      </section>
-
-      {/* Smart Tip Banner */}
-      <section className="glass-panel rounded-[24px] p-5 flex items-center gap-4 border-l-4 border-l-primary shadow-lg shadow-primary/5">
-        <div className="bg-primary/10 p-3 rounded-2xl">
-          <ChefHat className="h-7 w-7 text-primary" />
-        </div>
-        <div className="flex flex-col">
-          <h4 className="text-sm font-bold text-foreground">{t("smartTip")}</h4>
-          <p className="text-sm text-muted-foreground leading-tight mt-0.5">
-            {t("smartTipDesc")}
-          </p>
-        </div>
+        ) : (
+          filteredRecipes.map((recipe) => {
+            const isSaved = userRecipes.some((ur) => ur.id === recipe.id);
+            return (
+              <FeedCard
+                key={recipe.id}
+                recipe={recipe}
+                isSaved={isSaved}
+                onToggleSave={() => handleToggleSave(recipe, isSaved)}
+                onViewDetails={() => router.push(`/recipes/${recipe.id}`)}
+                tRecipes={tRecipes}
+                tDetails={tDetails}
+              />
+            );
+          })
+        )}
       </section>
     </div>
   );

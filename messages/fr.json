@@ -71,7 +71,15 @@
     "importFailed": "Erreur d'importation",
     "importFailedDesc": "Impossible de terminer l'importation. Veuillez réessayer plus tard.",
     "noTokensErrorTitle": "Tokens épuisés",
-    "noTokensErrorDesc": "Vous n'avez plus de tokens ! La recette que vous essayez d'importer n'est pas encore dans le catalogue. Rechargez vos tokens pour scanner de nouvelles recettes."
+    "noTokensErrorDesc": "Vous n'avez plus de tokens ! La recette que vous essayez d'importer n'est pas encore dans le catalogue. Rechargez vos tokens pour scanner de nouvelles recettes.",
+    "feedTitle": "Qu'est-ce qu'on cuisine aujourd'hui ?",
+    "feedSubtitle": "Découvrez les recettes scannées par les autres utilisateurs de la communauté",
+    "feedSearchPlaceholder": "Rechercher des recettes ou ingrédients...",
+    "scannedBy": "A scanné cette recette",
+    "drawerTitle": "Importer une Recette",
+    "drawerDesc": "Collez le lien d'un Reel Instagram, d'une vidéo TikTok ou d'une recette web pour la scanner et l'ajouter au catalogue.",
+    "saveSuccess": "Recette enregistrée dans votre carnet !",
+    "removeSuccess": "Recette retirée de votre carnet !"
   },
   "Profile": {
     "title": "Profil",

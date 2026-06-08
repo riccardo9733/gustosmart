@@ -71,7 +71,15 @@
     "importFailed": "Import error",
     "importFailedDesc": "Could not complete scraping. Please try again later.",
     "noTokensErrorTitle": "Tokens exhausted",
-    "noTokensErrorDesc": "You have run out of tokens! The recipe you are trying to import is not yet in the catalog. Refill your tokens to scan new recipes."
+    "noTokensErrorDesc": "You have run out of tokens! The recipe you are trying to import is not yet in the catalog. Refill your tokens to scan new recipes.",
+    "feedTitle": "What are we cooking today?",
+    "feedSubtitle": "Discover recipes scanned by other community users",
+    "feedSearchPlaceholder": "Search recipes or ingredients...",
+    "scannedBy": "Scanned this recipe",
+    "drawerTitle": "Import a Recipe",
+    "drawerDesc": "Paste an Instagram Reel, TikTok video, or web recipe link to scan and add it to the catalog.",
+    "saveSuccess": "Recipe saved to your collection!",
+    "removeSuccess": "Recipe removed from your collection!"
   },
   "Profile": {
     "title": "Profile",
