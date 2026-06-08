@@ -194,6 +194,7 @@
     "title": "Smart Shopping",
     "description": "{count} items remaining",
     "reset": "Reset",
+    "resetSuccess": "Shopping list reset!",
     "empty": "Empty",
     "completed": "Completed",
     "addCustomPlaceholder": "Add custom item...",

@@ -194,6 +194,7 @@
     "title": "Liste de Courses Intelligente",
     "description": "{count} articles restants",
     "reset": "Réinitialiser",
+    "resetSuccess": "Liste de courses réinitialisée !",
     "empty": "Vider",
     "completed": "Complétés",
     "addCustomPlaceholder": "Ajouter un article personnalisé...",

@@ -194,6 +194,7 @@
     "title": "Spesa Intelligente",
     "description": "{count} articoli rimanenti",
     "reset": "Reset",
+    "resetSuccess": "Lista della spesa resettata!",
     "empty": "Svuota",
     "completed": "Presi",
     "addCustomPlaceholder": "Aggiungi articolo personalizzato...",

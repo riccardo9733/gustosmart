@@ -194,6 +194,7 @@
     "title": "Compra Inteligente",
     "description": "{count} artículos restantes",
     "reset": "Restablecer",
+    "resetSuccess": "¡Lista de la compra restablecida!",
     "empty": "Vaciar",
     "completed": "Completado",
     "addCustomPlaceholder": "Añadir artículo personalizado...",
