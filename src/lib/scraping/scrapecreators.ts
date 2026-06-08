@@ -5,6 +5,17 @@ export interface ScrapedData {
   creatorUsername: string | null;
   creatorFullName: string | null;
   creatorId: string | null;
+  recipeStructuredData?: {
+    title?: string;
+    ingredients?: string[];
+    instructions?: string[];
+    servings?: string | number;
+    prepTime?: string;
+    cookTime?: string;
+    totalTime?: string;
+    calories?: string;
+    imageUrl?: string;
+  } | null;
 }
 
 /**

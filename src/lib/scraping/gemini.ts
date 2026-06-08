@@ -1,3 +1,5 @@
+import { type ScrapedData } from "./scrapecreators";
+
 /**
  * Utilizza OpenRouter (modello google/gemini-3.1-flash-lite) per estrarre una ricetta strutturata 
  * a partire da caption e trascrizione audio.
@@ -112,6 +114,133 @@ Istruzioni per l'estrazione:
   } catch (err) {
     console.error("Errore di parsing del JSON di OpenRouter. Output grezzo:", responseText);
     throw new Error("Il testo generato dall'IA tramite OpenRouter non è un JSON valido");
+  }
+}
+
+/**
+ * Utilizza OpenRouter (modello google/gemini-3.1-flash-lite) per estrarre una ricetta strutturata 
+ * a partire dai dati di scraping di una pagina web, preferendo i dati strutturati LD+JSON se presenti.
+ */
+export async function generateRecipeFromWeb(scrapedData: ScrapedData): Promise<any> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error("Manca la chiave d'ambiente OPENROUTER_API_KEY");
+  }
+
+  const modelId = "google/gemini-3.1-flash-lite";
+  console.log(`Chiamata a OpenRouter (Web) con modello: ${modelId}`);
+
+  const hasStructuredData = !!scrapedData.recipeStructuredData;
+  
+  let dataInput = "";
+  if (hasStructuredData) {
+    dataInput = `DATI STRUTTURATI ESTRATTI DALLA PAGINA WEB (JSON-LD):
+---
+${JSON.stringify(scrapedData.recipeStructuredData, null, 2)}
+---`;
+  } else {
+    dataInput = `TESTO ESTRATTO DALLA PAGINA WEB (Readability):
+---
+CAPTION/TITOLO:
+${scrapedData.caption || "(Nessun titolo estratto)"}
+
+TESTO COMPLETO DELLA PAGINA:
+${scrapedData.transcript || "(Nessun testo estratto)"}
+---`;
+  }
+
+  const prompt = `
+Sei un assistente culinario esperto e meticoloso. Il tuo compito è formattare e normalizzare le informazioni di una ricetta web in un formato JSON strutturato.
+
+Dati di input:
+${dataInput}
+
+Devi restituire esclusivamente un oggetto JSON che rispetta esattamente il seguente schema:
+{
+  "title": "Il titolo della ricetta (string)",
+  "sourceLanguage": "Il codice lingua ISO a due lettere della ricetta, es. 'it', 'en', 'es', 'fr' (string)",
+  "servings": "Numero di porzioni per cui sono calibrati gli ingredienti (integer, default: 2 se non specificato)",
+  "prepTimeMinutes": "Tempo totale di preparazione e cottura in minuti (integer, nullo o non inserito se non deducibile)",
+  "category": "La categoria della ricetta. Deve essere esattamente una tra: 'first_courses', 'second_courses', 'desserts', 'appetizers', 'sides', 'single_dishes', 'other' (string)",
+  "kcal": "Calorie medie stimate per 100g di ricetta pronta/finita in kcal (integer, null se non calcolabile)",
+  "ingredients": [
+    {
+      "name": "Nome dell'ingrediente, es. Farina 00, Uova (string)",
+      "quantity": "Quantità numerica, es. 150, 3 (number, null se q.b. o a sentimento)",
+      "unit": "Unità di misura, es. 'g', 'ml', oppure stringa vuota '' per ingredienti contabili. Default 'q.b.' se non specificata (string)"
+    }
+  ],
+  "instructions": [
+    "Istruzioni ordinate passo dopo passo, come elementi di questo array di stringhe"
+  ]
+}
+
+REGOLE RIGIDE DI FEDELTÀ (CRITICAL):
+1. NON INVENTARE ingredienti o dosi che non siano esplicitamente indicati nei dati di input.
+2. Se le dosi di un ingrediente non sono specificate o sono a sentimento, imposta "quantity" a null e "unit" a "q.b.". Non provare a indovinare o stimare quantità arbitrarie se l'input non ne parla.
+3. Se i passaggi della ricetta (instructions) non sono specificati o sono del tutto insufficienti, non inventarli da zero. Estrai solo i passaggi realmente descritti.
+4. Identifica la categoria culinaria adatta basandoti sul titolo e gli ingredienti. Deve corrispondere esattamente ad una delle seguenti stringhe:
+   - 'first_courses' (primi piatti come pasta, risotti, zuppe, gnocchi)
+   - 'second_courses' (secondi piatti di carne, pesce, uova o vegetariani strutturati)
+   - 'desserts' (dolci, torte, creme, biscotti)
+   - 'appetizers' (antipasti, stuzzichini)
+   - 'sides' (contorni come patate, verdure d'accompagnamento, insalate)
+   - 'single_dishes' (piatti unici ricchi e nutrizionalmente completi, es. lasagne, parmigiana)
+   - 'other' (se non rientra in nessun'altra categoria)
+5. Stima le calorie (kcal) medie PER 100G DI PRODOTTO FINITO (ricetta pronta) basandoti sul tipo e la quantità degli ingredienti totali. Se è impossibile stimarle o le dosi degli ingredienti chiave sono mancanti, inserisci null.
+6. Converti le unità volumetriche o non empiriche (come 'cucchiai', 'cucchiaini', 'tazze', 'bicchieri', 'manciate', 'pizzichi') nel loro peso equivalente in grammi (g) o volume in millilitri (ml) in base al tipo di ingrediente (es. 1 cucchiaio d'olio -> 10g o 12ml).
+7. Per ingredienti contabili e specifici interi (es. 'uova', 'carota', 'limone'), imposta il numero come 'quantity' (es. 2) e usa come 'unit' una stringa vuota (""). Non usare mai unità generiche come 'pezzo'.
+8. Se non trovi indicazioni sul numero di porzioni, imposta 'servings' a 2 di default.
+9. Rileva la lingua principale del post/sorgente e compila tutti i campi di testo ('title', 'ingredients', 'instructions') direttamente in tale lingua originale. Imposta il relativo codice lingua a due lettere in 'sourceLanguage'.
+10. Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
+`;
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://gustosmart.it",
+      "X-Title": "GustoSmart Ingestion Pipeline"
+    },
+    body: JSON.stringify({
+      model: modelId,
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: {
+        type: "json_object"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Errore risposta OpenRouter (Web):", errorText);
+    throw new Error(`Errore OpenRouter API per ricetta Web: ${response.status} - ${errorText}`);
+  }
+
+  const resJson = await response.json();
+  const responseText = resJson.choices?.[0]?.message?.content;
+
+  if (!responseText) {
+    console.error("Risposta OpenRouter (Web) vuota o non valida:", JSON.stringify(resJson));
+    throw new Error("OpenRouter ha restituito una risposta vuota per la ricetta Web");
+  }
+
+  let cleanText = responseText.trim();
+  if (cleanText.startsWith("```")) {
+    cleanText = cleanText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+  }
+
+  try {
+    return JSON.parse(cleanText);
+  } catch (err) {
+    console.error("Errore di parsing del JSON di OpenRouter (Web). Output grezzo:", responseText);
+    throw new Error("Il testo generato dall'IA per la ricetta Web non è un JSON valido");
   }
 }
 

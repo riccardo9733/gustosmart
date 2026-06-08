@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { scrapeInstagram, scrapeTikTok } from "@/lib/scraping/scrapecreators";
 import { scrapeWebPage } from "@/lib/scraping/web";
 import { identifyPlatform } from "@/lib/scraping/detector";
-import { generateRecipeFromText } from "@/lib/scraping/gemini";
+import { generateRecipeFromText, generateRecipeFromWeb } from "@/lib/scraping/gemini";
 import { validateAndFormatRecipe } from "@/lib/scraping/validation";
 import { uploadImageToB2 } from "@/lib/scraping/b2";
 
@@ -71,7 +71,9 @@ export async function GET(request: Request) {
           : await scrapeWebPage(sourceUrl);
 
         console.log(`[Scraper API] Dati ottenuti. Avvio dell'estrazione ricetta con Gemini...`);
-        const geminiOutput = await generateRecipeFromText(scrapedData.caption, scrapedData.transcript);
+        const geminiOutput = platform === "web"
+          ? await generateRecipeFromWeb(scrapedData)
+          : await generateRecipeFromText(scrapedData.caption, scrapedData.transcript);
 
         console.log(`[Scraper API] Risposta Gemini ottenuta. Caricamento immagine di copertina su B2...`);
         let b2ImageUrl: string | null = null;

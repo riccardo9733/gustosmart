@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { useAppSelector } from "@/store/hooks";
 import { selectUserProfile } from "@/store/userSlice";
 import { convertToImperial } from "@/lib/units";
@@ -703,40 +704,42 @@ export default function RecipeDetailPage() {
 
         {/* Creator Attribution Section */}
         {(recipe.creatorUsername || (platform === "web" && recipe.creatorFullName)) && (
-          <div className="glass-panel rounded-[24px] p-6 mt-8 border border-primary/10 bg-primary/5 dark:bg-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl shadow-primary/5 animate-in fade-in duration-300">
-            <div className="flex-1 flex gap-4 items-start">
+          <Card className="rounded-[24px] p-6 mt-8 border border-primary/10 bg-primary/5 dark:bg-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl shadow-primary/5 animate-in fade-in duration-300 min-w-0">
+            <div className="flex-1 flex gap-4 items-start min-w-0 w-full">
               <div className={`p-2.5 rounded-2xl ${bgClass} shrink-0`}>
                 <SocialIcon className="w-6 h-6 stroke-[1.8]" />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 min-w-0 w-full">
                 <h4 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
                   {t("creatorCreditTitle")}
                 </h4>
-                <div className="text-xs font-semibold text-primary flex items-center gap-1.5 mb-1.5">
-                  <span className="font-bold">{recipe.creatorFullName || recipe.creatorUsername}</span>
+                <div className="text-xs font-semibold text-primary flex flex-wrap items-center gap-1.5 mb-1.5 min-w-0">
                   {platform !== "web" ? (
-                    <a
-                      href={profileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline flex items-center gap-0.5 text-muted-foreground"
-                    >
-                      @{recipe.creatorUsername}
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <>
+                      <span className="font-bold">{recipe.creatorFullName || recipe.creatorUsername}</span>
+                      <a
+                        href={profileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline flex items-center gap-0.5 text-muted-foreground break-all"
+                      >
+                        @{recipe.creatorUsername}
+                        <ExternalLink className="w-3 h-3 shrink-0" />
+                      </a>
+                    </>
                   ) : (
                     <a
                       href={profileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:underline flex items-center gap-0.5 text-muted-foreground"
+                      className="hover:underline flex items-center gap-1.5 text-primary font-bold break-all"
                     >
                       {recipe.creatorFullName}
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                     </a>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed break-words">
                   {platform === "web"
                     ? t("webCreatorCreditDisclaimer", { creator: recipe.creatorFullName || "" })
                     : t("creatorCreditDisclaimer", { creator: recipe.creatorFullName || `@${recipe.creatorUsername}` })}
@@ -776,7 +779,7 @@ export default function RecipeDetailPage() {
                 </>
               )}
             </div>
-          </div>
+          </Card>
         )}
 
       </main>
