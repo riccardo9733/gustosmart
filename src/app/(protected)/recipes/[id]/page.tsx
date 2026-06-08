@@ -43,6 +43,25 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const Instagram = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
+
 export default function RecipeDetailPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -626,6 +645,57 @@ export default function RecipeDetailPage() {
           </section>
 
         </div>
+
+        {/* Creator Attribution Section */}
+        {recipe.creatorUsername && (
+          <div className="glass-panel rounded-[24px] p-6 mt-8 border border-primary/10 bg-primary/5 dark:bg-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl shadow-primary/5 animate-in fade-in duration-300">
+            <div className="flex-1 flex gap-4 items-start">
+              <div className="bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 p-2.5 rounded-2xl text-white shadow-lg shadow-pink-500/10 shrink-0">
+                <Instagram className="w-6 h-6 stroke-[1.8]" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h4 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+                  {t("creatorCreditTitle")}
+                </h4>
+                <div className="text-xs font-semibold text-primary flex items-center gap-1.5 mb-1.5">
+                  <span className="font-bold">{recipe.creatorFullName || recipe.creatorUsername}</span>
+                  <a
+                    href={`https://www.instagram.com/${recipe.creatorUsername}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline flex items-center gap-0.5 text-muted-foreground"
+                  >
+                    @{recipe.creatorUsername}
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {t("creatorCreditDisclaimer", { creator: recipe.creatorFullName || `@${recipe.creatorUsername}` })}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-row md:flex-col gap-3 shrink-0 w-full md:w-auto">
+              <Button
+                variant="outline"
+                className="rounded-full flex-1 md:flex-initial flex items-center gap-2 hover:bg-primary/5 hover:text-primary transition-all text-xs font-bold"
+                onClick={() => window.open(`https://www.instagram.com/${recipe.creatorUsername}`, "_blank")}
+              >
+                <Instagram className="w-4 h-4 text-primary" />
+                {t("viewOriginalProfile")}
+              </Button>
+              {recipe.sourceUrl && (
+                <Button
+                  variant="outline"
+                  className="rounded-full flex-1 md:flex-initial flex items-center gap-2 hover:bg-primary/5 hover:text-primary transition-all text-xs font-bold"
+                  onClick={() => window.open(recipe.sourceUrl, "_blank")}
+                >
+                  <ExternalLink className="w-4 h-4 text-primary" />
+                  {t("viewOriginalPost")}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
 

@@ -188,7 +188,11 @@
     "unitPlaceholder": "Unité",
     "ingredientPlaceholder": "Ingrédient",
     "stepPlaceholder": "Décrivez l'étape {count}",
-    "personalChangesInfo": "* Les modifications sont personnelles et n'affectent pas la recette globale partagée."
+    "personalChangesInfo": "* Les modifications sont personnelles et n'affectent pas la recette globale partagée.",
+    "creatorCreditTitle": "Attribution du Créateur",
+    "creatorCreditDisclaimer": "Cette recette a été scannée et optimisée automatiquement à partir d'une vidéo publique partagée par {creator}. Tous les droits d'auteur et de propriété intellectuelle relatifs au contenu original appartiennent à leur propriétaire respectif. GustoSmart reproduit ces données uniquement à des fins d'organisation personnelle et d'utilisation culinaire de l'utilisateur, sans revendiquer aucun droit sur celles-ci.",
+    "viewOriginalProfile": "Profil du Créateur",
+    "viewOriginalPost": "Reel Original"
   },
   "Shopping": {
     "title": "Liste de Courses Intelligente",

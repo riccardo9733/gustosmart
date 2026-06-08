@@ -17,6 +17,9 @@ export const RecipeSchema = z.object({
   prepTimeMinutes: z.number().int().nonnegative().nullable().optional().default(null),
   category: z.enum(['first_courses', 'second_courses', 'desserts', 'appetizers', 'sides', 'single_dishes', 'other']).default('other'),
   kcal: z.number().int().nonnegative().nullable().optional().default(null),
+  creatorUsername: z.string().nullable().optional().default(null),
+  creatorFullName: z.string().nullable().optional().default(null),
+  creatorId: z.string().nullable().optional().default(null),
 });
 
 export type RecipeInput = z.infer<typeof RecipeSchema>;
@@ -58,7 +61,12 @@ function normalizeCategory(cat: any): 'first_courses' | 'second_courses' | 'dess
 export function validateAndFormatRecipe(
   geminiOutput: any,
   sourceUrl: string,
-  imageUrl: string | null
+  imageUrl: string | null,
+  creatorInfo?: {
+    username?: string | null;
+    fullName?: string | null;
+    id?: string | null;
+  }
 ): RecipeInput {
   // Pulisce o normalizza i campi se necessario prima della validazione
   const rawRecipe = {
@@ -83,7 +91,10 @@ export function validateAndFormatRecipe(
     category: normalizeCategory(geminiOutput.category),
     kcal: geminiOutput.kcal !== undefined && geminiOutput.kcal !== null
       ? Number(geminiOutput.kcal)
-      : null
+      : null,
+    creatorUsername: creatorInfo?.username || null,
+    creatorFullName: creatorInfo?.fullName || null,
+    creatorId: creatorInfo?.id || null,
   };
 
   // Validazione Zod

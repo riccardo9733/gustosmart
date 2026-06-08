@@ -38,6 +38,9 @@ export interface GlobalRecipe {
   kcal: number | null;
   createdAt: any;
   createdBy: string;
+  creatorUsername?: string | null;
+  creatorFullName?: string | null;
+  creatorId?: string | null;
 }
 
 /** The personal override document in /users/{uid}/recipes/{recipeId} */

@@ -7,6 +7,9 @@ export interface ApifyScrapedData {
   caption: string;
   transcript: string;
   coverImageUrl: string | null;
+  creatorUsername: string | null;
+  creatorFullName: string | null;
+  creatorId: string | null;
 }
 
 /**
@@ -126,9 +129,17 @@ export async function getDatasetItems(datasetId: string): Promise<ApifyScrapedDa
   // Immagine di copertina
   const coverImageUrl = scrapedData.displayUrl || scrapedData.thumbnailUrl || scrapedData.videoPlayUrl || null;
 
+  // Dati del creator (owner)
+  const creatorUsername = scrapedData.ownerUsername || null;
+  const creatorFullName = scrapedData.ownerFullName || null;
+  const creatorId = scrapedData.ownerId || null;
+
   return {
     caption,
     transcript,
     coverImageUrl,
+    creatorUsername,
+    creatorFullName,
+    creatorId,
   };
 }

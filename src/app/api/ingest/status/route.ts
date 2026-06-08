@@ -56,7 +56,16 @@ export async function GET(request: Request) {
     }
 
     console.log("Validazione e formattazione con Zod...");
-    const validatedRecipe = validateAndFormatRecipe(geminiOutput, sourceUrl, b2ImageUrl);
+    const validatedRecipe = validateAndFormatRecipe(
+      geminiOutput,
+      sourceUrl,
+      b2ImageUrl,
+      {
+        username: scrapedData.creatorUsername,
+        fullName: scrapedData.creatorFullName,
+        id: scrapedData.creatorId
+      }
+    );
 
     return NextResponse.json({
       success: true,

@@ -182,6 +182,9 @@ export default function Home() {
                 : null,
               createdAt: serverTimestamp(),
               createdBy: user.uid,
+              creatorUsername: statusJson.recipe.creatorUsername || null,
+              creatorFullName: statusJson.recipe.creatorFullName || null,
+              creatorId: statusJson.recipe.creatorId || null,
             };
 
             await setDoc(doc(db, "recipes", recipeId), recipeDoc);
