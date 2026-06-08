@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { identifyPlatform } from "@/lib/scraping/detector";
-import { startInstagramScraper } from "@/lib/scraping/apify";
+import { startInstagramScraper, startTikTokScraper } from "@/lib/scraping/apify";
 import { getFirebaseDb } from "@/lib/firebase";
 import { collection, doc } from "firebase/firestore";
 
@@ -34,12 +34,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Al momento supportiamo solo Instagram Reel
-    if (platform !== "instagram") {
+    // Supportiamo Instagram Reel e TikTok
+    if (platform !== "instagram" && platform !== "tiktok") {
       return NextResponse.json(
         {
           success: false,
-          error: "Al momento supportiamo solo l'importazione da Instagram Reel. Il supporto ad altre piattaforme arriverà presto!",
+          error: "Al momento supportiamo solo l'importazione da Instagram Reel e TikTok.",
         },
         { status: 400 }
       );
@@ -55,8 +55,10 @@ export async function POST(request: Request) {
     const recipeId = newRecipeRef.id;
 
     // 3. Avvia Apify in modo asincrono
-    console.log(`Avvio scraping Apify per URL: ${url} per utente: ${userId}`);
-    const { runId, datasetId } = await startInstagramScraper(url);
+    console.log(`Avvio scraping Apify (${platform}) per URL: ${url} per utente: ${userId}`);
+    const { runId, datasetId } = platform === "instagram"
+      ? await startInstagramScraper(url)
+      : await startTikTokScraper(url);
     console.log(`Scraping Apify avviato con successo. Run ID: ${runId}, Dataset ID: ${datasetId}`);
 
     // 4. Risponde immediatamente al client

@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRecipes, useAddToUserRecipes } from "@/hooks/useRecipes";
 import { useAppSelector } from "@/store/hooks";
 import { selectUserProfile } from "@/store/userSlice";
+import { identifyPlatform } from "@/lib/scraping/detector";
 import {
   Sparkles,
   Film,
@@ -165,40 +166,61 @@ export default function Home() {
           }
 
           if (statusJson.status === "succeeded") {
-            // Salva la ricetta globale in /recipes/{recipeId} (senza userId)
-            const recipeDoc = {
-              sourceUrl: targetUrl,
-              sourcePlatform: "instagram",
-              title: statusJson.recipe.title,
-              sourceLanguage: statusJson.recipe.sourceLanguage || "it",
-              servings: statusJson.recipe.servings,
-              ingredients: statusJson.recipe.ingredients,
-              instructions: statusJson.recipe.instructions,
-              imageUrl: statusJson.recipe.imageUrl || null,
-              prepTimeMinutes: statusJson.recipe.prepTimeMinutes,
-              category: statusJson.recipe.category || "other",
-              kcal: statusJson.recipe.kcal !== undefined && statusJson.recipe.kcal !== null
-                ? statusJson.recipe.kcal
-                : null,
-              createdAt: serverTimestamp(),
-              createdBy: user.uid,
-              creatorUsername: statusJson.recipe.creatorUsername || null,
-              creatorFullName: statusJson.recipe.creatorFullName || null,
-              creatorId: statusJson.recipe.creatorId || null,
-            };
+            // Ferma subito il polling per evitare chiamate concorrenti/multiple
+            if (pollingIntervalId) {
+              clearInterval(pollingIntervalId);
+            }
 
-            await setDoc(doc(db, "recipes", recipeId), recipeDoc);
+            try {
+              // Salva la ricetta globale in /recipes/{recipeId} (senza userId)
+              let detectedPlatform = "web";
+              try {
+                detectedPlatform = identifyPlatform(targetUrl);
+              } catch (e) {
+                console.error("Errore identificazione piattaforma:", e);
+              }
 
-            // Crea il documento personale in /users/{uid}/recipes/{recipeId}
-            const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
-            await addFn(user.uid, recipeId);
+              const recipeDoc = {
+                sourceUrl: targetUrl,
+                sourcePlatform: detectedPlatform,
+                title: statusJson.recipe.title,
+                sourceLanguage: statusJson.recipe.sourceLanguage || "it",
+                servings: statusJson.recipe.servings,
+                ingredients: statusJson.recipe.ingredients,
+                instructions: statusJson.recipe.instructions,
+                imageUrl: statusJson.recipe.imageUrl || null,
+                prepTimeMinutes: statusJson.recipe.prepTimeMinutes,
+                category: statusJson.recipe.category || "other",
+                kcal: statusJson.recipe.kcal !== undefined && statusJson.recipe.kcal !== null
+                  ? statusJson.recipe.kcal
+                  : null,
+                createdAt: serverTimestamp(),
+                createdBy: user.uid,
+                creatorUsername: statusJson.recipe.creatorUsername || null,
+                creatorFullName: statusJson.recipe.creatorFullName || null,
+                creatorId: statusJson.recipe.creatorId || null,
+              };
 
-            // Detrai 1 token all'utente per aver scansionato una nuova ricetta
-            const userRef = doc(db, "users", user.uid);
-            await updateDoc(userRef, {
-              tokens: increment(-1),
-              updatedAt: new Date().toISOString(),
-            });
+              await setDoc(doc(db, "recipes", recipeId), recipeDoc);
+
+              // Crea il documento personale in /users/{uid}/recipes/{recipeId}
+              const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
+              await addFn(user.uid, recipeId);
+
+              // Detrai 1 token all'utente per aver scansionato una nuova ricetta
+              const userRef = doc(db, "users", user.uid);
+              await updateDoc(userRef, {
+                tokens: increment(-1),
+                updatedAt: new Date().toISOString(),
+              });
+            } catch (dbErr: any) {
+              console.error("Errore salvataggio dati ricetta su Firestore:", dbErr);
+              cleanup();
+              toast.error(t("importFailed"), {
+                id: toastId,
+                description: dbErr.message || t("importFailedDesc"),
+              });
+            }
           }
         } catch (pollErr) {
           console.error("Errore nel polling dello stato:", pollErr);

@@ -55,6 +55,54 @@ export async function startInstagramScraper(url: string): Promise<ApifyRunResult
 }
 
 /**
+ * Avvia l'actor clockworks/tiktok-scraper su Apify in modo asincrono.
+ */
+export async function startTikTokScraper(url: string): Promise<ApifyRunResult> {
+  const apifyToken = process.env.APIFY_TOKEN;
+  if (!apifyToken) {
+    throw new Error("Manca la chiave d'ambiente APIFY_TOKEN");
+  }
+
+  const actorId = "clockworks~tiktok-scraper";
+  const response = await fetch(
+    `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyToken}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        postURLs: [url],
+        resultsPerPage: 1,
+        excludePinnedPosts: false,
+        shouldDownloadVideos: false,
+        shouldDownloadCovers: false,
+        shouldDownloadSubtitles: false,
+        shouldDownloadSlideshowImages: false,
+        shouldDownloadMusicCovers: false,
+        shouldDownloadAvatars: false,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Errore avvio Apify TikTok Scraper:", errorText);
+    throw new Error("Errore durante l'avvio dello scraper Apify TikTok");
+  }
+
+  const resJson = await response.json();
+  const runId = resJson.data.id;
+  const datasetId = resJson.data.defaultDatasetId;
+
+  if (!runId || !datasetId) {
+    throw new Error("Risposta Apify malformata: runId o datasetId non trovati");
+  }
+
+  return { runId, datasetId };
+}
+
+/**
  * Controlla lo stato del run su Apify.
  */
 export async function getRunStatus(runId: string): Promise<'SUCCEEDED' | 'RUNNING' | 'FAILED' | 'OTHER'> {
@@ -121,18 +169,43 @@ export async function getDatasetItems(datasetId: string): Promise<ApifyScrapedDa
   }
 
   const scrapedData = items[0];
-  const caption = scrapedData.caption || "";
   
-  // Apify Reel Scraper può memorizzare la trascrizione in diversi campi a seconda della versione
+  // Supporta sia Instagram (caption) sia TikTok (text / caption)
+  const caption = scrapedData.caption || scrapedData.text || "";
+  
+  // Apify Reel Scraper può memorizzare la trascrizione in diversi campi a seconda della versione.
+  // TikTok scraper non ha trascrizione audio integrata per impostazione predefinita.
   const transcript = scrapedData.transcript || scrapedData.videoTranscript || "";
   
-  // Immagine di copertina
-  const coverImageUrl = scrapedData.displayUrl || scrapedData.thumbnailUrl || scrapedData.videoPlayUrl || null;
+  // Immagine di copertina: supporta Instagram (displayUrl ecc.) e TikTok (videoMeta.coverUrl ecc.)
+  const coverImageUrl =
+    scrapedData.displayUrl ||
+    scrapedData.thumbnailUrl ||
+    scrapedData.videoPlayUrl ||
+    scrapedData.videoMeta?.coverUrl ||
+    scrapedData.videoMeta?.originalCoverUrl ||
+    scrapedData["videoMeta.coverUrl"] ||
+    scrapedData["videoMeta.originalCoverUrl"] ||
+    null;
 
-  // Dati del creator (owner)
-  const creatorUsername = scrapedData.ownerUsername || null;
-  const creatorFullName = scrapedData.ownerFullName || null;
-  const creatorId = scrapedData.ownerId || null;
+  // Dati del creator (owner): supporta sia Instagram che TikTok
+  const creatorUsername =
+    scrapedData.ownerUsername ||
+    scrapedData.authorMeta?.name ||
+    scrapedData["authorMeta.name"] ||
+    null;
+
+  const creatorFullName =
+    scrapedData.ownerFullName ||
+    scrapedData.authorMeta?.nickName ||
+    scrapedData["authorMeta.nickName"] ||
+    null;
+
+  const creatorId =
+    scrapedData.ownerId ||
+    scrapedData.authorMeta?.id ||
+    scrapedData["authorMeta.id"] ||
+    null;
 
   return {
     caption,

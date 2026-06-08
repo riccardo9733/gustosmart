@@ -43,7 +43,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const Instagram = (props: React.SVGProps<SVGSVGElement>) => (
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -59,6 +59,41 @@ const Instagram = (props: React.SVGProps<SVGSVGElement>) => (
     <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
     <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
+
+const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
+);
+
+const YouTubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
+    <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
   </svg>
 );
 
@@ -344,6 +379,21 @@ export default function RecipeDetailPage() {
   const displayedTitle = displayData?.title || recipe.title || "";
   const displayedIngredients = displayData?.ingredients || recipe.ingredients || [];
   const displayedInstructions = displayData?.instructions || recipe.instructions || [];
+
+  const platform = recipe.sourcePlatform?.toLowerCase() || "instagram";
+  let bgClass = "bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 text-white shadow-pink-500/10";
+  let SocialIcon = InstagramIcon;
+  let profileUrl = recipe.creatorUsername ? `https://www.instagram.com/${recipe.creatorUsername}` : "#";
+
+  if (platform === "tiktok") {
+    bgClass = "bg-black dark:bg-zinc-800 text-white shadow-zinc-950/20";
+    SocialIcon = TikTokIcon;
+    profileUrl = recipe.creatorUsername ? `https://www.tiktok.com/@${recipe.creatorUsername}` : "#";
+  } else if (platform === "youtube") {
+    bgClass = "bg-red-600 text-white shadow-red-600/10";
+    SocialIcon = YouTubeIcon;
+    profileUrl = recipe.creatorUsername ? `https://www.youtube.com/@${recipe.creatorUsername}` : "#";
+  }
 
   return (
     <div className="relative w-full max-w-4xl mx-auto pb-32 animate-in fade-in duration-500">
@@ -650,8 +700,8 @@ export default function RecipeDetailPage() {
         {recipe.creatorUsername && (
           <div className="glass-panel rounded-[24px] p-6 mt-8 border border-primary/10 bg-primary/5 dark:bg-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl shadow-primary/5 animate-in fade-in duration-300">
             <div className="flex-1 flex gap-4 items-start">
-              <div className="bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 p-2.5 rounded-2xl text-white shadow-lg shadow-pink-500/10 shrink-0">
-                <Instagram className="w-6 h-6 stroke-[1.8]" />
+              <div className={`p-2.5 rounded-2xl ${bgClass} shrink-0`}>
+                <SocialIcon className="w-6 h-6 stroke-[1.8]" />
               </div>
               <div className="flex flex-col gap-1">
                 <h4 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
@@ -660,7 +710,7 @@ export default function RecipeDetailPage() {
                 <div className="text-xs font-semibold text-primary flex items-center gap-1.5 mb-1.5">
                   <span className="font-bold">{recipe.creatorFullName || recipe.creatorUsername}</span>
                   <a
-                    href={`https://www.instagram.com/${recipe.creatorUsername}`}
+                    href={profileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:underline flex items-center gap-0.5 text-muted-foreground"
@@ -678,9 +728,9 @@ export default function RecipeDetailPage() {
               <Button
                 variant="outline"
                 className="rounded-full flex-1 md:flex-initial flex items-center gap-2 hover:bg-primary/5 hover:text-primary transition-all text-xs font-bold"
-                onClick={() => window.open(`https://www.instagram.com/${recipe.creatorUsername}`, "_blank")}
+                onClick={() => window.open(profileUrl, "_blank")}
               >
-                <Instagram className="w-4 h-4 text-primary" />
+                <SocialIcon className="w-4 h-4 text-primary" />
                 {t("viewOriginalProfile")}
               </Button>
               {recipe.sourceUrl && (
@@ -690,7 +740,7 @@ export default function RecipeDetailPage() {
                   onClick={() => window.open(recipe.sourceUrl, "_blank")}
                 >
                   <ExternalLink className="w-4 h-4 text-primary" />
-                  {t("viewOriginalPost")}
+                  {t("originalSource")}
                 </Button>
               )}
             </div>
