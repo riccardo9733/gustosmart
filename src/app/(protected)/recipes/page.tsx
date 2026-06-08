@@ -269,7 +269,7 @@ export default function RecipesPage() {
                   <div className="absolute top-4 left-4 z-30" onClick={(e) => e.stopPropagation()}>
                     <AlertDialog>
                       <DropdownMenu>
-                        <DropdownMenuTrigger nativeButton={false} render={
+                        <DropdownMenuTrigger nativeButton={true} render={
                           <Button
                             variant="ghost"
                             size="icon"
