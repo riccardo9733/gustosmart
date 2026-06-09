@@ -202,7 +202,11 @@
     "webCreatorCreditDisclaimer": "Cette recette a été scannée et optimisée automatiquement à partir d'une page web publiée par {creator}. Tous les droits d'auteur et de propriété intellectuelle relatifs au contenu original appartiennent à leur propriétaire respectif. GustoSmart reproduit ces données uniquement à des fins d'organisation personnelle et d'utilisation culinaire de l'utilisateur, sans revendiquer aucun droit sur celles-ci.",
     "visitWebsite": "Visiter le Site",
     "viewOriginalProfile": "Profil du Créateur",
-    "viewOriginalPost": "Reel Original"
+    "viewOriginalPost": "Reel Original",
+    "addToRecipes": "Ajouter au carnet",
+    "addingRecipeProgress": "Ajout de la recette au carnet...",
+    "addToRecipesSuccess": "Recette ajoutée à votre carnet !",
+    "addToRecipesFailed": "Impossible d'ajouter la recette."
   },
   "Shopping": {
     "title": "Liste de Courses Intelligente",

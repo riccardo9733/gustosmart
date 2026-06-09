@@ -212,7 +212,11 @@
     "webCreatorCreditDisclaimer": "This recipe was automatically scanned and optimized from a web page published by {creator}. All copyrights and intellectual property rights relating to the original content belong to the respective owner. GustoSmart reproduces this data solely for the user's personal culinary organization and use, without claiming any rights over it.",
     "visitWebsite": "Visit Website",
     "viewOriginalProfile": "Creator Profile",
-    "viewOriginalPost": "Original Reel"
+    "viewOriginalPost": "Original Reel",
+    "addToRecipes": "Add to collection",
+    "addingRecipeProgress": "Adding recipe to collection...",
+    "addToRecipesSuccess": "Recipe added to your collection!",
+    "addToRecipesFailed": "Could not add recipe."
   },
   "Shopping": {
     "title": "Smart Shopping",

@@ -7,7 +7,7 @@ import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
-import { useRecipe, useRemoveFromUserRecipes, useRecipes } from "@/hooks/useRecipes";
+import { useRecipe, useRemoveFromUserRecipes, useRecipes, useAddToUserRecipes } from "@/hooks/useRecipes";
 import { useShoppingList, useUpdateShoppingList } from "@/hooks/useShoppingList";
 import { recalculateShoppingItems } from "@/lib/firestore/shopping-list";
 import {
@@ -23,7 +23,8 @@ import {
   ExternalLink,
   Flame,
   Loader2,
-  Globe
+  Globe,
+  Bookmark
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -146,6 +147,9 @@ export default function RecipeDetailPage() {
 
   // Mutations
   const { mutateAsync: removeRecipe } = useRemoveFromUserRecipes();
+  const { mutateAsync: addRecipe, isPending: addingRecipe } = useAddToUserRecipes();
+
+  const isSaved = !!recipe?.addedAt;
 
   const isSelectedInShopping = shoppingList?.selectedRecipes.some(
     (r) => r.recipeId === id
@@ -331,6 +335,17 @@ export default function RecipeDetailPage() {
     }
   };
 
+  const handleAddToRecipes = async () => {
+    const toastId = toast.loading(t("addingRecipeProgress"));
+    try {
+      await addRecipe(id);
+      toast.success(t("addToRecipesSuccess"), { id: toastId });
+    } catch (error) {
+      console.error("Errore durante l'aggiunta:", error);
+      toast.error(t("addToRecipesFailed"), { id: toastId });
+    }
+  };
+
   const formatQuantity = (qty: number) => {
     return qty % 1 === 0 ? qty.toString() : qty.toFixed(1);
   };
@@ -451,32 +466,34 @@ export default function RecipeDetailPage() {
         </Button>
 
         {/* Remove from collection button */}
-        <AlertDialog>
-          <AlertDialogTrigger render={
-            <Button
-              variant="outline"
-              size="icon"
-              className="absolute top-24 right-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-destructive active:scale-95 transition-all"
-              aria-label={t("removeFromRecipes")}
-            >
-              <Trash2 className="h-5 w-5" />
-            </Button>
-          } />
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("removeDialogTitle")}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("removeDialogDesc")}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteRecipe} className="bg-destructive hover:bg-destructive/90 text-white">
-                {t("remove")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {isSaved && (
+          <AlertDialog>
+            <AlertDialogTrigger render={
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute top-24 right-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-destructive active:scale-95 transition-all"
+                aria-label={t("removeFromRecipes")}
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            } />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("removeDialogTitle")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("removeDialogDesc")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteRecipe} className="bg-destructive hover:bg-destructive/90 text-white">
+                  {t("remove")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Main Content */}
@@ -769,16 +786,32 @@ export default function RecipeDetailPage() {
                   </Button>
                 </div>
 
-                <Button
-                  onClick={handleToggleShoppingList}
-                  variant={isSelectedInShopping ? "secondary" : "default"}
-                  className="rounded-full w-full flex items-center justify-center gap-2 h-14 px-6 active:scale-95 transition-transform"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  <span>
-                    {isSelectedInShopping ? tShopping("inShoppingList") : tShopping("addToShopping")}
-                  </span>
-                </Button>
+                {isSaved ? (
+                  <Button
+                    onClick={handleToggleShoppingList}
+                    variant={isSelectedInShopping ? "secondary" : "default"}
+                    className="rounded-full w-full flex items-center justify-center gap-2 h-14 px-6 active:scale-95 transition-transform"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    <span>
+                      {isSelectedInShopping ? tShopping("inShoppingList") : tShopping("addToShopping")}
+                    </span>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleAddToRecipes}
+                    disabled={addingRecipe}
+                    variant="default"
+                    className="rounded-full w-full flex items-center justify-center gap-2 h-14 px-6 active:scale-95 transition-transform bg-primary hover:bg-primary/90 text-white"
+                  >
+                    {addingRecipe ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Bookmark className="w-5 h-5" />
+                    )}
+                    <span>{t("addToRecipes")}</span>
+                  </Button>
+                )}
               </div>
             </div>
         </div>

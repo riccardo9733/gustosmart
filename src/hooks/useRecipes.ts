@@ -122,9 +122,10 @@ export function useAddToUserRecipes() {
       if (!user) throw new Error("Not authenticated");
       return addToUserRecipes(user.uid, recipeId);
     },
-    onSuccess: () => {
+    onSuccess: (_data, recipeId) => {
       if (user) {
         queryClient.invalidateQueries({ queryKey: recipeKeys.all(user.uid) });
+        queryClient.invalidateQueries({ queryKey: recipeKeys.detail(user.uid, recipeId) });
       }
     },
   });

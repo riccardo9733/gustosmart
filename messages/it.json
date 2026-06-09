@@ -212,7 +212,11 @@
     "webCreatorCreditDisclaimer": "Questa ricetta è stata scansionata e ottimizzata automaticamente a partire da una pagina web pubblicata da {creator}. Tutti i diritti d'autore e di proprietà intellettuale relativi al contenuto originale appartengono al rispettivo proprietario. GustoSmart riproduce questi dati esclusivamente per scopi di organizzazione personale e uso culinario dell'utente, senza rivendicarne alcun diritto.",
     "visitWebsite": "Visita il Sito",
     "viewOriginalProfile": "Profilo del Creator",
-    "viewOriginalPost": "Reel Originale"
+    "viewOriginalPost": "Reel Originale",
+    "addToRecipes": "Aggiungi al ricettario",
+    "addingRecipeProgress": "Aggiunta ricetta al ricettario...",
+    "addToRecipesSuccess": "Ricetta aggiunta al tuo ricettario!",
+    "addToRecipesFailed": "Impossibile aggiungere la ricetta."
   },
   "Shopping": {
     "title": "Spesa Intelligente",
