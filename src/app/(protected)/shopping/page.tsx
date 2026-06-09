@@ -10,6 +10,8 @@ import { useAppSelector } from "@/store/hooks";
 import { selectUserProfile } from "@/store/userSlice";
 import { convertToImperial } from "@/lib/units";
 import { type ShoppingItem, type ShoppingRecipe, recalculateShoppingItems } from "@/lib/firestore/shopping-list";
+import { useQuery } from "@tanstack/react-query";
+import { type MergedRecipe } from "@/lib/firestore/recipes";
 import {
   RotateCcw,
   Trash2,
@@ -36,7 +38,7 @@ export default function ShoppingPage() {
   const profile = useAppSelector(selectUserProfile);
   const measurementSystem = profile?.preferences?.measurementSystem || "metric";
 
-  const { data: recipes = [], isLoading: loadingRecipes, isError: recipesError } = useRecipes();
+  const { data: cookbookRecipes = [], isLoading: loadingRecipes, isError: recipesError } = useRecipes();
   const { data: shoppingList, isLoading: loadingList, isError: listError } = useShoppingList();
   const updateShoppingList = useUpdateShoppingList();
 
@@ -48,12 +50,49 @@ export default function ShoppingPage() {
   const [localItems, setLocalItems] = useState<ShoppingItem[]>([]);
   const [isDirty, setIsDirty] = useState(false);
 
+  // Find any recipe IDs in the shopping list that are not in the user's cookbook
+  const missingRecipeIds = React.useMemo(() => {
+    if (!shoppingList) return [];
+    const cookbookIds = new Set(cookbookRecipes.map((r) => r.id));
+    return shoppingList.selectedRecipes
+      .map((r) => r.recipeId)
+      .filter((id) => !cookbookIds.has(id));
+  }, [shoppingList, cookbookRecipes]);
+
+  // Fetch the missing recipes from the global collection
+  const { data: missingRecipes = [], isLoading: loadingMissing } = useQuery({
+    queryKey: ["shopping-missing-recipes", missingRecipeIds],
+    enabled: missingRecipeIds.length > 0,
+    queryFn: async () => {
+      const { getGlobalRecipe } = await import("@/lib/firestore/recipes");
+      const fetched = await Promise.all(
+        missingRecipeIds.map(async (id) => {
+          const global = await getGlobalRecipe(id);
+          if (!global) return null;
+          return {
+            ...global,
+            addedAt: null,
+            personalNotes: null,
+            rating: null,
+            isCustomized: false,
+          } as MergedRecipe;
+        })
+      );
+      return fetched.filter((r): r is MergedRecipe => r !== null);
+    },
+  });
+
+  // Combine cookbook recipes and missing recipes
+  const allRecipes = React.useMemo(() => {
+    return [...cookbookRecipes, ...missingRecipes];
+  }, [cookbookRecipes, missingRecipes]);
+
   // Espande automaticamente la sezione ricette se il ricettario è vuoto
   useEffect(() => {
-    if (recipes.length === 0 && !loadingRecipes) {
+    if (cookbookRecipes.length === 0 && !loadingRecipes) {
       setIsRecipesExpanded(true);
     }
-  }, [recipes.length, loadingRecipes]);
+  }, [cookbookRecipes.length, loadingRecipes]);
 
   // Carica i dati iniziali da Firestore solo se non ci sono modifiche locali non salvate
   useEffect(() => {
@@ -101,7 +140,9 @@ export default function ShoppingPage() {
     );
   }
 
-  if (loadingRecipes || loadingList || !shoppingList) {
+  const isLoading = loadingRecipes || loadingList || !shoppingList || (missingRecipeIds.length > 0 && loadingMissing);
+
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto pb-32 animate-in fade-in duration-500">
         <div className="flex justify-between items-end mb-4">
@@ -136,7 +177,7 @@ export default function ShoppingPage() {
       updatedRecipes.push({ recipeId, servings: baseServings || 2 });
     }
 
-    const newItems = recalculateShoppingItems(updatedRecipes, localItems, recipes);
+    const newItems = recalculateShoppingItems(updatedRecipes, localItems, allRecipes);
     setLocalRecipes(updatedRecipes);
     setLocalItems(newItems);
     setIsDirty(true);
@@ -151,7 +192,7 @@ export default function ShoppingPage() {
       return r;
     });
 
-    const newItems = recalculateShoppingItems(updatedRecipes, localItems, recipes);
+    const newItems = recalculateShoppingItems(updatedRecipes, localItems, allRecipes);
     setLocalRecipes(updatedRecipes);
     setLocalItems(newItems);
     setIsDirty(true);
@@ -242,7 +283,7 @@ export default function ShoppingPage() {
   // Costruiamo la mappatura delle fonti ricetta per gli ingredienti visualizzati
   const ingredientRecipeSources: Record<string, string[]> = {};
   localRecipes.forEach((sel) => {
-    const recipe = recipes.find((r) => r.id === sel.recipeId);
+    const recipe = allRecipes.find((r) => r.id === sel.recipeId);
     if (!recipe) return;
     recipe.ingredients.forEach((ing) => {
       const key = `${ing.name.toLowerCase().trim()}||${ing.unit.toLowerCase().trim()}`;
@@ -263,7 +304,7 @@ export default function ShoppingPage() {
     .filter((item) => item.checked && !(item as any).cleared)
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const filteredRecipes = recipes.filter((recipe) =>
+  const filteredRecipes = allRecipes.filter((recipe) =>
     recipe.title.toLowerCase().includes(recipeSearchQuery.toLowerCase())
   );
 
@@ -313,7 +354,7 @@ export default function ShoppingPage() {
 
         {isRecipesExpanded && (
           <div className="p-5 border-t border-border/40 bg-muted/5 flex flex-col gap-4 animate-in slide-in-from-top duration-300">
-            {recipes.length > 0 && (
+            {cookbookRecipes.length > 0 && (
               <div className="relative">
                 <Input
                   type="text"
@@ -334,7 +375,7 @@ export default function ShoppingPage() {
               </div>
             )}
 
-            {recipes.length === 0 ? (
+            {cookbookRecipes.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-6 text-center max-w-sm mx-auto">
                 <p className="text-sm text-muted-foreground">
                   {tRecipes("noRecipesYetDesc")}

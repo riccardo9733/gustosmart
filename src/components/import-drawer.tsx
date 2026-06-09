@@ -174,9 +174,12 @@ export function ImportDrawer({ open, onOpenChange }: ImportDrawerProps) {
           const statusJson = await statusRes.json();
           if (statusJson.status === "failed") {
             cleanup();
+            const desc = statusJson.error === "INSUFFICIENT_RECIPE_DATA"
+              ? t("insufficientDataError")
+              : (statusJson.error || t("importFailedDesc"));
             toast.error(t("importFailed"), {
               id: toastId,
-              description: statusJson.error || t("importFailedDesc"),
+              description: desc,
             });
             return;
           }
@@ -240,6 +243,12 @@ export function ImportDrawer({ open, onOpenChange }: ImportDrawerProps) {
               const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
               await addFn(user.uid, recipeId);
 
+              // Invalidate TanStack query cache to keep UI in sync
+              const { queryClient } = await import("@/lib/query-client");
+              const { recipeKeys } = await import("@/hooks/useRecipes");
+              queryClient.invalidateQueries({ queryKey: recipeKeys.all(user.uid) });
+              queryClient.invalidateQueries({ queryKey: recipeKeys.detail(user.uid, recipeId) });
+
               // Detrai 1 token all'utente per aver scansionato una nuova ricetta (solo se non è web)
               if (detectedPlatform !== "web") {
                 const userRef = doc(db, "users", user.uid);
@@ -265,9 +274,12 @@ export function ImportDrawer({ open, onOpenChange }: ImportDrawerProps) {
     } catch (error: any) {
       console.error("Errore durante il flusso di importazione:", error);
       cleanup();
+      const desc = error.message === "INSUFFICIENT_RECIPE_DATA"
+        ? t("insufficientDataError")
+        : (error.message || t("importFailedDesc"));
       toast.error(t("importFailed"), {
         id: toastId,
-        description: error.message || t("importFailedDesc"),
+        description: desc,
       });
     }
   };

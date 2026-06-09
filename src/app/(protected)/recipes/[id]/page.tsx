@@ -165,7 +165,14 @@ export default function RecipeDetailPage() {
       updatedRecipes.push({ recipeId: id, servings: currentServings });
     }
 
-    const newItems = recalculateShoppingItems(updatedRecipes, shoppingList.items, allRecipes);
+    // Ensure the current recipe is included in the list passed to recalculateShoppingItems,
+    // in case allRecipes (useRecipes query) hasn't finished refetching yet.
+    const recipesForCalculation = [...allRecipes];
+    if (recipe && !recipesForCalculation.some((r) => r.id === recipe.id)) {
+      recipesForCalculation.push(recipe);
+    }
+
+    const newItems = recalculateShoppingItems(updatedRecipes, shoppingList.items, recipesForCalculation);
     
     updateShoppingList.mutate({
       selectedRecipes: updatedRecipes,
@@ -315,7 +322,14 @@ export default function RecipeDetailPage() {
         }
         return r;
       });
-      const newItems = recalculateShoppingItems(updatedRecipes, shoppingList.items, allRecipes);
+      
+      // Ensure the current recipe is included in the list passed to recalculateShoppingItems
+      const recipesForCalculation = [...allRecipes];
+      if (recipe && !recipesForCalculation.some((r) => r.id === recipe.id)) {
+        recipesForCalculation.push(recipe);
+      }
+
+      const newItems = recalculateShoppingItems(updatedRecipes, shoppingList.items, recipesForCalculation);
       updateShoppingList.mutate({
         selectedRecipes: updatedRecipes,
         items: newItems,

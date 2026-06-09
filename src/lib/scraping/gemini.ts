@@ -27,6 +27,7 @@ ${transcript || "(Nessuna trascrizione audio fornita)"}
 
 Devi restituire esclusivamente un oggetto JSON che rispetta esattamente il seguente schema:
 {
+  "isRecipeDetailsPresent": "Imposta su true se e solo se la Caption o la Trascrizione Audio contengono dettagli effettivi sulla ricetta come ingredienti o passaggi di cottura. Imposta su false se non ci sono informazioni utili, se l'input contiene solo un titolo o parola chiave generica (es. 'Waffle') senza dettagli o se le informazioni fornite non permettono di ricreare fedelmente la ricetta (boolean)",
   "title": "Il titolo accattivante e descrittivo della ricetta (string)",
   "sourceLanguage": "Il codice lingua ISO a due lettere rilevato del post sorgente, es. 'it', 'en', 'es', 'fr' (string)",
   "servings": "Numero di porzioni per cui sono calibrati gli ingredienti (integer, default: 2 se non specificato)",
@@ -64,13 +65,14 @@ Istruzioni per l'estrazione:
    - 'other' (se non rientra in nessun'altra categoria)
 3. Stima accuratamente le calorie (kcal) medie e i macronutrienti (proteins, carbs, fats, fiber, sugar) per 100g DI PRODOTTO FINITO (ricetta pronta), basandoti sul tipo e la quantità degli ingredienti totali. Sii quanto più realistico e preciso possibile. Se è impossibile stimarle, imposta i relativi campi a null.
 4. Identifica le dosi e le unità di misura corrette.
-   - Converti tassativamente le unità volumetriche o non empiriche (come 'cucchiai', 'cucchiaini', 'tazze', 'bicchieri', 'manciate', 'pizzichi') nel loro peso equivalente in grammi (g) o volume in millilitri (ml) in base al tipo di ingrediente (es. 1 cucchiaio d'olio -> 10g o 12ml; 1 tazza di farina -> 120g).
+   - Converti tassativamente le unità volumetriche o non empiriche (like 'cucchiai', 'cucchiaini', 'tazze', 'bicchieri', 'manciate', 'pizzichi') nel loro peso equivalente in grammi (g) o volume in millilitri (ml) in base al tipo di ingrediente (es. 1 cucchiaio d'olio -> 10g o 12ml; 1 tazza di farina -> 120g).
    - Per ingredienti contabili e specifici interi (es. 'uova', 'carota', 'limone', 'spicchio d'aglio'), imposta il numero come 'quantity' (es. 2) e usa come 'unit' una stringa vuota (""). Non usare mai unità generiche come 'pezzo' o 'pezzi'.
    - Se le dosi non sono espresse o sono a sentimento, non specificare 'quantity' (impostalo a null) e imposta 'unit' come 'q.b.'.
 5. Se non trovi indicazioni sul numero di porzioni, imposta 'servings' a 2 di default.
 6. Ordina i passaggi delle istruzioni in ordine cronologico e logico chiaro.
 7. Rileva la lingua principale del post/sorgente (es. Italiano, Inglese, Spagnolo) e compila tutti i campi di testo ('title', 'ingredients', 'instructions', 'nutritionalAssessment') direttamente in tale lingua originale del post. Imposta il relativo codice lingua a due lettere in 'sourceLanguage' (es. 'it', 'en', 'es', 'fr', 'de').
-8. Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
+8. Valuta attentamente se nei dati di input (Caption o Trascrizione Audio) sono presenti informazioni utili per estrarre una ricetta (almeno qualche ingrediente o qualche passaggio di preparazione). Se le informazioni sono insufficienti, o se è presente solo un titolo o una parola chiave generica (es. "waffle") senza nessun ingrediente o procedimento utile, imposta tassativamente il campo "isRecipeDetailsPresent" a false.
+9. Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
 `;
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -164,6 +166,7 @@ ${dataInput}
 
 Devi restituire esclusivamente un oggetto JSON che rispetta esattamente il seguente schema:
 {
+  "isRecipeDetailsPresent": "Imposta su true se e solo se la pagina web contiene dettagli effettivi sulla ricetta come ingredienti o passaggi di cottura. Imposta su false se la pagina non contiene informazioni utili a ricreare la ricetta (boolean)",
   "title": "Il titolo della ricetta (string)",
   "sourceLanguage": "Il codice lingua ISO a due lettere della ricetta, es. 'it', 'en', 'es', 'fr' (string)",
   "servings": "Numero di porzioni per cui sono calibrati gli ingredienti (integer, default: 2 se non specificato)",
@@ -206,7 +209,8 @@ REGOLE RIGIDE DI FEDELTÀ (CRITICAL):
 7. Per ingredienti contabili e specifici interi (es. 'uova', 'carota', 'limone'), imposta il numero come 'quantity' (es. 2) e usa come 'unit' una stringa vuota (""). Non usare mai unità generiche come 'pezzo'.
 8. Se non trovi indicazioni sul numero di porzioni, imposta 'servings' a 2 di default.
 9. Rileva la lingua principale del post/sorgente e compila tutti i campi di testo ('title', 'ingredients', 'instructions', 'nutritionalAssessment') direttamente in tale lingua originale. Imposta il relativo codice lingua a due lettere in 'sourceLanguage'.
-10. Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
+10. Valuta attentamente se nei dati di input (dati strutturati o testo) sono realmente presenti informazioni utili per estrarre una ricetta (ingredienti o passaggi). Se le informazioni sono del tutto insufficienti o assenti, imposta tassativamente il campo "isRecipeDetailsPresent" a false.
+11. Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
 `;
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {

@@ -70,6 +70,7 @@
     "importedSuccessDesc": "The recipe is ready in your collection!",
     "importFailed": "Import error",
     "importFailedDesc": "Could not complete scraping. Please try again later.",
+    "insufficientDataError": "No useful recipe details (ingredients or instructions) were detected in the video.",
     "noTokensErrorTitle": "Tokens exhausted",
     "noTokensErrorDesc": "You have run out of tokens! The recipe you are trying to import is not yet in the catalog. Refill your tokens to scan new recipes.",
     "feedTitle": "What are we cooking today?",

@@ -70,10 +70,26 @@ export async function GET(request: Request) {
           ? await scrapeTikTok(sourceUrl)
           : await scrapeWebPage(sourceUrl);
 
+        // Pre-check basic: se didascalia, trascrizione e dati strutturati sono assenti, fallisci subito
+        const cleanCaption = (scrapedData.caption || "").trim();
+        const cleanTranscript = (scrapedData.transcript || "").trim();
+        const hasStructuredData = platform === "web" && !!scrapedData.recipeStructuredData;
+
+        if (!cleanCaption && !cleanTranscript && !hasStructuredData) {
+          console.warn("[Scraper API] Ingestione annullata: caption, transcript e dati strutturati vuoti.");
+          throw new Error("INSUFFICIENT_RECIPE_DATA");
+        }
+
         console.log(`[Scraper API] Dati ottenuti. Avvio dell'estrazione ricetta con Gemini...`);
         const geminiOutput = platform === "web"
           ? await generateRecipeFromWeb(scrapedData)
           : await generateRecipeFromText(scrapedData.caption, scrapedData.transcript);
+
+        // Post-check: verifica se Gemini ha rilevato dettagli insufficienti
+        if (geminiOutput.isRecipeDetailsPresent === false) {
+          console.warn("[Scraper API] Ingestione annullata: Gemini ha rilevato informazioni insufficienti per la ricetta.");
+          throw new Error("INSUFFICIENT_RECIPE_DATA");
+        }
 
         console.log(`[Scraper API] Risposta Gemini ottenuta. Caricamento immagine di copertina su B2...`);
         let b2ImageUrl: string | null = null;

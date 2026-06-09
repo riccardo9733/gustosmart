@@ -70,6 +70,7 @@
     "importedSuccessDesc": "La ricetta è pronta nel tuo ricettario!",
     "importFailed": "Errore di importazione",
     "importFailedDesc": "Impossibile completare lo scraping. Riprova più tardi.",
+    "insufficientDataError": "Non sono state rilevate informazioni utili (ingredienti o passaggi) per generare la ricetta.",
     "noTokensErrorTitle": "Token esauriti",
     "noTokensErrorDesc": "Hai esaurito i token! La ricetta che hai cercato di importare non fa ancora parte del catalogo e serve ricaricare i token.",
     "feedTitle": "Cosa si cucina oggi?",

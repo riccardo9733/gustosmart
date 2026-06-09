@@ -70,6 +70,7 @@
     "importedSuccessDesc": "¡La receta ya está lista en tu colección!",
     "importFailed": "Error de importación",
     "importFailedDesc": "No se pudo completar la importación. Inténtalo más tarde.",
+    "insufficientDataError": "No se detectó información útil (ingredientes o pasos) para generar la receta.",
     "noTokensErrorTitle": "Tokens agotados",
     "noTokensErrorDesc": "¡Te has quedado sin tokens! La receta que intentas importar no está en el catálogo. Recarga tus tokens para escanear nuevas recetas.",
     "feedTitle": "¿Qué cocinamos hoy?",
