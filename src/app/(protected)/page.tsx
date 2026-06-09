@@ -59,7 +59,7 @@ function ScannerHeader({ userId }: { userId: string }) {
     <div className="flex items-center gap-2 mt-2">
       {photo ? (
         <img
-          src={photo}
+          src={photo.includes("backblazeb2.com") ? `/api/proxy-image?url=${encodeURIComponent(photo)}` : photo}
           alt={name}
           className="size-6 rounded-full object-cover border border-white/10 shadow-sm"
         />

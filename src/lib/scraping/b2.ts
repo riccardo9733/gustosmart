@@ -34,12 +34,40 @@ function getS3Client(): S3Client {
 /**
  * Mappa un contentType all'estensione del file corretta.
  */
-function getExtensionFromContentType(contentType: string): string {
+export function getExtensionFromContentType(contentType: string): string {
   const cleanType = contentType.toLowerCase();
   if (cleanType.includes("image/png")) return "png";
   if (cleanType.includes("image/webp")) return "webp";
   if (cleanType.includes("image/gif")) return "gif";
   return "jpg"; // Default standard
+}
+
+/**
+ * Carica un buffer di un'immagine direttamente sul bucket Backblaze B2.
+ * Ritorna l'URL completo del file caricato.
+ */
+export async function uploadBufferToB2(buffer: Buffer, fileKey: string, contentType: string): Promise<string> {
+  const bucketName = process.env.B2_BUCKET_NAME;
+  if (!bucketName) {
+    throw new Error("Manca la chiave d'ambiente B2_BUCKET_NAME");
+  }
+
+  const client = getS3Client();
+
+  console.log(`B2: Avvio caricamento buffer su B2 con chiave: ${fileKey}`);
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: fileKey,
+    Body: buffer,
+    ContentType: contentType,
+  });
+
+  await client.send(command);
+  console.log("B2: Caricamento completato con successo!");
+
+  // Costruisce l'URL S3 completo
+  const endpoint = process.env.B2_ENDPOINT?.replace(/\/$/, "");
+  return `${endpoint}/${bucketName}/${fileKey}`;
 }
 
 /**

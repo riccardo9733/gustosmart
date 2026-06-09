@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { signOut } from "firebase/auth";
 import { useTranslations } from "next-intl";
 import { 
@@ -32,6 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ProfileImageDrawer } from "@/components/profile-image-drawer";
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
@@ -40,6 +40,7 @@ export default function ProfilePage() {
   const { isInstalled, installApp } = usePWA();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isImageDrawerOpen, setIsImageDrawerOpen] = useState(false);
 
   const [metricUnit, setMetricUnit] = useState(true);
   const [timerAlerts, setTimerAlerts] = useState(true);
@@ -180,18 +181,31 @@ export default function ProfilePage() {
     <div className="max-w-2xl mx-auto space-y-8 pb-10 animate-in fade-in duration-500">
       {/* User Profile Header */}
       <section className="flex flex-col items-center text-center space-y-4">
-        <div className="relative group">
+        <div 
+          onClick={() => setIsImageDrawerOpen(true)}
+          className="relative group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full transition-all"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setIsImageDrawerOpen(true);
+            }
+          }}
+          aria-label={t("uploadPhoto")}
+        >
           <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl relative">
-            <Image 
-              src={profile?.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuAlB9fZRWwbOPOZ7TZacLV3xx6oP8Rr4PhFnhygSn1hctWwwohqDbXROhA5oUjZDl9nPkp6NbYqi42KanTEW4sVWUmeHClSUQVgC7FuCQF2Fp2rna8sOBbFCFWTXPwJ7EHdpBzY9H_Qn4fcQdxX4sfziriwLLAKBDP-zRAXbMCti1BjIM0-Ct_xWvGYP3nCOAfb7vF-sMmbjugOe1OtZWpLUZyFP53wBYO2QnY6JnL5-WUUbvh2FeYYmbNLibwO8PU7fbdWBzduyA"}
+            <img 
+              src={profile?.photoURL ? `/api/proxy-image?url=${encodeURIComponent(profile.photoURL)}` : "https://lh3.googleusercontent.com/aida-public/AB6AXuAlB9fZRWwbOPOZ7TZacLV3xx6oP8Rr4PhFnhygSn1hctWwwohqDbXROhA5oUjZDl9nPkp6NbYqi42KanTEW4sVWUmeHClSUQVgC7FuCQF2Fp2rna8sOBbFCFWTXPwJ7EHdpBzY9H_Qn4fcQdxX4sfziriwLLAKBDP-zRAXbMCti1BjIM0-Ct_xWvGYP3nCOAfb7vF-sMmbjugOe1OtZWpLUZyFP53wBYO2QnY6JnL5-WUUbvh2FeYYmbNLibwO8PU7fbdWBzduyA"}
               alt={`${profile?.displayName || "Chef"} profile avatar`}
-              fill
-              sizes="96px"
-              className="object-cover"
-              priority
+              className="w-full h-full object-cover"
             />
           </div>
-          <button className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg border-2 border-white hover:scale-110 active:scale-95 transition-transform">
+          <button 
+            type="button"
+            className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg border-2 border-white hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+            aria-label={t("uploadPhoto")}
+          >
             <Pencil className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -472,6 +486,14 @@ export default function ProfilePage() {
           </p>
         </div>
       </div>
+
+      {profile?.uid && (
+        <ProfileImageDrawer
+          isOpen={isImageDrawerOpen}
+          onClose={() => setIsImageDrawerOpen(false)}
+          userId={profile.uid}
+        />
+      )}
     </div>
   );
 }

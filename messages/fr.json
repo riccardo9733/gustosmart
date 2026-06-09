@@ -116,7 +116,18 @@
     "tokensRemaining": "Tokens restants",
     "pwaSectionTitle": "Application",
     "pwaInstallApp": "Installer GustoSmart",
-    "pwaInstallDesc": "Ajoutez l'application à votre écran d'accueil pour l'utiliser en plein écran et hors ligne."
+    "pwaInstallDesc": "Ajoutez l'application à votre écran d'accueil pour l'utiliser en plein écran et hors ligne.",
+    "uploadPhoto": "Changer la Photo de Profil",
+    "uploadPhotoDesc": "Sélectionnez ou glissez une image (10 Mo maximum) pour mettre à jour votre avatar.",
+    "confirmUpload": "Enregistrer l'Image",
+    "uploading": "Téléchargement...",
+    "uploadSuccess": "Image téléchargée avec succès !",
+    "uploadFailed": "Échec du téléchargement. Veuillez réessayer.",
+    "sizeError": "Le fichier sélectionné dépasse la limite de 10 Mo.",
+    "typeError": "Type de fichier non pris en charge. Veuillez télécharger une image.",
+    "dragDrop": "Glissez l'image ici ou cliquez pour parcourir",
+    "limits": "Prend en charge JPG, PNG, WEBP, GIF (Max 10 Mo)",
+    "cancel": "Annuler"
   },
   "Recipes": {
     "title": "Votre Carnet de Recettes",

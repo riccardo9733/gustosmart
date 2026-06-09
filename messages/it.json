@@ -116,7 +116,18 @@
     "tokensRemaining": "Token rimasti",
     "pwaSectionTitle": "Applicazione",
     "pwaInstallApp": "Installa GustoSmart",
-    "pwaInstallDesc": "Aggiungi l'app alla tua schermata home per usarla a schermo intero e offline."
+    "pwaInstallDesc": "Aggiungi l'app alla tua schermata home per usarla a schermo intero e offline.",
+    "uploadPhoto": "Cambia Immagine del Profilo",
+    "uploadPhotoDesc": "Seleziona o trascina un'immagine (massimo 10MB) per aggiornare il tuo avatar.",
+    "confirmUpload": "Salva Immagine",
+    "uploading": "Caricamento in corso...",
+    "uploadSuccess": "Immagine caricata con successo!",
+    "uploadFailed": "Caricamento fallito. Riprova.",
+    "sizeError": "Il file selezionato supera il limite di 10MB.",
+    "typeError": "Tipo di file non supportato. Carica un'immagine.",
+    "dragDrop": "Trascina qui l'immagine o clicca per sfogliare",
+    "limits": "Supporta JPG, PNG, WEBP, GIF (Max 10MB)",
+    "cancel": "Annulla"
   },
   "Recipes": {
     "title": "Il Tuo Ricettario",

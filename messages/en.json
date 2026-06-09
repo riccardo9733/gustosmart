@@ -116,7 +116,18 @@
     "tokensRemaining": "Tokens left",
     "pwaSectionTitle": "Application",
     "pwaInstallApp": "Install GustoSmart",
-    "pwaInstallDesc": "Add the app to your home screen to use it full screen and offline."
+    "pwaInstallDesc": "Add the app to your home screen to use it full screen and offline.",
+    "uploadPhoto": "Change Profile Image",
+    "uploadPhotoDesc": "Select or drag an image (maximum 10MB) to update your avatar.",
+    "confirmUpload": "Save Image",
+    "uploading": "Uploading...",
+    "uploadSuccess": "Image uploaded successfully!",
+    "uploadFailed": "Upload failed. Please try again.",
+    "sizeError": "The selected file exceeds the 10MB limit.",
+    "typeError": "Unsupported file type. Please upload an image.",
+    "dragDrop": "Drag image here or click to browse",
+    "limits": "Supports JPG, PNG, WEBP, GIF (Max 10MB)",
+    "cancel": "Cancel"
   },
   "Recipes": {
     "title": "Your Recipes",
