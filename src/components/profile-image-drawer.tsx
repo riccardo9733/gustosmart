@@ -21,9 +21,73 @@ interface ProfileImageDrawerProps {
   userId: string;
 }
 
+/**
+ * Ridimensiona e taglia al centro un'immagine selezionata in un quadrato 384x384
+ * e restituisce un Blob compresso in formato JPEG (qualità 0.85).
+ */
+const cropAndResizeImage = (file: File, targetSize = 384): Promise<{ blob: Blob; previewUrl: string }> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Impossibile inizializzare il contesto Canvas 2D"));
+          return;
+        }
+
+        // Calcola il ritaglio quadrato centrale
+        const minSide = Math.min(img.width, img.height);
+        const sourceX = (img.width - minSide) / 2;
+        const sourceY = (img.height - minSide) / 2;
+
+        // Disegna l'immagine ritagliata e riscalata sul canvas
+        ctx.drawImage(
+          img,
+          sourceX,
+          sourceY,
+          minSide,
+          minSide, // sorgente
+          0,
+          0,
+          targetSize,
+          targetSize // destinazione
+        );
+
+        // Converte in blob JPEG a qualità 0.85
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const previewUrl = URL.createObjectURL(blob);
+              resolve({ blob, previewUrl });
+            } else {
+              reject(new Error("Errore durante la compressione dell'immagine"));
+            }
+          },
+          "image/jpeg",
+          0.85
+        );
+      };
+      img.onerror = () => {
+        reject(new Error("Errore durante il caricamento del file immagine"));
+      };
+    };
+    reader.onerror = () => {
+      reject(new Error("Errore durante la lettura del file"));
+    };
+  });
+};
+
 export function ProfileImageDrawer({ isOpen, onClose, userId }: ProfileImageDrawerProps) {
   const t = useTranslations("Profile");
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -55,11 +119,24 @@ export function ProfileImageDrawer({ isOpen, onClose, userId }: ProfileImageDraw
     return true;
   };
 
+  const processImageFile = async (selectedFile: File) => {
+    const toastId = toast.loading("Elaborazione immagine...");
+    try {
+      const { blob, previewUrl: url } = await cropAndResizeImage(selectedFile);
+      setFile(blob);
+      setPreviewUrl(url);
+      toast.dismiss(toastId);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Errore durante l'elaborazione dell'immagine.";
+      console.error(err);
+      toast.error(errorMessage, { id: toastId });
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile && validateFile(selectedFile)) {
-      setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile));
+      processImageFile(selectedFile);
     }
   };
 
@@ -77,8 +154,7 @@ export function ProfileImageDrawer({ isOpen, onClose, userId }: ProfileImageDraw
     setIsDragging(false);
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile && validateFile(droppedFile)) {
-      setFile(droppedFile);
-      setPreviewUrl(URL.createObjectURL(droppedFile));
+      processImageFile(droppedFile);
     }
   };
 
@@ -92,7 +168,8 @@ export function ProfileImageDrawer({ isOpen, onClose, userId }: ProfileImageDraw
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      // Poiché file è un Blob JPEG generato dal canvas, diamo un nome coerente "profile.jpg"
+      formData.append("file", file, "profile.jpg");
       formData.append("userId", userId);
 
       const response = await fetch("/api/profile/upload", {
