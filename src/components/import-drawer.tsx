@@ -83,7 +83,7 @@ export function ImportDrawer() {
   };
 
   return (
-    <Drawer open={isDrawerOpen} onOpenChange={(open) => !open && closeImportDrawer()}>
+    <Drawer open={isDrawerOpen} onOpenChange={(open) => !open && closeImportDrawer()} repositionInputs={false}>
       <DrawerContent className="max-h-[85vh] p-6 rounded-t-[32px] border-t border-white/20 bg-background dark:bg-surface-container/95 backdrop-blur-xl">
         {/* Elementi di accessibilità invisibili richiesti da Radix UI in tutti gli stati */}
         <div className="sr-only">
@@ -115,7 +115,7 @@ export function ImportDrawer() {
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
                     placeholder={t("placeholder")}
-                    className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-5 text-sm h-11"
+                    className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-5 h-11"
                   />
                   <Button
                     type="submit"
