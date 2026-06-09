@@ -12,7 +12,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { getFirebaseDb } from "@/lib/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
 interface ProfileImageDrawerProps {
@@ -186,10 +186,10 @@ export function ProfileImageDrawer({ isOpen, onClose, userId }: ProfileImageDraw
       // Update Firestore user document
       const db = getFirebaseDb();
       const userRef = doc(db, "users", userId);
-      await updateDoc(userRef, {
+      await setDoc(userRef, {
         photoURL: data.imageUrl,
         updatedAt: new Date().toISOString(),
-      });
+      }, { merge: true });
 
       toast.success(t("uploadSuccess"));
       handleClose();

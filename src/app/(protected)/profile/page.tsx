@@ -23,7 +23,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { usePWA } from "@/contexts/pwa-context";
 import { useTheme } from "next-themes";
 import { selectUserProfile, setUserSuccess } from "@/store/userSlice";
-import { doc, updateDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { doc, updateDoc, setDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -105,10 +105,10 @@ export default function ProfilePage() {
         language: langCode,
       };
 
-      await updateDoc(userRef, {
+      await setDoc(userRef, {
         preferences: updatedPreferences,
         updatedAt: new Date().toISOString(),
-      });
+      }, { merge: true });
 
       dispatch(
         setUserSuccess({
@@ -143,10 +143,10 @@ export default function ProfilePage() {
         measurementSystem: isMetric ? ("metric" as const) : ("imperial" as const),
       };
 
-      await updateDoc(userRef, {
+      await setDoc(userRef, {
         preferences: updatedPreferences,
         updatedAt: new Date().toISOString(),
-      });
+      }, { merge: true });
 
       dispatch(
         setUserSuccess({
