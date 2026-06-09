@@ -36,16 +36,12 @@ import type { GlobalRecipe } from "@/lib/firestore/recipes";
 // sub-component to fetch and render the user who scanned/imported the recipe
 function ScannerHeader({ userId }: { userId: string }) {
   const { data: profile, isLoading } = useUserProfile(userId);
-  const t = useTranslations("Home");
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-9 w-9 rounded-full bg-muted/20 animate-pulse" />
-        <div className="flex flex-col gap-1.5">
-          <Skeleton className="h-3 w-24 bg-muted/20 animate-pulse" />
-          <Skeleton className="h-2.5 w-16 bg-muted/20 animate-pulse" />
-        </div>
+      <div className="flex items-center gap-2 mt-2">
+        <Skeleton className="size-6 rounded-full bg-muted/20 animate-pulse" />
+        <Skeleton className="h-3 w-16 bg-muted/20 animate-pulse" />
       </div>
     );
   }
@@ -60,24 +56,21 @@ function ScannerHeader({ userId }: { userId: string }) {
     .toUpperCase();
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 mt-2">
       {photo ? (
         <img
           src={photo}
           alt={name}
-          className="h-9 w-9 rounded-full object-cover border border-white/10 shadow-sm"
+          className="size-6 rounded-full object-cover border border-white/10 shadow-sm"
         />
       ) : (
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs shadow-sm">
+        <div className="flex size-6 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-[9px] shadow-sm">
           {initials || "CG"}
         </div>
       )}
-      <div className="flex flex-col text-left">
-        <span className="text-xs font-semibold text-foreground leading-tight">{name}</span>
-        <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
-          {t("scannedBy") || "Ha scansionato questa ricetta"}
-        </span>
-      </div>
+      <span className="text-[11px] font-medium text-muted-foreground truncate max-w-[120px]">
+        {name}
+      </span>
     </div>
   );
 }
@@ -104,7 +97,8 @@ function FeedCard({
     ? `/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`
     : null;
 
-  const handleDoubleClick = () => {
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!isSaved) {
       onToggleSave();
       setShowSplash(true);
@@ -112,124 +106,94 @@ function FeedCard({
     }
   };
 
-  const isSocial =
-    recipe.sourcePlatform === "instagram" ||
-    recipe.sourcePlatform === "tiktok" ||
-    !recipe.sourceUrl?.includes(".");
-
   return (
-    <Card className="w-full max-w-md mx-auto overflow-hidden rounded-[24px] border border-white/10 dark:border-white/5 bg-surface-container/30 shadow-xl shadow-primary/2 flex flex-col">
-      {/* Card Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/5 bg-background/20 backdrop-blur-sm">
-        <ScannerHeader userId={recipe.createdBy} />
-
-        {/* Source badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 dark:bg-black/10 border border-white/10 text-[10px] font-semibold text-muted-foreground shadow-sm">
-          {recipe.sourcePlatform === "instagram" ? (
-            <Film className="h-3 w-3 text-pink-500 fill-pink-500/20" />
-          ) : recipe.sourcePlatform === "tiktok" ? (
-            <Video className="h-3 w-3 text-teal-400" />
-          ) : (
-            <LinkIcon className="h-3 w-3 text-primary" />
-          )}
-          <span className="capitalize">{recipe.sourcePlatform || "Web"}</span>
-        </div>
-      </div>
-
-      {/* Card Image with Double Click Save */}
-      <div
-        className="relative w-full aspect-square bg-muted/10 overflow-hidden cursor-pointer select-none"
+    <Card 
+      onClick={onViewDetails}
+      className="group relative w-full overflow-hidden rounded-3xl border border-border/40 bg-card/40 dark:bg-surface-container/20 shadow-md hover:-translate-y-1 hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer select-none flex flex-col"
+    >
+      {/* Image Container */}
+      <div 
+        className="relative w-full overflow-hidden bg-muted/10"
         onDoubleClick={handleDoubleClick}
       >
         {imageSrc ? (
           <img
             src={imageSrc}
             alt={recipe.title}
-            className="w-full h-full object-cover"
+            className="w-full h-auto max-h-[280px] object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/5 to-primary/10 flex flex-col items-center justify-center text-primary/20">
-            <ChefHat className="w-20 h-20 stroke-[1.2]" />
+          <div className="w-full aspect-[4/3] bg-gradient-to-br from-primary/5 to-primary/10 flex flex-col items-center justify-center text-primary/20">
+            <ChefHat className="size-10 stroke-[1.2]" />
           </div>
         )}
 
+        {/* Source Platform Badge (overlay top-left) */}
+        <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-background/70 backdrop-blur-md border border-white/10 text-[9px] font-bold text-muted-foreground shadow-sm">
+          {recipe.sourcePlatform === "instagram" ? (
+            <Film className="size-3 text-pink-500 fill-pink-500/10" />
+          ) : recipe.sourcePlatform === "tiktok" ? (
+            <Video className="size-3 text-teal-400" />
+          ) : (
+            <LinkIcon className="size-3 text-primary" />
+          )}
+          <span className="capitalize">{recipe.sourcePlatform || "Web"}</span>
+        </div>
+
+        {/* Bookmark/Save button (overlay top-right) */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSave();
+          }}
+          className={cn(
+            "absolute top-2.5 right-2.5 z-10 size-8 rounded-full bg-background/75 backdrop-blur-md shadow-sm border border-white/10 hover:bg-background hover:scale-105 active:scale-95 transition-all text-foreground",
+            isSaved ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          {isSaved ? (
+            <BookmarkCheck data-icon="inline-start" className="fill-primary text-primary" />
+          ) : (
+            <Bookmark data-icon="inline-start" />
+          )}
+        </Button>
+
         {/* Double click animated splash */}
         {showSplash && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/25 animate-in fade-in-0 duration-200">
-            <div className="p-5 rounded-full bg-white/90 dark:bg-black/80 shadow-2xl scale-0 animate-bounce">
-              <BookmarkCheck className="h-12 w-12 text-primary" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 animate-in fade-in-0 duration-200">
+            <div className="p-3 rounded-full bg-white/95 dark:bg-black/90 shadow-xl scale-0 animate-bounce">
+              <BookmarkCheck className="size-6 text-primary" />
             </div>
           </div>
         )}
       </div>
 
-      {/* Action Bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/10">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleSave}
-          className={cn(
-            "h-10 w-10 rounded-full transition-all active:scale-90",
-            isSaved
-              ? "text-primary hover:text-primary/80 hover:bg-primary/5"
-              : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-          )}
-        >
-          {isSaved ? (
-            <BookmarkCheck className="h-6 w-6 fill-primary" />
-          ) : (
-            <Bookmark className="h-6 w-6" />
-          )}
-        </Button>
-
-        <Button
-          onClick={onViewDetails}
-          variant="outline"
-          size="sm"
-          className="border-primary/20 text-primary hover:bg-primary/5 rounded-full font-semibold px-4 flex items-center gap-1 group transition-all"
-        >
-          {tDetails("view") || "Visualizza"}
-          <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-        </Button>
-      </div>
-
-      {/* Recipe Info */}
-      <div className="p-4 flex flex-col gap-3">
-        <h4
-          onClick={onViewDetails}
-          className="font-heading text-lg font-bold text-foreground leading-snug cursor-pointer hover:text-primary transition-colors text-left"
-        >
+      {/* Card Body */}
+      <div className="p-3.5 flex flex-col gap-1.5">
+        <h4 className="font-heading text-sm font-bold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2 text-left">
           {recipe.title}
         </h4>
 
-        {/* Tags Row */}
-        <div className="flex flex-wrap gap-2 items-center text-xs font-medium">
-          {recipe.prepTimeMinutes && (
-            <span className="flex items-center gap-1.5 bg-muted/10 border border-white/5 px-2.5 py-1 rounded-full text-muted-foreground">
-              <Clock className="h-3.5 w-3.5 text-primary" />
-              {tRecipes("minCount", { count: recipe.prepTimeMinutes })}
-            </span>
-          )}
-          <span className="flex items-center gap-1.5 bg-muted/10 border border-white/5 px-2.5 py-1 rounded-full text-muted-foreground">
-            <Users className="h-3.5 w-3.5 text-primary" />
-            {tRecipes("servingsCount", { count: recipe.servings || 2 })}
-          </span>
-          {recipe.kcal && (
-            <span className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full text-primary">
-              <Flame className="h-3.5 w-3.5 fill-primary/20" />
-              {tDetails("kcalCount", { count: recipe.kcal })}
-            </span>
-          )}
-        </div>
-
-        {/* Footer counts summary */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 border-t border-white/5 pt-3">
-          <span>{tRecipes("ingredients", { count: recipe.ingredients?.length || 0 })}</span>
-          <span className="size-1 rounded-full bg-muted-foreground/30" />
-          <span>{tRecipes("instructions", { count: recipe.instructions?.length || 0 })}</span>
-        </div>
+        {/* Recipe Tags */}
+        {(recipe.prepTimeMinutes || recipe.kcal || recipe.servings) && (
+          <div className="flex flex-wrap gap-1 items-center text-[10px] font-semibold">
+            {recipe.prepTimeMinutes && (
+              <span className="flex items-center gap-0.5 bg-muted/40 text-muted-foreground px-1.5 py-0.5 rounded-full border border-border/10">
+                <Clock className="size-3 text-primary" />
+                {tRecipes("minCount", { count: recipe.prepTimeMinutes })}
+              </span>
+            )}
+            {recipe.kcal && (
+              <span className="flex items-center gap-0.5 bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/10">
+                <Flame className="size-3 fill-primary/10" />
+                {tDetails("kcalCount", { count: recipe.kcal })}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -326,7 +290,7 @@ export default function HomeFeed() {
   const loading = globalLoading || userLoading;
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-500 relative max-w-xl mx-auto pb-16">
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500 relative w-full pb-16">
       {/* Header Info */}
       <section className="flex flex-col gap-2 text-center items-center mt-2">
         <h2 className="font-heading text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2 justify-center">
@@ -338,8 +302,8 @@ export default function HomeFeed() {
         </p>
       </section>
 
-      {/* Search and Filters */}
-      <section className="flex flex-col gap-4">
+      {/* Sticky Search and Filters */}
+      <div className="sticky top-16 z-30 -mx-6 px-6 py-4 bg-background/80 backdrop-blur-md border-b border-border/40 flex flex-col gap-3 transition-shadow">
         {/* Search Input */}
         <div className="relative w-full group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5 transition-colors group-focus-within:text-primary" />
@@ -353,7 +317,7 @@ export default function HomeFeed() {
         </div>
 
         {/* Filters Panel */}
-        <div className="flex flex-col gap-3 py-1">
+        <div className="flex flex-col gap-3">
           {/* Categories Horizontal Scroller */}
           <div className="flex overflow-x-auto gap-2 scrollbar-none pb-1 shrink-0">
             {CATEGORIES.map((cat) => {
@@ -414,21 +378,22 @@ export default function HomeFeed() {
             </button>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Feed List */}
-      <section className="w-full flex flex-col gap-8 mt-2">
+      <section className="w-full mt-2">
         {loading ? (
-          Array.from({ length: 3 }).map((_, idx) => (
-            <Card key={idx} className="w-full max-w-md mx-auto overflow-hidden rounded-[24px] border border-white/10 bg-muted/10 flex flex-col gap-4 p-4 aspect-[4/5]">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-9 w-9 rounded-full bg-muted/20 animate-pulse" />
-                <Skeleton className="h-4 w-28 bg-muted/20 animate-pulse" />
+          <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 w-full">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div key={idx} className="break-inside-avoid mb-4 w-full">
+                <Card className="overflow-hidden rounded-3xl border border-border/40 bg-card/40 p-3 flex flex-col gap-3">
+                  <Skeleton className="w-full aspect-[4/3] rounded-2xl bg-muted/20 animate-pulse" />
+                  <Skeleton className="h-4 w-3/4 bg-muted/20 animate-pulse" />
+                  <Skeleton className="h-3.5 w-1/2 bg-muted/20 animate-pulse" />
+                </Card>
               </div>
-              <Skeleton className="flex-1 w-full rounded-xl bg-muted/20 animate-pulse" />
-              <Skeleton className="h-6 w-3/4 bg-muted/20 animate-pulse" />
-            </Card>
-          ))
+            ))}
+          </div>
         ) : globalRecipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-700 max-w-md mx-auto">
             <div className="w-48 h-48 mb-8 rounded-full bg-primary/5 flex items-center justify-center relative shadow-inner">
@@ -457,20 +422,23 @@ export default function HomeFeed() {
             </Button>
           </div>
         ) : (
-          filteredRecipes.map((recipe) => {
-            const isSaved = userRecipes.some((ur) => ur.id === recipe.id);
-            return (
-              <FeedCard
-                key={recipe.id}
-                recipe={recipe}
-                isSaved={isSaved}
-                onToggleSave={() => handleToggleSave(recipe, isSaved)}
-                onViewDetails={() => router.push(`/recipes/${recipe.id}`)}
-                tRecipes={tRecipes}
-                tDetails={tDetails}
-              />
-            );
-          })
+          <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 w-full">
+            {filteredRecipes.map((recipe) => {
+              const isSaved = userRecipes.some((ur) => ur.id === recipe.id);
+              return (
+                <div key={recipe.id} className="break-inside-avoid mb-4 w-full">
+                  <FeedCard
+                    recipe={recipe}
+                    isSaved={isSaved}
+                    onToggleSave={() => handleToggleSave(recipe, isSaved)}
+                    onViewDetails={() => router.push(`/recipes/${recipe.id}`)}
+                    tRecipes={tRecipes}
+                    tDetails={tDetails}
+                  />
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
     </div>
