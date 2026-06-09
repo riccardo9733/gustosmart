@@ -210,6 +210,23 @@ export function ImportDrawer({ open, onOpenChange }: ImportDrawerProps) {
                 kcal: statusJson.recipe.kcal !== undefined && statusJson.recipe.kcal !== null
                   ? statusJson.recipe.kcal
                   : null,
+                proteins: statusJson.recipe.proteins !== undefined && statusJson.recipe.proteins !== null
+                  ? statusJson.recipe.proteins
+                  : null,
+                carbs: statusJson.recipe.carbs !== undefined && statusJson.recipe.carbs !== null
+                  ? statusJson.recipe.carbs
+                  : null,
+                fats: statusJson.recipe.fats !== undefined && statusJson.recipe.fats !== null
+                  ? statusJson.recipe.fats
+                  : null,
+                fiber: statusJson.recipe.fiber !== undefined && statusJson.recipe.fiber !== null
+                  ? statusJson.recipe.fiber
+                  : null,
+                sugar: statusJson.recipe.sugar !== undefined && statusJson.recipe.sugar !== null
+                  ? statusJson.recipe.sugar
+                  : null,
+                nutritionalRating: statusJson.recipe.nutritionalRating || null,
+                nutritionalAssessment: statusJson.recipe.nutritionalAssessment || null,
                 createdAt: serverTimestamp(),
                 createdBy: user.uid,
                 creatorUsername: statusJson.recipe.creatorUsername || null,

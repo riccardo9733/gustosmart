@@ -36,6 +36,13 @@ export interface GlobalRecipe {
   servings: number;
   category: string;
   kcal: number | null;
+  proteins?: number | null;
+  carbs?: number | null;
+  fats?: number | null;
+  fiber?: number | null;
+  sugar?: number | null;
+  nutritionalRating?: string | null;
+  nutritionalAssessment?: string | null;
   createdAt: any;
   createdBy: string;
   creatorUsername?: string | null;

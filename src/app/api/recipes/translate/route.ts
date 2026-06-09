@@ -4,7 +4,7 @@ import { translateRecipe } from "@/lib/scraping/gemini";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, ingredients, instructions, targetLanguage } = body;
+    const { title, ingredients, instructions, targetLanguage, nutritionalAssessment } = body;
 
     if (!title) {
       return NextResponse.json(
@@ -25,7 +25,8 @@ export async function POST(request: Request) {
       title,
       ingredients || [],
       instructions || [],
-      targetLanguage
+      targetLanguage,
+      nutritionalAssessment || null
     );
     console.log(`Traduzione completata con successo`);
 
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
         title: translatedJson.title,
         ingredients: translatedJson.ingredients || [],
         instructions: translatedJson.instructions || [],
+        nutritionalAssessment: translatedJson.nutritionalAssessment || null,
       }
     });
   } catch (error: any) {

@@ -33,6 +33,13 @@ Devi restituire esclusivamente un oggetto JSON che rispetta esattamente il segue
   "prepTimeMinutes": "Tempo totale di preparazione e cottura in minuti (integer, nullo o non inserito se non deducibile)",
   "category": "La categoria della ricetta. Deve essere esattamente una tra: 'first_courses', 'second_courses', 'desserts', 'appetizers', 'sides', 'single_dishes', 'other' (string)",
   "kcal": "Calorie medie stimate per 100g di ricetta pronta/finita in kcal (integer, null se non calcolabile)",
+  "proteins": "Stima dei grammi di proteine per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "carbs": "Stima dei grammi di carboidrati per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "fats": "Stima dei grammi di grassi per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "fiber": "Stima dei grammi di fibre per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "sugar": "Stima dei grammi di zuccheri per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "nutritionalRating": "Valutazione sintetica della ricetta in scala da 'A' (molto salutare) a 'E' (poco salutare) in stile Nutri-Score (string: 'A', 'B', 'C', 'D' o 'E', null se non calcolabile)",
+  "nutritionalAssessment": "Breve frase di commento nutrizionale sulla ricetta nella stessa lingua originale del post, max 120 caratteri (string, null se non calcolabile)",
   "ingredients": [
     {
       "name": "Nome dell'ingrediente, es. Farina 00, Uova (string)",
@@ -55,14 +62,14 @@ Istruzioni per l'estrazione:
    - 'sides' (contorni come patate, verdure d'accompagnamento, insalate)
    - 'single_dishes' (piatti unici ricchi e nutrizionalmente completi, es. lasagne, parmigiana)
    - 'other' (se non rientra in nessun'altra categoria)
-3. Stima le calorie (kcal) medie PER 100G DI PRODOTTO FINITO (ricetta pronta) basandoti sul tipo e la quantità degli ingredienti totali. Sii quanto più realistico e preciso possibile. Se è impossibile stimarle, inserisci null.
+3. Stima accuratamente le calorie (kcal) medie e i macronutrienti (proteins, carbs, fats, fiber, sugar) per 100g DI PRODOTTO FINITO (ricetta pronta), basandoti sul tipo e la quantità degli ingredienti totali. Sii quanto più realistico e preciso possibile. Se è impossibile stimarle, imposta i relativi campi a null.
 4. Identifica le dosi e le unità di misura corrette.
    - Converti tassativamente le unità volumetriche o non empiriche (come 'cucchiai', 'cucchiaini', 'tazze', 'bicchieri', 'manciate', 'pizzichi') nel loro peso equivalente in grammi (g) o volume in millilitri (ml) in base al tipo di ingrediente (es. 1 cucchiaio d'olio -> 10g o 12ml; 1 tazza di farina -> 120g).
    - Per ingredienti contabili e specifici interi (es. 'uova', 'carota', 'limone', 'spicchio d'aglio'), imposta il numero come 'quantity' (es. 2) e usa come 'unit' una stringa vuota (""). Non usare mai unità generiche come 'pezzo' o 'pezzi'.
    - Se le dosi non sono espresse o sono a sentimento, non specificare 'quantity' (impostalo a null) e imposta 'unit' come 'q.b.'.
 5. Se non trovi indicazioni sul numero di porzioni, imposta 'servings' a 2 di default.
 6. Ordina i passaggi delle istruzioni in ordine cronologico e logico chiaro.
-7. Rileva la lingua principale del post/sorgente (es. Italiano, Inglese, Spagnolo) e compila tutti i campi di testo ('title', 'ingredients', 'instructions') direttamente in tale lingua originale del post. Imposta il relativo codice lingua a due lettere in 'sourceLanguage' (es. 'it', 'en', 'es', 'fr', 'de').
+7. Rileva la lingua principale del post/sorgente (es. Italiano, Inglese, Spagnolo) e compila tutti i campi di testo ('title', 'ingredients', 'instructions', 'nutritionalAssessment') direttamente in tale lingua originale del post. Imposta il relativo codice lingua a due lettere in 'sourceLanguage' (es. 'it', 'en', 'es', 'fr', 'de').
 8. Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
 `;
 
@@ -163,6 +170,13 @@ Devi restituire esclusivamente un oggetto JSON che rispetta esattamente il segue
   "prepTimeMinutes": "Tempo totale di preparazione e cottura in minuti (integer, nullo o non inserito se non deducibile)",
   "category": "La categoria della ricetta. Deve essere esattamente una tra: 'first_courses', 'second_courses', 'desserts', 'appetizers', 'sides', 'single_dishes', 'other' (string)",
   "kcal": "Calorie medie stimate per 100g di ricetta pronta/finita in kcal (integer, null se non calcolabile)",
+  "proteins": "Stima dei grammi di proteine per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "carbs": "Stima dei grammi di carboidrati per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "fats": "Stima dei grammi di grassi per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "fiber": "Stima dei grammi di fibre per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "sugar": "Stima dei grammi di zuccheri per 100g di ricetta pronta/finita (number, null se non calcolabile)",
+  "nutritionalRating": "Valutazione sintetica della ricetta in scala da 'A' (molto salutare) a 'E' (poco salutare) in stile Nutri-Score (string: 'A', 'B', 'C', 'D' o 'E', null se non calcolabile)",
+  "nutritionalAssessment": "Breve frase di commento nutrizionale sulla ricetta nella stessa lingua originale, max 120 caratteri (string, null se non calcolabile)",
   "ingredients": [
     {
       "name": "Nome dell'ingrediente, es. Farina 00, Uova (string)",
@@ -187,11 +201,11 @@ REGOLE RIGIDE DI FEDELTÀ (CRITICAL):
    - 'sides' (contorni come patate, verdure d'accompagnamento, insalate)
    - 'single_dishes' (piatti unici ricchi e nutrizionalmente completi, es. lasagne, parmigiana)
    - 'other' (se non rientra in nessun'altra categoria)
-5. Stima le calorie (kcal) medie PER 100G DI PRODOTTO FINITO (ricetta pronta) basandoti sul tipo e la quantità degli ingredienti totali. Se è impossibile stimarle o le dosi degli ingredienti chiave sono mancanti, inserisci null.
+5. Stima accuratamente le calorie (kcal) medie e i macronutrienti (proteins, carbs, fats, fiber, sugar) per 100g DI PRODOTTO FINITO (ricetta pronta) basandoti sul tipo e la quantità degli ingredienti totali. Se è impossibile stimarle o le dosi degli ingredienti chiave sono mancanti, imposta i relativi campi a null.
 6. Converti le unità volumetriche o non empiriche (come 'cucchiai', 'cucchiaini', 'tazze', 'bicchieri', 'manciate', 'pizzichi') nel loro peso equivalente in grammi (g) o volume in millilitri (ml) in base al tipo di ingrediente (es. 1 cucchiaio d'olio -> 10g o 12ml).
 7. Per ingredienti contabili e specifici interi (es. 'uova', 'carota', 'limone'), imposta il numero come 'quantity' (es. 2) e usa come 'unit' una stringa vuota (""). Non usare mai unità generiche come 'pezzo'.
 8. Se non trovi indicazioni sul numero di porzioni, imposta 'servings' a 2 di default.
-9. Rileva la lingua principale del post/sorgente e compila tutti i campi di testo ('title', 'ingredients', 'instructions') direttamente in tale lingua originale. Imposta il relativo codice lingua a due lettere in 'sourceLanguage'.
+9. Rileva la lingua principale del post/sorgente e compila tutti i campi di testo ('title', 'ingredients', 'instructions', 'nutritionalAssessment') direttamente in tale lingua originale. Imposta il relativo codice lingua a due lettere in 'sourceLanguage'.
 10. Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
 `;
 
@@ -245,13 +259,14 @@ REGOLE RIGIDE DI FEDELTÀ (CRITICAL):
 }
 
 /**
- * Traduce titolo, ingredienti e istruzioni di una ricetta nella lingua indicata.
+ * Traduce titolo, ingredienti, istruzioni e valutazione nutrizionale di una ricetta nella lingua indicata.
  */
 export async function translateRecipe(
   title: string,
   ingredients: any[],
   instructions: string[],
-  targetLanguage: string
+  targetLanguage: string,
+  nutritionalAssessment?: string | null
 ): Promise<any> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -276,13 +291,15 @@ Traduci solo i campi di testo:
 - Il titolo della ricetta.
 - Il nome (name) di ciascun ingrediente. Nota: le quantità e le unità di misura (g, ml, q.b., stringa vuota) devono rimanere identiche e inalterate.
 - Ciascun passaggio (stringa) delle istruzioni.
+- La valutazione nutrizionale (nutritionalAssessment), se presente.
 
 Struttura della ricetta da tradurre (JSON):
 \`\`\`json
 {
   "title": "${title.replace(/"/g, '\\"')}",
   "ingredients": ${JSON.stringify(ingredients)},
-  "instructions": ${JSON.stringify(instructions)}
+  "instructions": ${JSON.stringify(instructions)},
+  "nutritionalAssessment": ${nutritionalAssessment ? JSON.stringify(nutritionalAssessment) : "null"}
 }
 \`\`\`
 
@@ -298,7 +315,8 @@ Devi restituire esclusivamente un oggetto JSON con la stessa identica struttura,
   ],
   "instructions": [
     "Istruzioni tradotte passo dopo passo (array of strings)"
-  ]
+  ],
+  "nutritionalAssessment": "Valutazione nutrizionale tradotta (string o null)"
 }
 
 Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
@@ -351,3 +369,4 @@ Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includ
     throw new Error("Il testo tradotto generato dall'IA non è un JSON valido");
   }
 }
+

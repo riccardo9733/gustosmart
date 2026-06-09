@@ -44,6 +44,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -127,6 +137,7 @@ export default function RecipeDetailPage() {
     title: string;
     ingredients: any[];
     instructions: string[];
+    nutritionalAssessment?: string | null;
     isTranslated: boolean;
   } | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -196,6 +207,7 @@ export default function RecipeDetailPage() {
         title: recipe.title,
         ingredients: recipe.ingredients || [],
         instructions: recipe.instructions || [],
+        nutritionalAssessment: recipe.nutritionalAssessment || null,
         isTranslated: false
       });
       setIsTranslating(false);
@@ -213,6 +225,7 @@ export default function RecipeDetailPage() {
               title: transData.title,
               ingredients: transData.ingredients || [],
               instructions: transData.instructions || [],
+              nutritionalAssessment: transData.nutritionalAssessment || null,
               isTranslated: true
             });
             setIsTranslating(false);
@@ -222,6 +235,7 @@ export default function RecipeDetailPage() {
               title: recipe.title,
               ingredients: recipe.ingredients || [],
               instructions: recipe.instructions || [],
+              nutritionalAssessment: recipe.nutritionalAssessment || null,
               isTranslated: false
             });
 
@@ -233,7 +247,8 @@ export default function RecipeDetailPage() {
                 title: recipe.title,
                 ingredients: recipe.ingredients || [],
                 instructions: recipe.instructions || [],
-                targetLanguage: userLanguage
+                targetLanguage: userLanguage,
+                nutritionalAssessment: recipe.nutritionalAssessment || null
               })
             });
 
@@ -245,6 +260,7 @@ export default function RecipeDetailPage() {
                 title: resJson.translation.title,
                 ingredients: resJson.translation.ingredients || [],
                 instructions: resJson.translation.instructions || [],
+                nutritionalAssessment: resJson.translation.nutritionalAssessment || null,
                 translatedAt: new Date().toISOString()
               };
 
@@ -255,6 +271,7 @@ export default function RecipeDetailPage() {
                 title: resJson.translation.title,
                 ingredients: resJson.translation.ingredients || [],
                 instructions: resJson.translation.instructions || [],
+                nutritionalAssessment: resJson.translation.nutritionalAssessment || null,
                 isTranslated: true
               });
             } else {
@@ -270,6 +287,7 @@ export default function RecipeDetailPage() {
               title: recipe.title,
               ingredients: recipe.ingredients || [],
               instructions: recipe.instructions || [],
+              nutritionalAssessment: recipe.nutritionalAssessment || null,
               isTranslated: false
             });
           }
@@ -475,10 +493,214 @@ export default function RecipeDetailPage() {
                     </Badge>
                   )}
                   {recipe.kcal && (
-                    <Badge variant="secondary" className="bg-primary/10 text-primary rounded-full px-3 py-1 font-semibold flex items-center gap-1">
-                      <Flame className="w-3.5 h-3.5 fill-primary" />
-                      {t("kcalCount", { count: recipe.kcal })}
-                    </Badge>
+                    <Drawer>
+                      <DrawerTrigger asChild>
+                        <Badge variant="secondary" className="bg-primary/10 hover:bg-primary/15 transition-all text-primary rounded-full px-3 py-1 font-semibold flex items-center gap-1 cursor-pointer select-none active:scale-95 duration-100">
+                          <Flame className="w-3.5 h-3.5 fill-primary animate-pulse" />
+                          {t("kcalCount", { count: recipe.kcal })}
+                        </Badge>
+                      </DrawerTrigger>
+                      <DrawerContent className="max-w-md mx-auto rounded-t-[32px] p-6 pb-8 border-t border-border bg-background/95 backdrop-blur-md">
+                        <DrawerHeader className="p-0 mb-4 text-left">
+                          <DrawerTitle className="font-heading text-xl font-bold flex items-center gap-2">
+                            <Flame className="w-5 h-5 text-primary fill-primary" />
+                            {t("nutritionTitle")}
+                          </DrawerTitle>
+                          <DrawerDescription className="text-xs text-muted-foreground">
+                            {t("nutritionSub")}
+                          </DrawerDescription>
+                        </DrawerHeader>
+
+                        {(() => {
+                          const hasNutritionDetails = 
+                            (recipe.proteins !== undefined && recipe.proteins !== null) ||
+                            (recipe.carbs !== undefined && recipe.carbs !== null) ||
+                            (recipe.fats !== undefined && recipe.fats !== null);
+
+                          if (!hasNutritionDetails) {
+                            return (
+                              <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                                <div className="p-3 rounded-full bg-amber-500/10 text-amber-500 mb-3">
+                                  <Flame className="w-6 h-6 fill-amber-500" />
+                                </div>
+                                <h4 className="font-heading font-semibold text-foreground mb-1">
+                                  Dettagli non disponibili
+                                </h4>
+                                <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
+                                  Questa ricetta è stata scansionata in precedenza o non ha sufficienti informazioni per stimare i macronutrienti. Le calorie stimate sono pari a <span className="font-bold text-primary">{recipe.kcal} kcal/100g</span>.
+                                </p>
+                                <DrawerClose asChild>
+                                  <Button className="mt-6 rounded-full w-full">Chiudi</Button>
+                                </DrawerClose>
+                              </div>
+                            );
+                          }
+
+                          const pGrams = recipe.proteins ?? 0;
+                          const cGrams = recipe.carbs ?? 0;
+                          const fGrams = recipe.fats ?? 0;
+                          const totalGrams = pGrams + cGrams + fGrams;
+
+                          const pPct = totalGrams > 0 ? Math.round((pGrams / totalGrams) * 100) : 0;
+                          const cPct = totalGrams > 0 ? Math.round((cGrams / totalGrams) * 100) : 0;
+                          const fPct = totalGrams > 0 ? Math.max(0, 100 - pPct - cPct) : 0;
+
+                          const ratingColors: Record<string, string> = {
+                            A: "bg-emerald-600 text-white shadow-emerald-500/30",
+                            B: "bg-green-500 text-white shadow-green-400/30",
+                            C: "bg-amber-400 text-black shadow-amber-300/30",
+                            D: "bg-orange-500 text-white shadow-orange-400/30",
+                            E: "bg-rose-600 text-white shadow-rose-500/30",
+                          };
+
+                          const ratingLabels = ['A', 'B', 'C', 'D', 'E'];
+
+                          return (
+                            <div className="flex flex-col">
+                              {/* Nutri-Score Rating Row */}
+                              {recipe.nutritionalRating && (
+                                <div className="flex flex-col gap-2 items-center justify-center p-3 rounded-2xl bg-muted/20 border border-border/30">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                    {t("nutritionRating")}
+                                  </span>
+                                  <div className="flex gap-1 items-center">
+                                    {ratingLabels.map((label) => {
+                                      const isActive = recipe.nutritionalRating?.toUpperCase() === label;
+                                      return (
+                                        <div
+                                          key={label}
+                                          className={`w-8 h-8 rounded-lg font-heading text-base font-black flex items-center justify-center transition-all duration-300 ${
+                                            isActive
+                                              ? `${ratingColors[label]} scale-110 ring-2 ring-primary/20 shadow-md`
+                                              : "bg-muted/40 text-muted-foreground/30 opacity-40 scale-95"
+                                          }`}
+                                        >
+                                          {label}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* AI Assessment Comment */}
+                              {displayData?.nutritionalAssessment && (
+                                <div className="bg-primary/5 dark:bg-white/5 border border-primary/10 rounded-2xl p-4 text-xs leading-relaxed text-muted-foreground flex gap-2.5 items-start mt-4 shadow-sm">
+                                  <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                  <p>{displayData.nutritionalAssessment}</p>
+                                </div>
+                              )}
+
+                              {/* Macro Chart Title & Graph */}
+                              <div className="mt-5 flex flex-col gap-2">
+                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                  {t("macroDistribution")}
+                                </span>
+                                
+                                {/* CSS flex-based horizontal bar */}
+                                <div className="w-full h-4 rounded-full overflow-hidden flex bg-muted/30 border border-border/10">
+                                  {cPct > 0 && (
+                                    <div
+                                      style={{ width: `${cPct}%` }}
+                                      className="bg-amber-400 h-full transition-all"
+                                      title={`${t("carbsLabel")}: ${cPct}%`}
+                                    />
+                                  )}
+                                  {pPct > 0 && (
+                                    <div
+                                      style={{ width: `${pPct}%` }}
+                                      className="bg-emerald-500 h-full transition-all"
+                                      title={`${t("proteinsLabel")}: ${pPct}%`}
+                                    />
+                                  )}
+                                  {fPct > 0 && (
+                                    <div
+                                      style={{ width: `${fPct}%` }}
+                                      className="bg-rose-500 h-full transition-all"
+                                      title={`${t("fatsLabel")}: ${fPct}%`}
+                                    />
+                                  )}
+                                </div>
+
+                                {/* Graph Legenda */}
+                                <div className="flex justify-between items-center text-xs mt-1.5 px-1 font-medium">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                                    <span className="text-muted-foreground">{t("carbsLabel")}</span>
+                                    <span className="font-bold text-foreground">{cPct}%</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                                    <span className="text-muted-foreground">{t("fatsLabel")}</span>
+                                    <span className="font-bold text-foreground">{fPct}%</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                                    <span className="text-muted-foreground">{t("proteinsLabel")}</span>
+                                    <span className="font-bold text-foreground">{pPct}%</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Detailed Table */}
+                              <div className="border border-border/40 rounded-2xl overflow-hidden mt-5 bg-muted/5">
+                                <div className="grid grid-cols-2 p-3 border-b border-border/40 bg-muted/20 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                  <span>Nutriente (per 100g)</span>
+                                  <span className="text-right">Valore</span>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 p-3 border-b border-border/20 text-xs items-center">
+                                  <span className="font-semibold flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                                    {t("carbsLabel")}
+                                  </span>
+                                  <span className="text-right font-bold">{recipe.carbs ?? 0} g</span>
+                                </div>
+                                
+                                {recipe.sugar !== null && recipe.sugar !== undefined && (
+                                  <div className="grid grid-cols-2 py-2 px-5 border-b border-border/20 text-[11px] text-muted-foreground items-center bg-muted/5">
+                                    <span>— {t("sugarLabel")}</span>
+                                    <span className="text-right font-semibold">{recipe.sugar} g</span>
+                                  </div>
+                                )}
+
+                                <div className="grid grid-cols-2 p-3 border-b border-border/20 text-xs items-center">
+                                  <span className="font-semibold flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                                    {t("fatsLabel")}
+                                  </span>
+                                  <span className="text-right font-bold">{recipe.fats ?? 0} g</span>
+                                </div>
+
+                                <div className="grid grid-cols-2 p-3 border-b border-border/20 text-xs items-center">
+                                  <span className="font-semibold flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                                    {t("proteinsLabel")}
+                                  </span>
+                                  <span className="text-right font-bold">{recipe.proteins ?? 0} g</span>
+                                </div>
+
+                                {recipe.fiber !== null && recipe.fiber !== undefined && (
+                                  <div className="grid grid-cols-2 p-3 text-xs items-center">
+                                    <span className="font-semibold flex items-center gap-2 text-muted-foreground">
+                                      <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                                      {t("fiberLabel")}
+                                    </span>
+                                    <span className="text-right font-bold text-muted-foreground">{recipe.fiber} g</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <DrawerClose asChild>
+                                <Button variant="outline" className="mt-5 rounded-full">
+                                  Chiudi
+                                </Button>
+                              </DrawerClose>
+                            </div>
+                          );
+                        })()}
+                      </DrawerContent>
+                    </Drawer>
                   )}
                   {recipe.prepTimeMinutes && (
                     <Badge variant="secondary" className="bg-secondary-container text-on-secondary-container rounded-full px-3 py-1 font-semibold flex items-center gap-1">

@@ -17,6 +17,13 @@ export const RecipeSchema = z.object({
   prepTimeMinutes: z.number().int().nonnegative().nullable().optional().default(null),
   category: z.enum(['first_courses', 'second_courses', 'desserts', 'appetizers', 'sides', 'single_dishes', 'other']).default('other'),
   kcal: z.number().int().nonnegative().nullable().optional().default(null),
+  proteins: z.number().nonnegative().nullable().optional().default(null),
+  carbs: z.number().nonnegative().nullable().optional().default(null),
+  fats: z.number().nonnegative().nullable().optional().default(null),
+  fiber: z.number().nonnegative().nullable().optional().default(null),
+  sugar: z.number().nonnegative().nullable().optional().default(null),
+  nutritionalRating: z.enum(['A', 'B', 'C', 'D', 'E']).nullable().optional().default(null),
+  nutritionalAssessment: z.string().nullable().optional().default(null),
   creatorUsername: z.string().nullable().optional().default(null),
   creatorFullName: z.string().nullable().optional().default(null),
   creatorId: z.string().nullable().optional().default(null),
@@ -91,6 +98,27 @@ export function validateAndFormatRecipe(
     category: normalizeCategory(geminiOutput.category),
     kcal: geminiOutput.kcal !== undefined && geminiOutput.kcal !== null
       ? Number(geminiOutput.kcal)
+      : null,
+    proteins: geminiOutput.proteins !== undefined && geminiOutput.proteins !== null
+      ? Number(geminiOutput.proteins)
+      : null,
+    carbs: geminiOutput.carbs !== undefined && geminiOutput.carbs !== null
+      ? Number(geminiOutput.carbs)
+      : null,
+    fats: geminiOutput.fats !== undefined && geminiOutput.fats !== null
+      ? Number(geminiOutput.fats)
+      : null,
+    fiber: geminiOutput.fiber !== undefined && geminiOutput.fiber !== null
+      ? Number(geminiOutput.fiber)
+      : null,
+    sugar: geminiOutput.sugar !== undefined && geminiOutput.sugar !== null
+      ? Number(geminiOutput.sugar)
+      : null,
+    nutritionalRating: (geminiOutput.nutritionalRating && ['A', 'B', 'C', 'D', 'E'].includes(String(geminiOutput.nutritionalRating).toUpperCase().trim()))
+      ? String(geminiOutput.nutritionalRating).toUpperCase().trim()
+      : null,
+    nutritionalAssessment: geminiOutput.nutritionalAssessment !== undefined && geminiOutput.nutritionalAssessment !== null
+      ? String(geminiOutput.nutritionalAssessment).trim()
       : null,
     creatorUsername: creatorInfo?.username || null,
     creatorFullName: creatorInfo?.fullName || null,
