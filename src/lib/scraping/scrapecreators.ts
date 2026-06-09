@@ -101,6 +101,24 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
 }
 
 /**
+ * Trova il primo URL in una lista che non ha estensione HEIC/HEIF (non supportate nativamente dai browser).
+ */
+function findBrowserCompatibleUrl(urlList: string[] | undefined | null): string | null {
+  if (!urlList || urlList.length === 0) return null;
+  for (const url of urlList) {
+    try {
+      const urlWithoutQuery = url.split("?")[0];
+      if (!urlWithoutQuery.toLowerCase().endsWith(".heic") && !urlWithoutQuery.toLowerCase().endsWith(".heif")) {
+        return url;
+      }
+    } catch {
+      // Ignora errori
+    }
+  }
+  return null;
+}
+
+/**
  * Esegue lo scraping di un video TikTok tramite ScrapeCreators.
  */
 export async function scrapeTikTok(url: string): Promise<ScrapedData> {
@@ -133,7 +151,14 @@ export async function scrapeTikTok(url: string): Promise<ScrapedData> {
   }
 
   const caption = detail.desc || "";
-  const coverImageUrl = detail.video?.cover?.url_list?.[0] || detail.video?.dynamic_cover?.url_list?.[0] || null;
+  
+  // Seleziona una copertina compatibile con i browser (evitando HEIC)
+  const coverImageUrl = findBrowserCompatibleUrl(detail.video?.cover?.url_list)
+    || findBrowserCompatibleUrl(detail.video?.dynamic_cover?.url_list)
+    || findBrowserCompatibleUrl(detail.video?.origin_cover?.url_list)
+    || detail.video?.cover?.url_list?.[0]
+    || null;
+
   const creatorUsername = detail.author?.unique_id || null;
   const creatorFullName = detail.author?.nickname || null;
   const creatorId = detail.author?.uid || null;

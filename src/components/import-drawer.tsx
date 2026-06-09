@@ -3,14 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
-import { doc, onSnapshot, serverTimestamp, setDoc, updateDoc, increment } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/firebase";
-import { useAuth } from "@/contexts/auth-context";
-import { useAddToUserRecipes } from "@/hooks/useRecipes";
-import { useAppSelector } from "@/store/hooks";
-import { selectUserProfile } from "@/store/userSlice";
-import { identifyPlatform } from "@/lib/scraping/detector";
 import {
   Sparkles,
   Film,
@@ -18,359 +10,288 @@ import {
   Link as LinkIcon,
   Loader2,
   HelpCircle,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   Drawer,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-  DrawerFooter,
-  DrawerClose,
 } from "@/components/ui/drawer";
+import { useIngest } from "@/contexts/ingest-context";
 
-interface ImportDrawerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export function ImportDrawer({ open, onOpenChange }: ImportDrawerProps) {
+export function ImportDrawer() {
   const [videoUrl, setVideoUrl] = useState("");
-  const [isImporting, setIsImporting] = useState(false);
-  const [activeCleanup, setActiveCleanup] = useState<(() => void) | null>(null);
+  const {
+    isIngesting,
+    isDrawerOpen,
+    closeImportDrawer,
+    step,
+    progress,
+    error,
+    recipeId,
+    startIngest,
+    resetIngest,
+  } = useIngest();
 
-  const { user } = useAuth();
   const router = useRouter();
-  const profile = useAppSelector(selectUserProfile);
-  
   const t = useTranslations("Home");
 
-  // Mutation per aggiungere una ricetta al ricettario personale
-  const { mutateAsync: addToUserRecipes } = useAddToUserRecipes();
-
-  // Cleanup listener on unmount
+  // Reset input field when drawer is opened and is idle
   useEffect(() => {
-    return () => {
-      if (activeCleanup) activeCleanup();
-    };
-  }, [activeCleanup]);
+    if (isDrawerOpen && step === "idle") {
+      setVideoUrl("");
+    }
+  }, [isDrawerOpen, step]);
 
-  const handleImport = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoUrl) return;
-    if (!user) {
-      toast.error("Utente non autenticato.");
-      return;
-    }
+    await startIngest(videoUrl.trim());
+  };
 
-    setIsImporting(true);
-    const targetUrl = videoUrl;
-    setVideoUrl("");
-    // Close the drawer immediately to let user explore the feed while importing in background
-    onOpenChange(false);
-
-    const toastId = toast.loading(t("importing"), {
-      description: t("importingDesc"),
-      duration: Infinity,
-    });
-
-    let pollingIntervalId: NodeJS.Timeout | null = null;
-    let unsubscribeFirestore: (() => void) | null = null;
-
-    const cleanup = () => {
-      if (pollingIntervalId) clearInterval(pollingIntervalId);
-      if (unsubscribeFirestore) unsubscribeFirestore();
-      setIsImporting(false);
-      setActiveCleanup(null);
-    };
-
-    setActiveCleanup(() => cleanup);
-
-    try {
-      // 0. Check client-side: esiste già una ricetta globale con questo URL?
-      const { checkRecipeExistsByUrl } = await import("@/lib/firestore/recipes");
-      const existingRecipeId = await checkRecipeExistsByUrl(targetUrl);
-
-      if (existingRecipeId) {
-        // Ricetta già nel catalogo globale → aggiungila direttamente al ricettario
-        await addToUserRecipes(existingRecipeId);
-        cleanup();
-        toast.success(t("recipeExists"), {
-          id: toastId,
-          description: t("recipeExistsDesc"),
-          duration: 6000,
-          action: {
-            label: t("view"),
-            onClick: () => router.push(`/recipes/${existingRecipeId}`),
-          },
-        });
-        return;
-      }
-
-      // Controlla la disponibilità dei token prima dell'ingest (se la ricetta non esiste già e non è web)
-      let detectedPlatform = "web";
-      try {
-        detectedPlatform = identifyPlatform(targetUrl);
-      } catch (e) {
-        console.error("Errore identificazione piattaforma:", e);
-      }
-
-      if (detectedPlatform !== "web") {
-        const tokens = profile?.tokens ?? 10;
-        if (tokens <= 0) {
-          cleanup();
-          toast.error(t("noTokensErrorTitle"), {
-            id: toastId,
-            description: t("noTokensErrorDesc"),
-          });
-          return;
-        }
-      }
-
-      // 1. Invia il trigger al backend (solo se la ricetta non esiste già)
-      const response = await fetch("/api/ingest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl, userId: user.uid }),
-      });
-
-      if (!response.ok) {
-        const errJson = await response.json();
-        throw new Error(errJson.error || "Impossibile avviare l'importazione.");
-      }
-
-      const json = await response.json();
-
-      // Nuova ricetta: avvia polling Apify e ascolta Firestore per il completamento
-      const { runId, datasetId, recipeId } = json;
-
-      // Listener one-shot su /users/{uid}/recipes/{recipeId}
-      const db = getFirebaseDb();
-      unsubscribeFirestore = onSnapshot(doc(db, "users", user.uid, "recipes", recipeId), (docSnap) => {
-        if (docSnap.exists()) {
-          cleanup();
-          toast.success(t("importedSuccess"), {
-            id: toastId,
-            description: t("importedSuccessDesc"),
-            duration: 8000,
-            action: {
-              label: t("view"),
-              onClick: () => router.push(`/recipes/${recipeId}`),
-            },
-          });
-        }
-      });
-
-      // 3. Polling per far progredire lo scraping Apify
-      pollingIntervalId = setInterval(async () => {
-        try {
-          const statusRes = await fetch(
-            `/api/ingest/status?runId=${runId}&datasetId=${datasetId}&recipeId=${recipeId}&userId=${user.uid}&sourceUrl=${encodeURIComponent(targetUrl)}`
-          );
-          if (!statusRes.ok) return;
-
-          const statusJson = await statusRes.json();
-          if (statusJson.status === "failed") {
-            cleanup();
-            const desc = statusJson.error === "INSUFFICIENT_RECIPE_DATA"
-              ? t("insufficientDataError")
-              : (statusJson.error || t("importFailedDesc"));
-            toast.error(t("importFailed"), {
-              id: toastId,
-              description: desc,
-            });
-            return;
-          }
-
-          if (statusJson.status === "succeeded") {
-            // Ferma subito il polling per evitare chiamate concorrenti/multiple
-            if (pollingIntervalId) {
-              clearInterval(pollingIntervalId);
-            }
-
-            try {
-              // Salva la ricetta globale in /recipes/{recipeId} (senza userId)
-              let detectedPlatform = "web";
-              try {
-                detectedPlatform = identifyPlatform(targetUrl);
-              } catch (e) {
-                console.error("Errore identificazione piattaforma:", e);
-              }
-
-              const recipeDoc = {
-                sourceUrl: targetUrl,
-                sourcePlatform: detectedPlatform,
-                title: statusJson.recipe.title,
-                sourceLanguage: statusJson.recipe.sourceLanguage || "it",
-                servings: statusJson.recipe.servings,
-                ingredients: statusJson.recipe.ingredients,
-                instructions: statusJson.recipe.instructions,
-                imageUrl: statusJson.recipe.imageUrl || null,
-                prepTimeMinutes: statusJson.recipe.prepTimeMinutes,
-                category: statusJson.recipe.category || "other",
-                kcal: statusJson.recipe.kcal !== undefined && statusJson.recipe.kcal !== null
-                  ? statusJson.recipe.kcal
-                  : null,
-                proteins: statusJson.recipe.proteins !== undefined && statusJson.recipe.proteins !== null
-                  ? statusJson.recipe.proteins
-                  : null,
-                carbs: statusJson.recipe.carbs !== undefined && statusJson.recipe.carbs !== null
-                  ? statusJson.recipe.carbs
-                  : null,
-                fats: statusJson.recipe.fats !== undefined && statusJson.recipe.fats !== null
-                  ? statusJson.recipe.fats
-                  : null,
-                fiber: statusJson.recipe.fiber !== undefined && statusJson.recipe.fiber !== null
-                  ? statusJson.recipe.fiber
-                  : null,
-                sugar: statusJson.recipe.sugar !== undefined && statusJson.recipe.sugar !== null
-                  ? statusJson.recipe.sugar
-                  : null,
-                nutritionalRating: statusJson.recipe.nutritionalRating || null,
-                nutritionalAssessment: statusJson.recipe.nutritionalAssessment || null,
-                createdAt: serverTimestamp(),
-                createdBy: user.uid,
-                creatorUsername: statusJson.recipe.creatorUsername || null,
-                creatorFullName: statusJson.recipe.creatorFullName || null,
-                creatorId: statusJson.recipe.creatorId || null,
-              };
-
-              await setDoc(doc(db, "recipes", recipeId), recipeDoc);
-
-              // Crea il documento personale in /users/{uid}/recipes/{recipeId}
-              const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
-              await addFn(user.uid, recipeId);
-
-              // Invalidate TanStack query cache to keep UI in sync
-              const { queryClient } = await import("@/lib/query-client");
-              const { recipeKeys } = await import("@/hooks/useRecipes");
-              queryClient.invalidateQueries({ queryKey: recipeKeys.all(user.uid) });
-              queryClient.invalidateQueries({ queryKey: recipeKeys.detail(user.uid, recipeId) });
-
-              // Detrai 1 token all'utente per aver scansionato una nuova ricetta (solo se non è web)
-              if (detectedPlatform !== "web") {
-                const userRef = doc(db, "users", user.uid);
-                await updateDoc(userRef, {
-                  tokens: increment(-1),
-                  updatedAt: new Date().toISOString(),
-                });
-              }
-            } catch (dbErr: any) {
-              console.error("Errore salvataggio dati ricetta su Firestore:", dbErr);
-              cleanup();
-              toast.error(t("importFailed"), {
-                id: toastId,
-                description: dbErr.message || t("importFailedDesc"),
-              });
-            }
-          }
-        } catch (pollErr) {
-          console.error("Errore nel polling dello stato:", pollErr);
-        }
-      }, 4000);
-
-    } catch (error: any) {
-      console.error("Errore durante il flusso di importazione:", error);
-      cleanup();
-      const desc = error.message === "INSUFFICIENT_RECIPE_DATA"
-        ? t("insufficientDataError")
-        : (error.message || t("importFailedDesc"));
-      toast.error(t("importFailed"), {
-        id: toastId,
-        description: desc,
-      });
+  const getStepMessage = () => {
+    switch (step) {
+      case "scraping":
+        return t("stepScraping");
+      case "extracting":
+        return t("stepAnalyzing");
+      case "saving":
+        return t("stepSaving");
+      default:
+        return t("importingDesc");
     }
   };
 
-  const setPlatformUrl = (platform: string) => {
-    if (platform === "instagram") {
-      setVideoUrl("https://www.instagram.com/reel/example");
-    } else if (platform === "tiktok") {
-      setVideoUrl("https://www.tiktok.com/@example/video/12345");
-    } else {
-      setVideoUrl("https://giallozafferano.it/ricette/example");
+  const getErrorMessage = () => {
+    if (error === "NO_TOKENS") {
+      return t("noTokensErrorDesc");
     }
+    if (error === "INSUFFICIENT_RECIPE_DATA") {
+      return t("insufficientDataError");
+    }
+    if (error === "WEBSITE_FORBIDDEN") {
+      return t("websiteForbidden");
+    }
+    return error || t("importFailedDesc");
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={isDrawerOpen} onOpenChange={(open) => !open && closeImportDrawer()}>
       <DrawerContent className="max-h-[85vh] p-6 rounded-t-[32px] border-t border-white/20 bg-background dark:bg-surface-container/95 backdrop-blur-xl">
-        <div className="flex flex-col gap-6 max-w-lg mx-auto w-full pb-10">
-          <DrawerHeader className="p-0 text-center flex flex-col gap-2">
-            <DrawerTitle className="font-heading text-2xl font-bold tracking-tight text-foreground">
-              {t("drawerTitle") || "Importa una Ricetta"}
-            </DrawerTitle>
-            <DrawerDescription className="text-sm text-muted-foreground leading-relaxed">
-              {t("drawerDesc") || "Incolla il link di un Reel di Instagram, un video TikTok o una ricetta web per scansionarla e aggiungerla al catalogo."}
-            </DrawerDescription>
-          </DrawerHeader>
+        {/* Elementi di accessibilità invisibili richiesti da Radix UI in tutti gli stati */}
+        <div className="sr-only">
+          <DrawerTitle>{t("drawerTitle") || "Importa una Ricetta"}</DrawerTitle>
+          <DrawerDescription>
+            {t("drawerDesc") || "Incolla il link di un Reel di Instagram, un video TikTok o una ricetta web per scansionarla e aggiungerla al catalogo."}
+          </DrawerDescription>
+        </div>
 
-          {/* Form */}
-          <form onSubmit={handleImport} className="relative group w-full mt-2">
-            <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full -z-10 transition-all duration-500 group-focus-within:bg-primary/20"></div>
-            <div className="flex items-center glass-panel rounded-full p-1.5 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all">
-              <Input
-                type="text"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder={t("placeholder")}
-                className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-5 text-sm h-11"
-                disabled={isImporting}
-              />
+        <div className="flex flex-col gap-6 max-w-lg mx-auto w-full pb-10">
+          
+          {/* 1. STATE: IDLE (Input URL) */}
+          {step === "idle" && (
+            <>
+              <DrawerHeader className="p-0 text-center flex flex-col gap-2">
+                <div className="font-heading text-2xl font-bold tracking-tight text-foreground">
+                  {t("drawerTitle") || "Importa una Ricetta"}
+                </div>
+                <div className="text-sm text-muted-foreground leading-relaxed">
+                  {t("drawerDesc") || "Incolla il link di un Reel di Instagram, un video TikTok o una ricetta web per scansionarla e aggiungerla al catalogo."}
+                </div>
+              </DrawerHeader>
+
+              <form onSubmit={handleSubmit} className="relative group w-full mt-2">
+                <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full -z-10 transition-all duration-500 group-focus-within:bg-primary/20"></div>
+                <div className="flex items-center glass-panel rounded-full p-1.5 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all">
+                  <Input
+                    type="text"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder={t("placeholder")}
+                    className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-5 text-sm h-11"
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={!videoUrl.trim()}
+                    className="bg-primary hover:bg-primary/95 text-white rounded-full h-11 w-11 shadow-lg active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Sparkles className="fill-white" data-icon="inline-start" />
+                  </Button>
+                </div>
+              </form>
+
+              <div className="flex flex-wrap justify-center gap-3">
+                <button
+                  onClick={() => setVideoUrl("https://www.instagram.com/reel/example")}
+                  type="button"
+                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
+                >
+                  <Film className="h-4 w-4 text-primary" />
+                  {t("instagram")}
+                </button>
+                <button
+                  onClick={() => setVideoUrl("https://www.tiktok.com/@example/video/12345")}
+                  type="button"
+                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
+                >
+                  <Video className="h-4 w-4 text-primary" />
+                  {t("tiktok")}
+                </button>
+                <button
+                  onClick={() => setVideoUrl("https://giallozafferano.it/ricette/example")}
+                  type="button"
+                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
+                >
+                  <LinkIcon className="h-4 w-4 text-primary" />
+                  {t("web")}
+                </button>
+              </div>
+
+              <div className="flex gap-4 items-start bg-primary/5 p-4 rounded-2xl border border-primary/10 mt-2">
+                <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-bold text-foreground">Come funziona?</span>
+                  <span className="text-xs text-muted-foreground leading-snug">
+                    I nostri sistemi analizzeranno la trascrizione del video o la pagina web per estrarre dosi, ingredienti e passaggi con l'intelligenza artificiale.
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* 2. STATE: INGESTING (Progress bar) */}
+          {isIngesting && step !== "completed" && step !== "failed" && (
+            <div className="flex flex-col items-center justify-center text-center gap-6 py-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-125 animate-pulse"></div>
+                <div className="relative flex items-center justify-center bg-primary/10 rounded-full p-5 border border-primary/20">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 w-full px-4">
+                <h3 className="font-heading text-xl font-bold text-foreground animate-pulse">
+                  {t("importing")}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed min-h-[40px]">
+                  {getStepMessage()}
+                </p>
+              </div>
+
+              <div className="w-full px-4 flex flex-col gap-1.5">
+                <Progress value={progress} className="h-2.5 w-full bg-primary/10 text-primary" />
+                <span className="text-xs font-semibold text-muted-foreground text-right">
+                  {progress}%
+                </span>
+              </div>
+
               <Button
-                type="submit"
-                size="icon"
-                disabled={isImporting || !videoUrl.trim()}
-                className="bg-primary hover:bg-primary/95 text-white rounded-full h-11 w-11 shadow-lg active:scale-95 transition-all"
+                variant="outline"
+                onClick={closeImportDrawer}
+                className="mt-2 text-xs font-bold tracking-wide uppercase px-6 cursor-pointer"
               >
-                {isImporting ? (
-                  <Loader2 className="animate-spin" data-icon="inline-start" />
-                ) : (
-                  <Sparkles className="fill-white" data-icon="inline-start" />
-                )}
+                Continua in background
               </Button>
             </div>
-          </form>
+          )}
 
-          {/* Platform Suggestion Badges */}
-          <div className="flex flex-wrap justify-center gap-3">
-            <button
-              onClick={() => setPlatformUrl("instagram")}
-              type="button"
-              className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10"
-            >
-              <Film className="h-4 w-4 text-primary" />
-              {t("instagram")}
-            </button>
-            <button
-              onClick={() => setPlatformUrl("tiktok")}
-              type="button"
-              className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10"
-            >
-              <Video className="h-4 w-4 text-primary" />
-              {t("tiktok")}
-            </button>
-            <button
-              onClick={() => setPlatformUrl("web")}
-              type="button"
-              className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10"
-            >
-              <LinkIcon className="h-4 w-4 text-primary" />
-              {t("web")}
-            </button>
-          </div>
+          {/* 3. STATE: COMPLETED (Success) */}
+          {step === "completed" && (
+            <div className="flex flex-col items-center justify-center text-center gap-6 py-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-secondary/20 blur-xl rounded-full scale-125 animate-bounce"></div>
+                <div className="relative flex items-center justify-center bg-secondary/10 rounded-full p-5 border border-secondary/20">
+                  <CheckCircle2 className="h-10 w-10 text-secondary" />
+                </div>
+              </div>
 
-          <div className="flex gap-4 items-start bg-primary/5 p-4 rounded-2xl border border-primary/10 mt-2">
-            <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-bold text-foreground">Come funziona?</span>
-              <span className="text-xs text-muted-foreground leading-snug">
-                I nostri sistemi analizzeranno la trascrizione del video o la pagina web per estrarre dosi, ingredienti e passaggi con l'intelligenza artificiale.
-              </span>
+              <div className="flex flex-col gap-2">
+                <h3 className="font-heading text-2xl font-bold text-secondary">
+                  {t("importedSuccess")}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                  {t("importedSuccessDesc")}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 w-full mt-2">
+                <Button
+                  onClick={() => {
+                    closeImportDrawer();
+                    if (recipeId) {
+                      router.push(`/recipes/${recipeId}`);
+                    }
+                  }}
+                  className="bg-primary hover:bg-primary/95 text-white w-full rounded-xl py-6 font-bold text-base shadow-lg shadow-primary/20 cursor-pointer"
+                >
+                  {t("view")}
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    resetIngest();
+                  }}
+                  className="text-sm text-muted-foreground cursor-pointer"
+                >
+                  Importa un'altra ricetta
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* 4. STATE: FAILED (Error) */}
+          {step === "failed" && (
+            <div className="flex flex-col items-center justify-center text-center gap-6 py-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-destructive/20 blur-xl rounded-full scale-125"></div>
+                <div className="relative flex items-center justify-center bg-destructive/10 rounded-full p-5 border border-destructive/20">
+                  <AlertCircle className="h-10 w-10 text-destructive" />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <h3 className="font-heading text-2xl font-bold text-destructive">
+                  {t("importFailed")}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                  {getErrorMessage()}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 w-full mt-2">
+                <Button
+                  onClick={() => {
+                    resetIngest();
+                  }}
+                  className="bg-primary hover:bg-primary/95 text-white w-full rounded-xl py-6 font-bold text-base cursor-pointer"
+                >
+                  Riprova
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    closeImportDrawer();
+                    resetIngest();
+                  }}
+                  className="text-sm text-muted-foreground cursor-pointer"
+                >
+                  Chiudi
+                </Button>
+              </div>
+            </div>
+          )}
+
         </div>
       </DrawerContent>
     </Drawer>

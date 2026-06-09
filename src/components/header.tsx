@@ -1,12 +1,14 @@
 "use client";
  
-import { Leaf, Zap } from "lucide-react";
+import { Leaf, Zap, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAppSelector } from "@/store/hooks";
 import { selectUserProfile } from "@/store/userSlice";
+import { useIngest } from "@/contexts/ingest-context";
  
 export function Header() {
   const profile = useAppSelector(selectUserProfile);
+  const { isIngesting, progress, openImportDrawer } = useIngest();
  
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-background/60 px-6 shadow-xl shadow-primary/5 backdrop-blur-xl dark:bg-surface-container/60">
@@ -17,6 +19,18 @@ export function Header() {
         </h1>
       </Link>
       <div className="flex items-center gap-3">
+        {isIngesting && (
+          <button
+            onClick={openImportDrawer}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/15 dark:bg-secondary/25 rounded-full border border-secondary/30 hover:bg-secondary/25 cursor-pointer active:scale-95 transition-all animate-pulse shadow-md shadow-secondary/10"
+            aria-label="Mostra progresso importazione"
+          >
+            <Loader2 className="h-3.5 w-3.5 text-secondary animate-spin" />
+            <span className="text-[10px] font-extrabold text-secondary tracking-wider">
+              {progress}%
+            </span>
+          </button>
+        )}
         {profile && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 dark:bg-primary/20 rounded-full border border-primary/20">
             <Zap className="h-3.5 w-3.5 text-primary fill-primary animate-pulse" />

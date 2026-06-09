@@ -19,6 +19,9 @@ export async function scrapeWebPage(url: string): Promise<ScrapedData> {
   });
 
   if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error("WEBSITE_FORBIDDEN");
+    }
     throw new Error(`Impossibile scaricare la pagina web (status ${response.status})`);
   }
 

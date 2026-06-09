@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Home, UtensilsCrossed, ShoppingCart, User, Plus } from "lucide-react";
-import { ImportDrawer } from "@/components/import-drawer";
+import { useIngest } from "@/contexts/ingest-context";
 
 export function BottomNav() {
   const pathname = usePathname();
   const t = useTranslations("Nav");
-  const [isImportOpen, setIsImportOpen] = useState(false);
+  const { openImportDrawer } = useIngest();
 
   const leftItems = [
     { label: t("home"), href: "/", icon: Home },
@@ -51,7 +50,7 @@ export function BottomNav() {
 
           {/* Middle Plus Button */}
           <button
-            onClick={() => setIsImportOpen(true)}
+            onClick={openImportDrawer}
             className="mx-2 flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all duration-200"
             aria-label="Importa ricetta"
           >
@@ -82,8 +81,6 @@ export function BottomNav() {
           </div>
         </div>
       </nav>
-
-      <ImportDrawer open={isImportOpen} onOpenChange={setIsImportOpen} />
     </>
   );
 }
