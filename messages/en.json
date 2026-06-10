@@ -54,6 +54,8 @@
     "import": "Import",
     "instagram": "Instagram Reel",
     "tiktok": "TikTok Video",
+    "youtube": "YouTube Video/Short",
+    "facebook": "Facebook Reel",
     "web": "Web Link",
     "recent": "Latest Arrivals",
     "seeAll": "See all",

@@ -1,7 +1,7 @@
 import { identifyPlatform } from "@/lib/scraping/detector";
 import { getFirebaseDb } from "@/lib/firebase";
 import { collection, doc } from "firebase/firestore";
-import { scrapeInstagram, scrapeTikTok } from "@/lib/scraping/scrapecreators";
+import { scrapeInstagram, scrapeTikTok, scrapeFacebook, scrapeYouTube } from "@/lib/scraping/scrapecreators";
 import { scrapeWebPage } from "@/lib/scraping/web";
 import { generateRecipeFromText, generateRecipeFromWeb } from "@/lib/scraping/gemini";
 import { validateAndFormatRecipe } from "@/lib/scraping/validation";
@@ -47,11 +47,11 @@ export async function POST(request: Request) {
       });
     }
 
-    if (platform !== "instagram" && platform !== "tiktok" && platform !== "web") {
+    if (platform !== "instagram" && platform !== "tiktok" && platform !== "youtube" && platform !== "facebook" && platform !== "web") {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Al momento supportiamo solo l'importazione da Instagram Reel, TikTok e siti web di ricette.",
+          error: "Al momento supportiamo solo l'importazione da Instagram Reel, TikTok, YouTube, Facebook Reel e siti web di ricette.",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -84,6 +84,10 @@ export async function POST(request: Request) {
             ? await scrapeInstagram(url)
             : platform === "tiktok"
             ? await scrapeTikTok(url)
+            : platform === "facebook"
+            ? await scrapeFacebook(url)
+            : platform === "youtube"
+            ? await scrapeYouTube(url)
             : await scrapeWebPage(url);
 
           const cleanCaption = (scrapedData.caption || "").trim();

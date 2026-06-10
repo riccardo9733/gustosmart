@@ -14,6 +14,41 @@ import {
   AlertCircle,
   ArrowRight,
 } from "lucide-react";
+
+const YouTubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
+    <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
+  </svg>
+);
+
+const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+  </svg>
+);
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -134,7 +169,7 @@ export function ImportDrawer() {
                   type="button"
                   className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
                 >
-                  <Film className="h-4 w-4 text-primary" />
+                  <Film className="h-4 w-4 text-pink-500 fill-pink-500/10" />
                   {t("instagram")}
                 </button>
                 <button
@@ -142,8 +177,24 @@ export function ImportDrawer() {
                   type="button"
                   className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
                 >
-                  <Video className="h-4 w-4 text-primary" />
+                  <Video className="h-4 w-4 text-teal-400" />
                   {t("tiktok")}
+                </button>
+                <button
+                  onClick={() => setVideoUrl("https://www.youtube.com/watch?v=example")}
+                  type="button"
+                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
+                >
+                  <YouTubeIcon className="h-4 w-4 text-red-500 fill-red-500/10" />
+                  {t("youtube")}
+                </button>
+                <button
+                  onClick={() => setVideoUrl("https://www.facebook.com/reel/example")}
+                  type="button"
+                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
+                >
+                  <FacebookIcon className="h-4 w-4 text-blue-500 fill-blue-500/10" />
+                  {t("facebook")}
                 </button>
                 <button
                   onClick={() => setVideoUrl("https://giallozafferano.it/ricette/example")}

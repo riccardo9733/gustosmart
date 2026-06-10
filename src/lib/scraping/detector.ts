@@ -1,7 +1,7 @@
 /**
  * Identifica la piattaforma di provenienza di un dato URL.
  */
-export function identifyPlatform(url: string): 'instagram' | 'tiktok' | 'youtube' | 'web' {
+export function identifyPlatform(url: string): 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'web' {
   if (!url) {
     throw new Error("URL non valido o vuoto");
   }
@@ -18,6 +18,10 @@ export function identifyPlatform(url: string): 'instagram' | 'tiktok' | 'youtube
   
   if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
     return 'youtube';
+  }
+
+  if (cleanUrl.includes('facebook.com') || cleanUrl.includes('fb.watch')) {
+    return 'facebook';
   }
   
   return 'web';
