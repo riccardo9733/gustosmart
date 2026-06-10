@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
 import { selectUserProfile, selectUserLoading } from "@/store/userSlice";
@@ -28,9 +28,40 @@ import {
   Info,
   Flame
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+// Recharts components
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+// Shadcn Chart components
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 
 const YouTubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -338,6 +369,79 @@ export default function AdminDashboard() {
   const pwaPromptsAccepted = events.filter((e) => e.eventName === "pwa_install_prompt_action" && e.params.action === "accepted").length;
   const pwaPromptsShown = events.filter((e) => e.eventName === "pwa_install_prompt_action" && e.params.action === "shown").length;
 
+  // ---------------------------------------------------------------------------
+  // Chart Calculations
+  // ---------------------------------------------------------------------------
+  const chartData = useMemo(() => {
+    const data: Record<string, { date: string; success: number; failure: number; cost: number }> = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString("it-IT", { month: "2-digit", day: "2-digit" });
+      const key = d.toISOString().split("T")[0];
+      data[key] = { date: dateStr, success: 0, failure: 0, cost: 0 };
+    }
+
+    events.forEach((e) => {
+      if (!e.timestamp) return;
+      const key = e.timestamp.split("T")[0];
+      if (data[key]) {
+        if (e.eventName === "recipe_import_completed") {
+          data[key].success++;
+        } else if (e.eventName === "recipe_import_failed") {
+          data[key].failure++;
+        } else if (e.eventName === "openrouter_call") {
+          const cost = Number(e.params.cost) || 0;
+          data[key].cost += cost;
+        }
+      }
+    });
+
+    return Object.values(data);
+  }, [events]);
+
+  const platformChartData = useMemo(() => {
+    return [
+      { platform: "Instagram", scans: platforms.instagram, fill: "#ec4899" },
+      { platform: "TikTok", scans: platforms.tiktok, fill: "#2dd4bf" },
+      { platform: "YouTube", scans: platforms.youtube, fill: "#ef4444" },
+      { platform: "Facebook", scans: platforms.facebook, fill: "#3b82f6" },
+      { platform: "Web", scans: platforms.web, fill: "hsl(var(--primary))" },
+    ].filter(p => p.scans > 0); // Only show platforms with data to keep Pie clean
+  }, [platforms]);
+
+  const engagementChartData = useMemo(() => {
+    return [
+      { action: "Checklist Cottura", count: cookingChecks, fill: "hsl(var(--primary))" },
+      { action: "Porzioni Ricalcolate", count: servingsChanged, fill: "#3b82f6" },
+      { action: "Traduzioni AI", count: translations, fill: "#2dd4bf" },
+      { action: "Info Nutrizionali", count: nutritionViews, fill: "#f59e0b" },
+      { action: "Modifiche Spesa", count: shoppingToggles + customItemsAdded, fill: "#ec4899" },
+    ];
+  }, [cookingChecks, servingsChanged, translations, nutritionViews, shoppingToggles, customItemsAdded]);
+
+  const ingestChartConfig = {
+    success: { label: "Successi", color: "hsl(var(--primary))" },
+    failure: { label: "Fallimenti", color: "hsl(var(--destructive))" },
+  } satisfies ChartConfig;
+
+  const costChartConfig = {
+    cost: { label: "Spesa ($)", color: "#f59e0b" },
+  } satisfies ChartConfig;
+
+  const platformChartConfig = {
+    scans: { label: "Scansioni" },
+    instagram: { label: "Instagram", color: "#ec4899" },
+    tiktok: { label: "TikTok", color: "#2dd4bf" },
+    youtube: { label: "YouTube", color: "#ef4444" },
+    facebook: { label: "Facebook", color: "#3b82f6" },
+    web: { label: "Siti Web", color: "hsl(var(--primary))" },
+  } satisfies ChartConfig;
+
+  const engagementChartConfig = {
+    count: { label: "Interazioni", color: "hsl(var(--primary))" },
+  } satisfies ChartConfig;
+
   const filteredLogs = events.filter((e) => {
     if (!logSearchQuery.trim()) return true;
     const q = logSearchQuery.toLowerCase();
@@ -403,10 +507,10 @@ export default function AdminDashboard() {
       </section>
 
       {/* Tabs Switcher */}
-      <div className="flex flex-wrap gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-white/5 self-start shadow-sm">
+      <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-white/5 w-full sm:w-auto self-start shadow-sm max-w-full">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
             activeTab === "overview"
               ? "bg-primary text-white shadow-md shadow-primary/20"
               : "text-muted-foreground hover:text-foreground"
@@ -416,7 +520,7 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={() => setActiveTab("ingest")}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
             activeTab === "ingest"
               ? "bg-primary text-white shadow-md shadow-primary/20"
               : "text-muted-foreground hover:text-foreground"
@@ -426,7 +530,7 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={() => setActiveTab("openrouter")}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-1 ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 flex items-center gap-1 ${
             activeTab === "openrouter"
               ? "bg-primary text-white shadow-md shadow-primary/20"
               : "text-muted-foreground hover:text-foreground"
@@ -437,7 +541,7 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={() => setActiveTab("logs")}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
             activeTab === "logs"
               ? "bg-primary text-white shadow-md shadow-primary/20"
               : "text-muted-foreground hover:text-foreground"
@@ -516,133 +620,184 @@ export default function AdminDashboard() {
                   </div>
                   <div className="mt-4">
                     <h3 className="text-3xl font-extrabold text-foreground leading-none">{pwaInstalls}</h3>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">
-                      Prompts accettati: {pwaPromptsAccepted} / {pwaPromptsShown}
+                    <p className="text-[10px] text-muted-foreground font-semibold mt-1 flex flex-wrap gap-1">
+                      <span>Accettati: {pwaPromptsAccepted}</span>
+                      <span className="text-muted-foreground/60">/</span>
+                      <span>Mostrati: {pwaPromptsShown}</span>
                     </p>
                   </div>
                 </Card>
               </div>
 
-              {/* Grid: Engagement Metrics & Live Statistics */}
+              {/* Grid: Charts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
-                {/* Engagement Metrics Panel */}
+                {/* Ingestion success trend (Daily) */}
                 <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5">
-                  <h3 className="font-heading text-lg font-bold text-foreground mb-5 flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    Coinvolgimento Funzionalità
-                  </h3>
-                  <div className="space-y-4">
-                    {/* Cooking list checks */}
-                    <div className="flex justify-between items-center py-2 border-b border-border/20">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                          <ChefHat className="h-4.5 w-4.5" />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">Click Checklist Cottura</span>
-                      </div>
-                      <span className="text-sm font-bold text-foreground bg-muted/65 px-2.5 py-1 rounded-full">{cookingChecks}</span>
-                    </div>
-
-                    {/* Servings changes */}
-                    <div className="flex justify-between items-center py-2 border-b border-border/20">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-secondary/10 text-secondary">
-                          <RefreshCw className="h-4.5 w-4.5" />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">Porzioni Ricalcolate</span>
-                      </div>
-                      <span className="text-sm font-bold text-foreground bg-muted/65 px-2.5 py-1 rounded-full">{servingsChanged}</span>
-                    </div>
-
-                    {/* Translations */}
-                    <div className="flex justify-between items-center py-2 border-b border-border/20">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-teal-500/10 text-teal-500">
-                          <Globe className="h-4.5 w-4.5" />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">Traduzioni AI Eseguite</span>
-                      </div>
-                      <span className="text-sm font-bold text-foreground bg-muted/65 px-2.5 py-1 rounded-full">{translations}</span>
-                    </div>
-
-                    {/* Nutrition Views */}
-                    <div className="flex justify-between items-center py-2 border-b border-border/20">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-orange-500/10 text-orange-500">
-                          <Flame className="h-4.5 w-4.5 fill-orange-500/10" />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">Visualizzazioni Info Nutrizionali</span>
-                      </div>
-                      <span className="text-sm font-bold text-foreground bg-muted/65 px-2.5 py-1 rounded-full">{nutritionViews}</span>
-                    </div>
-
-                    {/* Shopping items */}
-                    <div className="flex justify-between items-center py-2 border-b border-border/20">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
-                          <ShoppingCart className="h-4.5 w-4.5" />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">Modifiche Lista della Spesa</span>
-                      </div>
-                      <span className="text-sm font-bold text-foreground bg-muted/65 px-2.5 py-1 rounded-full">
-                        {shoppingToggles + customItemsAdded}
-                      </span>
-                    </div>
-
-                    {/* Shopping resets */}
-                    <div className="flex justify-between items-center py-2">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-rose-500/10 text-rose-500">
-                          <AlertTriangle className="h-4.5 w-4.5" />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">Reset Lista della Spesa</span>
-                      </div>
-                      <span className="text-sm font-bold text-foreground bg-muted/65 px-2.5 py-1 rounded-full">{shoppingResets}</span>
-                    </div>
-                  </div>
+                  <CardHeader className="p-0 mb-5">
+                    <CardTitle className="text-base font-bold text-foreground">Trend Ingestione (Ultimi 7 Giorni)</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">Rapporto tra importazioni completate e fallite.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0 h-[240px] w-full">
+                    <ChartContainer config={ingestChartConfig} className="h-full w-full">
+                      <AreaChart data={chartData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorSuccess" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--color-success)" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="var(--color-success)" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorFailure" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--color-failure)" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="var(--color-failure)" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border/40" />
+                        <XAxis
+                          dataKey="date"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          className="fill-muted-foreground text-[10px] font-mono"
+                        />
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          className="fill-muted-foreground text-[10px] font-mono"
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Area
+                          type="monotone"
+                          dataKey="success"
+                          stroke="var(--color-success)"
+                          fillOpacity={1}
+                          fill="url(#colorSuccess)"
+                          strokeWidth={2}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="failure"
+                          stroke="var(--color-failure)"
+                          fillOpacity={1}
+                          fill="url(#colorFailure)"
+                          strokeWidth={2}
+                        />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </AreaChart>
+                    </ChartContainer>
+                  </CardContent>
                 </Card>
 
-                {/* Error Monitoring Panel */}
+                {/* OpenRouter cost trend (Daily) */}
                 <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5">
-                  <h3 className="font-heading text-lg font-bold text-foreground mb-5 flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-rose-500" />
-                    Monitoraggio Errori Ingestion
-                  </h3>
-                  {failedImports.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <CheckCircle2 className="h-12 w-12 text-emerald-500 mb-3" />
-                      <h4 className="text-sm font-bold text-foreground">Nessun errore registrato</h4>
-                      <p className="text-xs text-muted-foreground max-w-xs mt-1">Tutte le importazioni pianificate o recenti si sono concluse con successo.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {Object.entries(errors).map(([errorType, count]) => {
-                        const pct = Math.round((count / failedImports.length) * 100);
-                        return (
-                          <div key={errorType} className="space-y-1">
-                            <div className="flex justify-between items-center text-xs font-bold">
-                              <span className="text-foreground font-mono">{errorType}</span>
-                              <span className="text-muted-foreground">{count} ({pct}%)</span>
-                            </div>
-                            <div className="w-full bg-muted/50 h-2 rounded-full overflow-hidden border border-white/5">
-                              <div className="bg-rose-500 h-full rounded-full" style={{ width: `${pct}%` }}></div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      
-                      <div className="flex gap-4 items-start bg-rose-500/5 p-4 rounded-2xl border border-rose-500/10 mt-4">
-                        <AlertTriangle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-xs font-bold text-foreground">Dettaglio Diagnostico</span>
-                          <span className="text-xs text-muted-foreground leading-snug">
-                            L&apos;errore `INSUFFICIENT_RECIPE_DATA` indica che l&apos;AI non ha rilevato dosi/procedimenti validi nella trascrizione.
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <CardHeader className="p-0 mb-5">
+                    <CardTitle className="text-base font-bold text-foreground">Costo OpenRouter Giornaliero</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">Spesa totale accumulata (in USD) degli ultimi 7 giorni.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0 h-[240px] w-full">
+                    <ChartContainer config={costChartConfig} className="h-full w-full">
+                      <AreaChart data={chartData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--color-cost)" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="var(--color-cost)" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border/40" />
+                        <XAxis
+                          dataKey="date"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          className="fill-muted-foreground text-[10px] font-mono"
+                        />
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          tickFormatter={(val) => `$${Number(val).toFixed(3)}`}
+                          className="fill-muted-foreground text-[10px] font-mono"
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Area
+                          type="monotone"
+                          dataKey="cost"
+                          stroke="var(--color-cost)"
+                          fillOpacity={1}
+                          fill="url(#colorCost)"
+                          strokeWidth={2}
+                        />
+                      </AreaChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Platform Distribution donut */}
+                <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 flex flex-col justify-between">
+                  <CardHeader className="p-0 mb-5">
+                    <CardTitle className="text-base font-bold text-foreground">Provenienza Ricette</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">Percentuale delle scansioni per social/sito.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0 flex-1 flex flex-col justify-center min-h-[240px]">
+                    {platformChartData.length === 0 ? (
+                      <div className="text-center py-12 text-xs text-muted-foreground">Nessun dato di provenienza disponibile.</div>
+                    ) : (
+                      <ChartContainer config={platformChartConfig} className="mx-auto aspect-square max-h-[220px] w-full">
+                        <PieChart>
+                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                          <Pie
+                            data={platformChartData}
+                            dataKey="scans"
+                            nameKey="platform"
+                            innerRadius={50}
+                            outerRadius={75}
+                            strokeWidth={3}
+                            paddingAngle={2}
+                          >
+                            {platformChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <ChartLegend content={<ChartLegendContent nameKey="platform" />} />
+                        </PieChart>
+                      </ChartContainer>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Feature Engagement Bar Chart */}
+                <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5">
+                  <CardHeader className="p-0 mb-5">
+                    <CardTitle className="text-base font-bold text-foreground">Utilizzo Funzionalità</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">Frequenza delle azioni interattive degli utenti.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0 h-[240px] w-full">
+                    <ChartContainer config={engagementChartConfig} className="h-full w-full">
+                      <BarChart
+                        data={engagementChartData}
+                        layout="vertical"
+                        margin={{ left: 10, right: 10, top: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} className="stroke-border/40" />
+                        <XAxis type="number" hide />
+                        <YAxis
+                          dataKey="action"
+                          type="category"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={10}
+                          width={100}
+                          className="fill-foreground text-[9px] font-semibold"
+                        />
+                        <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                        <Bar dataKey="count" radius={4}>
+                          {engagementChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ChartContainer>
+                  </CardContent>
                 </Card>
 
               </div>
@@ -768,10 +923,10 @@ export default function AdminDashboard() {
                   <Button onClick={() => router.refresh()} className="rounded-full mt-2">Riprova</Button>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                   
                   {/* Credits Usage Card */}
-                  <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 md:col-span-7 flex flex-col justify-between gap-5">
+                  <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 lg:col-span-7 flex flex-col justify-between gap-5">
                     <div>
                       <h3 className="font-heading text-lg font-bold text-foreground mb-1 flex items-center gap-2">
                         <DollarSign className="h-5 w-5 text-primary" />
@@ -782,7 +937,7 @@ export default function AdminDashboard() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 py-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-2">
                       <div className="bg-muted/10 p-4 rounded-2xl border border-white/5 text-center">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Acquistati</span>
                         <span className="text-xl font-extrabold text-foreground">
@@ -827,7 +982,7 @@ export default function AdminDashboard() {
                   </Card>
 
                   {/* Key and Rate Limits Card */}
-                  <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 md:col-span-5 flex flex-col justify-between gap-4">
+                  <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 lg:col-span-5 flex flex-col justify-between gap-4">
                     <div>
                       <h3 className="font-heading text-lg font-bold text-foreground mb-1 flex items-center gap-2">
                         <Activity className="h-5 w-5 text-secondary" />
@@ -889,7 +1044,7 @@ export default function AdminDashboard() {
                   </Card>
 
                   {/* OpenRouter Calls Table */}
-                  <Card className="glass-panel rounded-[28px] border border-white/10 overflow-hidden shadow-xl shadow-primary/5 col-span-12">
+                  <Card className="glass-panel rounded-[28px] border border-white/10 overflow-hidden shadow-xl shadow-primary/5 col-span-1 lg:col-span-12">
                     <div className="p-6 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/20">
                       <div>
                         <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
@@ -936,7 +1091,64 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    {/* Mobile Card List view */}
+                    <div className="block md:hidden divide-y divide-border/10">
+                      {paginatedOpenRouterCalls.map((log) => {
+                        const type = (log.params.type as string) || "unknown";
+                        const promptTokens = (log.params.prompt_tokens as number) ?? 0;
+                        const completionTokens = (log.params.completion_tokens as number) ?? 0;
+                        const cost = (log.params.cost as number) ?? 0;
+                        const genId = (log.params.generation_id as string) || "";
+                        
+                        return (
+                          <div key={log.id} className="p-4 flex flex-col gap-3 hover:bg-muted/5 transition-colors">
+                            <div className="flex justify-between items-start">
+                              <span className="font-mono text-[9px] text-muted-foreground">
+                                {log.timestamp ? new Date(log.timestamp).toLocaleString("it-IT") : "—"}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase border ${
+                                type === "ingest"
+                                  ? "bg-teal-500/10 text-teal-400 border-teal-500/20"
+                                  : type === "translate"
+                                  ? "bg-violet-500/10 text-violet-400 border-violet-500/20"
+                                  : "bg-muted text-muted-foreground border-border"
+                              }`}>
+                                {type === "ingest" ? "Ingest" : type === "translate" ? "Traduzione" : type}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-xs text-foreground truncate max-w-[180px]">{log.userEmail || "Anonimo"}</span>
+                                <span className="text-[9px] text-muted-foreground font-mono truncate max-w-[150px]">{log.userId || "—"}</span>
+                              </div>
+                              <span className="font-mono font-bold text-xs text-primary">${cost.toFixed(6)}</span>
+                            </div>
+
+                            <div className="flex justify-between items-center text-[10px] text-muted-foreground border-t border-border/10 pt-2">
+                              <span>Tokens: <strong className="text-foreground">{promptTokens + completionTokens}</strong> (In: {promptTokens} | Out: {completionTokens})</span>
+                              {genId && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedGenerationId(genId)}
+                                  className="h-7 px-2.5 rounded-lg border-primary/20 text-primary hover:bg-primary/5 text-[10px]"
+                                >
+                                  <Info className="h-3.5 w-3.5 mr-1" data-icon="inline-start" />
+                                  Dettagli
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {filteredOpenRouterCalls.length === 0 && (
+                        <p className="p-8 text-center text-xs text-muted-foreground">Nessuna chiamata registrata.</p>
+                      )}
+                    </div>
+
+                    {/* Desktop Table view */}
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
                           <tr className="bg-muted/30 border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
@@ -1080,7 +1292,52 @@ export default function AdminDashboard() {
 
               {/* Logs Card List */}
               <Card className="glass-panel rounded-[28px] border border-white/10 overflow-hidden shadow-xl shadow-primary/5">
-                <div className="overflow-x-auto">
+                {/* Mobile Card List view */}
+                <div className="block md:hidden divide-y divide-border/10">
+                  {paginatedLogs.map((log) => {
+                    const hasGenId = !!log.params.generation_id;
+                    return (
+                      <div key={log.id} className="p-4 flex flex-col gap-3 hover:bg-muted/5 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <span className="font-mono text-[9px] text-muted-foreground">
+                            {log.timestamp ? new Date(log.timestamp).toLocaleString("it-IT") : "—"}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full font-bold bg-primary/10 text-primary border border-primary/5 text-[9px]">
+                            {log.eventName}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-semibold text-xs text-foreground">{log.userEmail || "Anonimo"}</span>
+                          <span className="text-[9px] text-muted-foreground font-mono">{log.userId || "—"}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 border-t border-border/10 pt-2">
+                          <div className="font-mono text-[9px] bg-muted/20 p-2 rounded-lg max-w-[280px] overflow-x-auto scrollbar-none text-muted-foreground border border-border/20 flex-1">
+                            {JSON.stringify(log.params)}
+                          </div>
+                          {hasGenId && (
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => setSelectedGenerationId(log.params.generation_id as string)}
+                              className="h-7 w-7 rounded-lg border-primary/20 text-primary hover:bg-primary/5 shrink-0"
+                              title="Mostra costi generazione OpenRouter"
+                            >
+                              <Info className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredLogs.length === 0 && (
+                    <p className="p-8 text-center text-xs text-muted-foreground">Nessun evento registrato.</p>
+                  )}
+                </div>
+
+                {/* Desktop Table view */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-muted/30 border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
