@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppSelector } from "@/store/hooks";
 import { selectUserProfile } from "@/store/userSlice";
@@ -10,6 +10,7 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { identifyPlatform } from "@/lib/scraping/detector";
 import { toast } from "sonner";
 import { ImportDrawer } from "@/components/import-drawer";
+import { trackEvent } from "@/lib/analytics";
 
 export type IngestStep = "idle" | "scraping" | "extracting" | "saving" | "completed" | "failed";
 
@@ -73,7 +74,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Reset pre-esistente
+    // Reset pre-esistenza
     resetIngest();
     setUrl(targetUrl);
     setIsIngesting(true);
@@ -81,12 +82,28 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
     setProgress(5);
     setIsDrawerOpen(true); // Apre il drawer per mostrare il progresso iniziale
 
+    // Rileva piattaforma prima delle verifiche
+    let detectedPlatform = "web";
+    try {
+      detectedPlatform = identifyPlatform(targetUrl);
+    } catch (e) {
+      console.error("Errore identificazione piattaforma:", e);
+    }
+
     try {
       // 1. Check client-side: esiste già una ricetta globale con questo URL?
       const { checkRecipeExistsByUrl } = await import("@/lib/firestore/recipes");
       const existingRecipeId = await checkRecipeExistsByUrl(targetUrl);
 
       if (existingRecipeId) {
+        // Traccia avvio con cache hit
+        await trackEvent("recipe_import_initiated", {
+          source_platform: detectedPlatform,
+          is_cached_hit: true,
+          userId: user.uid,
+          userEmail: user.email || undefined,
+        });
+
         setStep("saving");
         setProgress(75);
         
@@ -97,6 +114,14 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
         setProgress(100);
         setRecipeId(existingRecipeId);
         
+        // Traccia successo cache hit
+        await trackEvent("recipe_import_completed", {
+          source_platform: detectedPlatform,
+          is_cached_hit: true,
+          userId: user.uid,
+          userEmail: user.email || undefined,
+        });
+
         toast.success("Ricetta aggiunta al tuo ricettario!", {
           description: "La ricetta era già presente nel nostro catalogo ed è stata aggiunta istantaneamente.",
         });
@@ -105,13 +130,14 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 2. Rileva piattaforma e controlla i token (per Instagram/TikTok)
-      let detectedPlatform = "web";
-      try {
-        detectedPlatform = identifyPlatform(targetUrl);
-      } catch (e) {
-        console.error("Errore identificazione piattaforma:", e);
-      }
+      // Traccia avvio senza cache hit
+      const startTime = Date.now();
+      await trackEvent("recipe_import_initiated", {
+        source_platform: detectedPlatform,
+        is_cached_hit: false,
+        userId: user.uid,
+        userEmail: user.email || undefined,
+      });
 
       if (detectedPlatform !== "web") {
         const tokens = profile?.tokens ?? 10;
@@ -121,6 +147,13 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
           setIsIngesting(false);
           setIsDrawerOpen(true);
           toast.error("Importazione fallita.");
+          
+          await trackEvent("recipe_import_failed", {
+            source_platform: detectedPlatform,
+            error_type: "NO_TOKENS",
+            userId: user.uid,
+            userEmail: user.email || undefined,
+          });
           return;
         }
       }
@@ -129,16 +162,24 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch("/api/ingest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl, userId: user.uid }),
+        body: JSON.stringify({ url: targetUrl, userId: user.uid, userEmail: user.email || null }),
       });
 
       if (!response.ok) {
         const errJson = await response.json();
-        setError(errJson.error || "Impossibile avviare l'importazione.");
+        const errType = errJson.error || "Impossibile avviare l'importazione.";
+        setError(errType);
         setStep("failed");
         setIsIngesting(false);
         setIsDrawerOpen(true);
         toast.error("Importazione fallita.");
+
+        await trackEvent("recipe_import_failed", {
+          source_platform: detectedPlatform,
+          error_type: errType,
+          userId: user.uid,
+          userEmail: user.email || undefined,
+        });
         return;
       }
 
@@ -152,6 +193,13 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
         setIsIngesting(false);
         setIsDrawerOpen(true);
         toast.error("Importazione fallita.");
+
+        await trackEvent("recipe_import_failed", {
+          source_platform: detectedPlatform,
+          error_type: "STREAM_READ_ERROR",
+          userId: user.uid,
+          userEmail: user.email || undefined,
+        });
         return;
       }
 
@@ -184,7 +232,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 setStep(data.step as IngestStep);
                 setProgress(data.progress);
               } else if (eventName === "success") {
-                const { recipe, recipeId: newRecipeId } = data;
+                const { recipe, recipeId: newRecipeId, generationId } = data;
                 setStep("saving");
                 setProgress(95);
 
@@ -244,13 +292,34 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 setProgress(100);
                 setIsIngesting(false);
                 setIsDrawerOpen(true); // Forza la riapertura del drawer per mostrare il successo
+
+                // Traccia successo
+                const durationSeconds = Math.round((Date.now() - startTime) / 1000);
+                await trackEvent("recipe_import_completed", {
+                  source_platform: detectedPlatform,
+                  is_cached_hit: false,
+                  duration_seconds: durationSeconds,
+                  generation_id: generationId || null,
+                  userId: user.uid,
+                  userEmail: user.email || undefined,
+                });
+
                 toast.success("Ricetta importata con successo!");
               } else if (eventName === "error") {
-                setError(data.error || "Errore durante l'elaborazione.");
+                const errType = data.error || "Errore durante l'elaborazione.";
+                setError(errType);
                 setStep("failed");
                 setIsIngesting(false);
                 setIsDrawerOpen(true);
                 toast.error("Importazione fallita.");
+
+                await trackEvent("recipe_import_failed", {
+                  source_platform: detectedPlatform,
+                  error_type: errType,
+                  userId: user.uid,
+                  userEmail: user.email || undefined,
+                });
+
                 reader.cancel();
                 return;
               }
@@ -262,11 +331,19 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err: any) {
       console.error("Errore durante l'ingest:", err);
-      setError(err.message || "Errore imprevisto durante l'elaborazione");
+      const errType = err.message || "Errore imprevisto durante l'elaborazione";
+      setError(errType);
       setStep("failed");
       setIsIngesting(false);
       setIsDrawerOpen(true); // Forza la riapertura del drawer per mostrare l'errore
       toast.error("Importazione fallita.");
+
+      await trackEvent("recipe_import_failed", {
+        source_platform: detectedPlatform,
+        error_type: errType,
+        userId: user.uid,
+        userEmail: user.email || undefined,
+      });
     }
   };
 

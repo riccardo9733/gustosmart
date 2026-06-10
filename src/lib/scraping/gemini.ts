@@ -119,8 +119,8 @@ Istruzioni per l'estrazione:
   }
 
   try {
-    return JSON.parse(cleanText);
-  } catch (err) {
+    return { recipe: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null };
+  } catch {
     console.error("Errore di parsing del JSON di OpenRouter. Output grezzo:", responseText);
     throw new Error("Il testo generato dall'IA tramite OpenRouter non è un JSON valido");
   }
@@ -255,8 +255,8 @@ REGOLE RIGIDE DI FEDELTÀ (CRITICAL):
   }
 
   try {
-    return JSON.parse(cleanText);
-  } catch (err) {
+    return { recipe: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null };
+  } catch {
     console.error("Errore di parsing del JSON di OpenRouter (Web). Output grezzo:", responseText);
     throw new Error("Il testo generato dall'IA per la ricetta Web non è un JSON valido");
   }
@@ -367,8 +367,8 @@ Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includ
   }
 
   try {
-    return JSON.parse(cleanText);
-  } catch (err) {
+    return { translation: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null };
+  } catch {
     console.error("Errore di parsing del JSON di traduzione di OpenRouter. Output grezzo:", responseText);
     throw new Error("Il testo tradotto generato dall'IA non è un JSON valido");
   }

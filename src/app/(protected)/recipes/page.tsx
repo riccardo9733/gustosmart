@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/auth-context";
 import { useRecipes, useRemoveFromUserRecipes } from "@/hooks/useRecipes";
 import {
   Search,
@@ -76,6 +77,7 @@ import {
 
 export default function RecipesPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const t = useTranslations("Recipes");
   const tDetails = useTranslations("Details");
 
@@ -104,6 +106,14 @@ export default function RecipesPage() {
     const toastId = toast.loading(t("removingRecipeProgress", { title }));
     try {
       await removeRecipe(id);
+
+      const { trackEvent } = await import("@/lib/analytics");
+      await trackEvent("recipe_removed", {
+        recipe_id: id,
+        userId: user?.uid,
+        userEmail: user?.email || undefined,
+      });
+
       toast.success(t("recipeRemovedSuccess"), { id: toastId });
     } catch (error) {
       console.error("Errore eliminazione:", error);

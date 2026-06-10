@@ -54,6 +54,7 @@ export function useSyncUser() {
                 measurementSystem: data.preferences?.measurementSystem || "metric",
               },
               tokens: typeof data.tokens === "number" ? data.tokens : 10,
+              role: data.role || "user",
               createdAt: data.createdAt ? (typeof data.createdAt.toDate === "function" ? data.createdAt.toDate().toISOString() : data.createdAt) : null,
               updatedAt: data.updatedAt ? (typeof data.updatedAt.toDate === "function" ? data.updatedAt.toDate().toISOString() : data.updatedAt) : null,
             })
@@ -80,6 +81,7 @@ export function useSyncUser() {
                 measurementSystem: "metric",
               },
               tokens: 10,
+              role: "user",
               createdAt: null,
               updatedAt: null,
             })

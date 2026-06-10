@@ -113,7 +113,7 @@ function ScannerHeader({ userId }: { userId: string }) {
 interface FeedCardProps {
   recipe: GlobalRecipe;
   isSaved: boolean;
-  onToggleSave: () => void;
+  onToggleSave: (method?: string) => void;
   onViewDetails: () => void;
   tRecipes: any;
   tDetails: any;
@@ -135,7 +135,7 @@ function FeedCard({
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isSaved) {
-      onToggleSave();
+      onToggleSave("double_click");
       setShowSplash(true);
       setTimeout(() => setShowSplash(false), 800);
     }
@@ -186,7 +186,7 @@ function FeedCard({
           size="icon"
           onClick={(e) => {
             e.stopPropagation();
-            onToggleSave();
+            onToggleSave("button_click");
           }}
           className={cn(
             "absolute top-2.5 right-2.5 z-10 size-8 rounded-full bg-background/75 backdrop-blur-md shadow-sm border border-white/10 hover:bg-background hover:scale-105 active:scale-95 transition-all text-foreground",
@@ -271,18 +271,35 @@ export default function HomeFeed() {
     { key: "other", label: tRecipes("other") },
   ];
 
-  const handleToggleSave = async (recipe: GlobalRecipe, isSaved: boolean) => {
+  const handleToggleSave = async (recipe: GlobalRecipe, isSaved: boolean, method = "button_click") => {
     if (!user) {
       toast.error("Effettua l'accesso per salvare le ricette.");
       return;
     }
     const toastId = toast.loading(isSaved ? "Rimozione..." : "Salvataggio...");
     try {
+      const { trackEvent } = await import("@/lib/analytics");
       if (isSaved) {
         await unsaveRecipe(recipe.id);
+        
+        await trackEvent("recipe_removed", {
+          recipe_id: recipe.id,
+          userId: user.uid,
+          userEmail: user.email || undefined,
+        });
+
         toast.success(t("removeSuccess") || "Ricetta rimossa dal ricettario!", { id: toastId });
       } else {
         await saveRecipe(recipe.id);
+
+        await trackEvent("recipe_saved", {
+          recipe_id: recipe.id,
+          source_platform: recipe.sourcePlatform || "web",
+          method,
+          userId: user.uid,
+          userEmail: user.email || undefined,
+        });
+
         toast.success(t("saveSuccess") || "Ricetta salvata nel ricettario!", { id: toastId });
       }
     } catch (e) {
@@ -474,7 +491,7 @@ export default function HomeFeed() {
                   <FeedCard
                     recipe={recipe}
                     isSaved={isSaved}
-                    onToggleSave={() => handleToggleSave(recipe, isSaved)}
+                    onToggleSave={(method) => handleToggleSave(recipe, isSaved, method)}
                     onViewDetails={() => router.push(`/recipes/${recipe.id}`)}
                     tRecipes={tRecipes}
                     tDetails={tDetails}

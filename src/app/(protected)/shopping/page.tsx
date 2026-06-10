@@ -181,6 +181,15 @@ export default function ShoppingPage() {
     setLocalRecipes(updatedRecipes);
     setLocalItems(newItems);
     setIsDirty(true);
+
+    import("@/lib/analytics").then(({ trackEvent }) => {
+      trackEvent("shopping_recipe_toggled", {
+        recipe_id: recipeId,
+        action: isSelected ? "remove" : "add",
+        userId: profile?.uid,
+        userEmail: profile?.email || undefined
+      });
+    });
   };
 
   const handleUpdateServings = (recipeId: string, delta: number) => {
@@ -240,6 +249,14 @@ export default function ShoppingPage() {
     setLocalItems(updatedItems);
     setIsDirty(true);
     setCustomItemName("");
+
+    import("@/lib/analytics").then(({ trackEvent }) => {
+      trackEvent("shopping_custom_item_added", {
+        item_name: name,
+        userId: profile?.uid,
+        userEmail: profile?.email || undefined
+      });
+    });
   };
 
   const handleDeleteCustomItem = (name: string) => {
@@ -274,6 +291,13 @@ export default function ShoppingPage() {
     setLocalItems([]);
     setIsDirty(true);
     toast.success(t("resetSuccess") || "Lista della spesa resettata!");
+
+    import("@/lib/analytics").then(({ trackEvent }) => {
+      trackEvent("shopping_list_reset", {
+        userId: profile?.uid,
+        userEmail: profile?.email || undefined
+      });
+    });
   };
 
   // ---------------------------------------------------------------------------

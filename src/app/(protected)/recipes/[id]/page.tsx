@@ -50,7 +50,6 @@ import {
   DrawerClose,
   DrawerContent,
   DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
@@ -196,6 +195,14 @@ export default function RecipeDetailPage() {
       items: newItems,
     }, {
       onSuccess: () => {
+        import("@/lib/analytics").then(({ trackEvent }) => {
+          trackEvent("shopping_recipe_toggled", {
+            recipe_id: id,
+            action: isSelectedInShopping ? "remove" : "add",
+            userId: user?.uid,
+            userEmail: user?.email || undefined
+          });
+        });
         if (isSelectedInShopping) {
           toast.success(tShopping("removeFromShoppingSuccess"));
         } else {
@@ -276,7 +283,9 @@ export default function RecipeDetailPage() {
                 ingredients: recipe.ingredients || [],
                 instructions: recipe.instructions || [],
                 targetLanguage: userLanguage,
-                nutritionalAssessment: recipe.nutritionalAssessment || null
+                nutritionalAssessment: recipe.nutritionalAssessment || null,
+                userId: user?.uid || null,
+                userEmail: user?.email || null
               })
             });
 
@@ -294,6 +303,16 @@ export default function RecipeDetailPage() {
 
               // Save translation on the GLOBAL recipe — accessible by all users
               await setDoc(translationRef, translationDoc);
+
+              const { trackEvent } = await import("@/lib/analytics");
+              await trackEvent("recipe_translated", {
+                recipe_id: recipe.id,
+                source_lang: recipe.sourceLanguage || "it",
+                target_lang: userLanguage,
+                generation_id: resJson.generationId || null,
+                userId: user?.uid,
+                userEmail: user?.email || undefined,
+              });
 
               setDisplayData({
                 title: resJson.translation.title,
@@ -329,6 +348,17 @@ export default function RecipeDetailPage() {
   const updateServings = (delta: number) => {
     const newVal = currentServings + delta;
     if (newVal < 1) return;
+
+    import("@/lib/analytics").then(({ trackEvent }) => {
+      trackEvent("recipe_servings_changed", {
+        recipe_id: id,
+        previous_servings: currentServings,
+        new_servings: newVal,
+        userId: user?.uid,
+        userEmail: user?.email || undefined,
+      });
+    });
+
     setCurrentServings(newVal);
 
     // Se la ricetta è già in spesa, aggiorna le porzioni anche lì!
@@ -358,6 +388,14 @@ export default function RecipeDetailPage() {
     const toastId = toast.loading(t("removingRecipeProgress"));
     try {
       await removeRecipe(id);
+
+      const { trackEvent } = await import("@/lib/analytics");
+      await trackEvent("recipe_removed", {
+        recipe_id: id,
+        userId: user?.uid,
+        userEmail: user?.email || undefined,
+      });
+
       toast.success(t("recipeRemovedSuccess"), { id: toastId });
       router.push("/recipes");
     } catch (error) {
@@ -370,6 +408,16 @@ export default function RecipeDetailPage() {
     const toastId = toast.loading(t("addingRecipeProgress"));
     try {
       await addRecipe(id);
+
+      const { trackEvent } = await import("@/lib/analytics");
+      await trackEvent("recipe_saved", {
+        recipe_id: id,
+        source_platform: recipe?.sourcePlatform || "web",
+        method: "button_click",
+        userId: user?.uid,
+        userEmail: user?.email || undefined,
+      });
+
       toast.success(t("addToRecipesSuccess"), { id: toastId });
     } catch (error) {
       console.error("Errore durante l'aggiunta:", error);
@@ -545,7 +593,18 @@ export default function RecipeDetailPage() {
                     </Badge>
                   )}
                   {recipe.kcal && (
-                    <Drawer>
+                    <Drawer onOpenChange={(open) => {
+                      if (open) {
+                        import("@/lib/analytics").then(({ trackEvent }) => {
+                          trackEvent("recipe_nutrition_viewed", {
+                            recipeId: recipe.id,
+                            recipeTitle: recipe.title,
+                            userId: user?.uid || undefined,
+                            userEmail: user?.email || undefined,
+                          });
+                        });
+                      }
+                    }}>
                       <DrawerTrigger asChild>
                         <Badge variant="secondary" className="bg-primary/10 hover:bg-primary/15 transition-all text-primary rounded-full px-3 py-1 font-semibold flex items-center gap-1 cursor-pointer select-none active:scale-95 duration-100">
                           <Flame className="w-3.5 h-3.5 fill-primary animate-pulse" />
@@ -889,11 +948,20 @@ export default function RecipeDetailPage() {
                       >
                         <Checkbox
                           checked={isChecked}
-                          onCheckedChange={(checked) => {
+                          onCheckedChange={async (checked) => {
                             setCheckedIngredients(prev => ({
                               ...prev,
                               [idx]: !!checked
                             }));
+                            const { trackEvent } = await import("@/lib/analytics");
+                            await trackEvent("cooking_check_item", {
+                              recipe_id: id,
+                              item_type: "ingredient",
+                              index: idx,
+                              checked: !!checked,
+                              userId: user?.uid,
+                              userEmail: user?.email || undefined,
+                            });
                           }}
                         />
                         <span className={`text-sm text-foreground transition-all duration-200 ${
@@ -943,11 +1011,21 @@ export default function RecipeDetailPage() {
                     <div key={idx} className="group flex gap-4 items-start">
                       <div className="flex flex-col items-center shrink-0">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
+                            const newChecked = !completedSteps[idx];
                             setCompletedSteps(prev => ({
                               ...prev,
-                              [idx]: !prev[idx]
+                              [idx]: newChecked
                             }));
+                            const { trackEvent } = await import("@/lib/analytics");
+                            await trackEvent("cooking_check_item", {
+                              recipe_id: id,
+                              item_type: "step",
+                              index: idx,
+                              checked: newChecked,
+                              userId: user?.uid,
+                              userEmail: user?.email || undefined,
+                            });
                           }}
                           className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-md transition-all active:scale-90 ${
                             isChecked
@@ -971,11 +1049,21 @@ export default function RecipeDetailPage() {
                         <label className="flex items-center gap-2 mt-4 text-xs font-bold text-secondary cursor-pointer select-none">
                           <Checkbox
                             checked={isChecked}
-                            onCheckedChange={(checked) => {
+                            onCheckedChange={async (checked) => {
+                              const newChecked = !!checked;
                               setCompletedSteps(prev => ({
                                 ...prev,
-                                [idx]: !!checked
+                                [idx]: newChecked
                               }));
+                              const { trackEvent } = await import("@/lib/analytics");
+                              await trackEvent("cooking_check_item", {
+                                recipe_id: id,
+                                item_type: "step",
+                                index: idx,
+                                checked: newChecked,
+                                userId: user?.uid,
+                                userEmail: user?.email || undefined,
+                              });
                             }}
                           />
                           <span>{t("stepCompleted")}</span>

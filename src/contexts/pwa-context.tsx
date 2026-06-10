@@ -85,6 +85,9 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
+      import("@/lib/analytics").then(({ trackEvent }) => {
+        trackEvent("pwa_install_prompt_action", { action: "app_installed" });
+      });
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -112,12 +115,18 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     if (isIos) {
       // iOS doesn't support native prompt, show helper instructions modal
       setShowIosInstructions(true);
+      import("@/lib/analytics").then(({ trackEvent }) => {
+        trackEvent("pwa_install_prompt_action", { action: "ios_instructions_shown" });
+      });
       return;
     }
 
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
+      import("@/lib/analytics").then(({ trackEvent }) => {
+        trackEvent("pwa_install_prompt_action", { action: outcome === "accepted" ? "accepted" : "dismissed" });
+      });
       if (outcome === "accepted") {
         setIsInstalled(true);
       }
@@ -128,6 +137,9 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   const dismissPrompt = () => {
     setIsDismissed(true);
     localStorage.setItem("pwa_install_dismissed", "true");
+    import("@/lib/analytics").then(({ trackEvent }) => {
+      trackEvent("pwa_install_prompt_action", { action: "dismissed" });
+    });
   };
 
   const canInstall = !isInstalled && (deferredPrompt !== null || isIos);

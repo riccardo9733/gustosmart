@@ -13,6 +13,7 @@ export interface UserProfile {
   photoURL: string | null;
   preferences: UserPreferences;
   tokens: number;
+  role?: "admin" | "user";
   createdAt: any;
   updatedAt: any;
 }

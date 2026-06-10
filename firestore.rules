@@ -11,6 +11,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // 1. Users collection (profile info readable by authenticated users, writable only by owner)
     match /users/{userId} {
       allow read: if isAuthenticated();
@@ -52,6 +58,13 @@ service cloud.firestore {
     match /language/{langId} {
       allow read: if isAuthenticated();
       allow write: if false;
+    }
+
+    // 5. Analytics Events collection (writeable by anyone, readable only by admins)
+    match /analytics_events/{eventId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if false;
     }
   }
 }

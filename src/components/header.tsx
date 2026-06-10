@@ -1,6 +1,6 @@
 "use client";
  
-import { Leaf, Zap, Loader2 } from "lucide-react";
+import { Leaf, Zap, Loader2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useAppSelector } from "@/store/hooks";
 import { selectUserProfile } from "@/store/userSlice";
@@ -30,6 +30,16 @@ export function Header() {
               {progress}%
             </span>
           </button>
+        )}
+        {profile?.role === "admin" && (
+          <Link
+            href="/admin"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/10 dark:bg-secondary/25 rounded-full border border-secondary/20 hover:bg-secondary/20 active:scale-95 transition-all text-secondary"
+            aria-label="Dashboard Amministratore"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span className="text-[10px] font-extrabold tracking-wider uppercase hidden sm:inline">Admin</span>
+          </Link>
         )}
         {profile && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 dark:bg-primary/20 rounded-full border border-primary/20">

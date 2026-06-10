@@ -111,6 +111,7 @@ function LoginForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const blobsRef = useRef<HTMLDivElement>(null);
+  const bannerTrackedRef = useRef(false);
 
   const redirectTo = searchParams.get("redirect") || "/";
 
@@ -137,6 +138,16 @@ function LoginForm() {
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
+
+  /* ------ Track PWA Install Banner Shown ------ */
+  useEffect(() => {
+    if (canInstall && !isDismissed && !bannerTrackedRef.current) {
+      bannerTrackedRef.current = true;
+      import("@/lib/analytics").then(({ trackEvent }) => {
+        trackEvent("pwa_install_prompt_action", { action: "shown" });
+      });
+    }
+  }, [canInstall, isDismissed]);
 
   /* ------ Redirect after successful login ------ */
   function handleSuccess() {

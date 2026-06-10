@@ -1,6 +1,6 @@
 import { identifyPlatform } from "@/lib/scraping/detector";
 import { getFirebaseDb } from "@/lib/firebase";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, addDoc, serverTimestamp } from "firebase/firestore";
 import { scrapeInstagram, scrapeTikTok, scrapeFacebook, scrapeYouTube } from "@/lib/scraping/scrapecreators";
 import { scrapeWebPage } from "@/lib/scraping/web";
 import { generateRecipeFromText, generateRecipeFromWeb } from "@/lib/scraping/gemini";
@@ -13,7 +13,7 @@ export const maxDuration = 60;
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { url, userId } = body;
+    const { url, userId, userEmail } = body;
 
     if (!url) {
       return new Response(JSON.stringify({ success: false, error: "L'URL è obbligatorio" }), {
@@ -120,7 +120,33 @@ export async function POST(request: Request) {
 
           const [geminiOutput, b2ImageUrl] = await Promise.all([geminiPromise, uploadPromise]);
 
-          if (geminiOutput.isRecipeDetailsPresent === false) {
+          // Log OpenRouter Call Event
+          const usage = geminiOutput.usage;
+          if (usage) {
+            try {
+              const expireAt = new Date();
+              expireAt.setDate(expireAt.getDate() + 7);
+
+              await addDoc(collection(db, "analytics_events"), {
+                eventName: "openrouter_call",
+                userId: userId || null,
+                userEmail: userEmail || null,
+                timestamp: serverTimestamp(),
+                expireAt,
+                params: {
+                  generation_id: geminiOutput.generationId || "",
+                  type: "ingest",
+                  prompt_tokens: usage.prompt_tokens ?? 0,
+                  completion_tokens: usage.completion_tokens ?? 0,
+                  cost: usage.cost ?? 0
+                }
+              });
+            } catch (fsErr) {
+              console.error("[Ingest Route] Errore nel salvataggio del log di chiamata OpenRouter su Firestore:", fsErr);
+            }
+          }
+
+          if (geminiOutput.recipe.isRecipeDetailsPresent === false) {
             throw new Error("INSUFFICIENT_RECIPE_DATA");
           }
 
@@ -129,7 +155,7 @@ export async function POST(request: Request) {
           sendEvent("status", { step: "saving", progress: 90 });
 
           const validatedRecipe = validateAndFormatRecipe(
-            geminiOutput,
+            geminiOutput.recipe,
             url,
             b2ImageUrl,
             {
@@ -141,7 +167,7 @@ export async function POST(request: Request) {
 
           // SUCCESS
           console.log(`[Ingest Route] Ingest completato per recipeId: ${recipeId}`);
-          sendEvent("success", { recipe: validatedRecipe, recipeId });
+          sendEvent("success", { recipe: validatedRecipe, recipeId, generationId: geminiOutput.generationId });
           controller.close();
         } catch (err: any) {
           const errorMessage = err instanceof Error ? err.message : String(err);
