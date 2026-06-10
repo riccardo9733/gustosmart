@@ -203,6 +203,8 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      let currentStep: IngestStep = "scraping";
+
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -229,11 +231,14 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
               const data = JSON.parse(dataStr);
 
               if (eventName === "status") {
-                setStep(data.step as IngestStep);
+                const nextStep = data.step as IngestStep;
+                setStep(nextStep);
+                currentStep = nextStep;
                 setProgress(data.progress);
               } else if (eventName === "success") {
                 const { recipe, recipeId: newRecipeId, generationId } = data;
                 setStep("saving");
+                currentStep = "saving";
                 setProgress(95);
 
                 // 4. Salva la ricetta globale in /recipes/{recipeId} (lato client)
@@ -289,6 +294,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 setRecipeId(newRecipeId);
                 setRecipeResult(recipe);
                 setStep("completed");
+                currentStep = "completed";
                 setProgress(100);
                 setIsIngesting(false);
                 setIsDrawerOpen(true); // Forza la riapertura del drawer per mostrare il successo
@@ -309,6 +315,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 const errType = data.error || "Errore durante l'elaborazione.";
                 setError(errType);
                 setStep("failed");
+                currentStep = "failed";
                 setIsIngesting(false);
                 setIsDrawerOpen(true);
                 toast.error("Importazione fallita.");
@@ -325,6 +332,12 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
               }
             }
           }
+        }
+
+        // Se usciamo dal loop e lo step non è completed o failed, significa che lo stream
+        // si è chiuso in modo anomalo senza inviare un evento di successo o errore.
+        if (currentStep !== "completed" && currentStep !== "failed") {
+          throw new Error("La connessione con il server si è interrotta inaspettatamente.");
         }
       } finally {
         reader.releaseLock();

@@ -81,39 +81,52 @@ export async function uploadImageToB2(imageUrl: string, recipeId: string): Promi
   }
 
   console.log(`B2: Scaricamento immagine da URL: ${imageUrl}`);
-  const response = await fetch(imageUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    },
-  });
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000); // 6 secondi di timeout per evitare hang indefiniti
 
-  if (!response.ok) {
-    throw new Error(`Impossibile scaricare l'immagine originale (${response.status} ${response.statusText})`);
+  try {
+    const response = await fetch(imageUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Impossibile scaricare l'immagine originale (${response.status} ${response.statusText})`);
+    }
+
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const ext = getExtensionFromContentType(contentType);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const fileKey = `recipes/${recipeId}.${ext}`;
+    const client = getS3Client();
+
+    console.log(`B2: Avvio caricamento su B2 con chiave: ${fileKey}`);
+    const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: fileKey,
+      Body: buffer,
+      ContentType: contentType,
+    });
+
+    await client.send(command);
+    console.log("B2: Caricamento completato con successo!");
+
+    // Costruisce l'URL S3 completo
+    // Es: https://s3.eu-central-003.backblazeb2.com/gustosmart/recipes/recipeId.jpg
+    const endpoint = process.env.B2_ENDPOINT?.replace(/\/$/, "");
+    return `${endpoint}/${bucketName}/${fileKey}`;
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    console.error(`[B2 Upload] Errore o timeout durante il download/upload dell'immagine:`, err.message || err);
+    throw err;
   }
-
-  const contentType = response.headers.get("content-type") || "image/jpeg";
-  const ext = getExtensionFromContentType(contentType);
-  const arrayBuffer = await response.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-
-  const fileKey = `recipes/${recipeId}.${ext}`;
-  const client = getS3Client();
-
-  console.log(`B2: Avvio caricamento su B2 con chiave: ${fileKey}`);
-  const command = new PutObjectCommand({
-    Bucket: bucketName,
-    Key: fileKey,
-    Body: buffer,
-    ContentType: contentType,
-  });
-
-  await client.send(command);
-  console.log("B2: Caricamento completato con successo!");
-
-  // Costruisce l'URL S3 completo
-  // Es: https://s3.eu-central-003.backblazeb2.com/gustosmart/recipes/recipeId.jpg
-  const endpoint = process.env.B2_ENDPOINT?.replace(/\/$/, "");
-  return `${endpoint}/${bucketName}/${fileKey}`;
 }
 
 /**
