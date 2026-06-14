@@ -115,8 +115,8 @@ interface FeedCardProps {
   isSaved: boolean;
   onToggleSave: (method?: string) => void;
   onViewDetails: () => void;
-  tRecipes: any;
-  tDetails: any;
+  tRecipes: (key: string, values?: { count?: number }) => string;
+  tDetails: (key: string, values?: { count?: number }) => string;
 }
 
 function FeedCard({
@@ -128,9 +128,6 @@ function FeedCard({
   tDetails,
 }: FeedCardProps) {
   const [showSplash, setShowSplash] = useState(false);
-  const imageSrc = recipe.imageUrl
-    ? `/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`
-    : null;
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -144,28 +141,13 @@ function FeedCard({
   return (
     <Card 
       onClick={onViewDetails}
-      className="group relative w-full overflow-hidden rounded-3xl border border-border/40 bg-card/40 dark:bg-surface-container/20 shadow-md hover:-translate-y-1 hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer select-none flex flex-col"
+      onDoubleClick={handleDoubleClick}
+      className="group relative w-full overflow-hidden rounded-3xl border border-border/40 bg-card/40 dark:bg-surface-container/20 shadow-md hover:-translate-y-1 hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer select-none flex flex-col p-3.5 gap-3.5"
     >
-      {/* Image Container */}
-      <div 
-        className="relative w-full overflow-hidden bg-muted/10"
-        onDoubleClick={handleDoubleClick}
-      >
-        {imageSrc ? (
-          <img
-            src={imageSrc}
-            alt={recipe.title}
-            className="w-full h-auto max-h-[280px] object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full aspect-[4/3] bg-gradient-to-br from-primary/5 to-primary/10 flex flex-col items-center justify-center text-primary/20">
-            <ChefHat className="size-10 stroke-[1.2]" />
-          </div>
-        )}
-
-        {/* Source Platform Badge (overlay top-left) */}
-        <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-background/70 backdrop-blur-md border border-white/10 text-[9px] font-bold text-muted-foreground shadow-sm">
+      {/* Card Header (Source Platform & Save Button) */}
+      <div className="flex items-center justify-between w-full">
+        {/* Source Platform Badge */}
+        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted/40 dark:bg-surface-container/60 border border-border/20 text-[9px] font-bold text-muted-foreground shadow-sm">
           {recipe.sourcePlatform === "instagram" ? (
             <Film className="size-3 text-pink-500 fill-pink-500/10" />
           ) : recipe.sourcePlatform === "tiktok" ? (
@@ -180,7 +162,7 @@ function FeedCard({
           <span className="capitalize">{recipe.sourcePlatform || "Web"}</span>
         </div>
 
-        {/* Bookmark/Save button (overlay top-right) */}
+        {/* Bookmark/Save button */}
         <Button
           variant="ghost"
           size="icon"
@@ -189,7 +171,7 @@ function FeedCard({
             onToggleSave("button_click");
           }}
           className={cn(
-            "absolute top-2.5 right-2.5 z-10 size-8 rounded-full bg-background/75 backdrop-blur-md shadow-sm border border-white/10 hover:bg-background hover:scale-105 active:scale-95 transition-all text-foreground",
+            "size-8 rounded-full bg-muted/30 hover:bg-muted/50 border border-border/10 hover:scale-105 active:scale-95 transition-all text-foreground",
             isSaved ? "text-primary" : "text-muted-foreground"
           )}
         >
@@ -199,26 +181,26 @@ function FeedCard({
             <Bookmark data-icon="inline-start" />
           )}
         </Button>
-
-        {/* Double click animated splash */}
-        {showSplash && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 animate-in fade-in-0 duration-200">
-            <div className="p-3 rounded-full bg-white/95 dark:bg-black/90 shadow-xl scale-0 animate-bounce">
-              <BookmarkCheck className="size-6 text-primary" />
-            </div>
-          </div>
-        )}
       </div>
 
+      {/* Double click animated splash */}
+      {showSplash && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm animate-in fade-in-0 duration-200 z-20">
+          <div className="p-3 rounded-full bg-background/95 dark:bg-surface-container/90 shadow-xl scale-0 animate-bounce border border-primary/20">
+            <BookmarkCheck className="size-6 text-primary fill-primary" />
+          </div>
+        </div>
+      )}
+
       {/* Card Body */}
-      <div className="p-3.5 flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <h4 className="font-heading text-sm font-bold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2 text-left">
           {recipe.title}
         </h4>
 
         {/* Recipe Tags */}
-        {(recipe.prepTimeMinutes || recipe.kcal || recipe.servings) && (
-          <div className="flex flex-wrap gap-1 items-center text-[10px] font-semibold">
+        {(recipe.prepTimeMinutes || recipe.kcal || recipe.servings || (recipe.ingredients && recipe.ingredients.length > 0)) && (
+          <div className="flex flex-wrap gap-1.5 items-center text-[10px] font-semibold mt-1">
             {recipe.prepTimeMinutes && (
               <span className="flex items-center gap-0.5 bg-muted/40 text-muted-foreground px-1.5 py-0.5 rounded-full border border-border/10">
                 <Clock className="size-3 text-primary" />
@@ -229,6 +211,18 @@ function FeedCard({
               <span className="flex items-center gap-0.5 bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/10">
                 <Flame className="size-3 fill-primary/10" />
                 {tDetails("kcalCount", { count: recipe.kcal })}
+              </span>
+            )}
+            {recipe.servings && (
+              <span className="flex items-center gap-0.5 bg-muted/40 text-muted-foreground px-1.5 py-0.5 rounded-full border border-border/10">
+                <Users className="size-3 text-primary" />
+                {tRecipes("servingsCount", { count: recipe.servings })}
+              </span>
+            )}
+            {recipe.ingredients && recipe.ingredients.length > 0 && (
+              <span className="flex items-center gap-0.5 bg-muted/40 text-muted-foreground px-1.5 py-0.5 rounded-full border border-border/10">
+                <ChefHat className="size-3 text-primary" />
+                {tRecipes("ingredients", { count: recipe.ingredients.length })}
               </span>
             )}
           </div>
@@ -447,10 +441,16 @@ export default function HomeFeed() {
           <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 w-full">
             {Array.from({ length: 8 }).map((_, idx) => (
               <div key={idx} className="break-inside-avoid mb-4 w-full">
-                <Card className="overflow-hidden rounded-3xl border border-border/40 bg-card/40 p-3 flex flex-col gap-3">
-                  <Skeleton className="w-full aspect-[4/3] rounded-2xl bg-muted/20 animate-pulse" />
+                <Card className="overflow-hidden rounded-3xl border border-border/40 bg-card/40 p-3.5 flex flex-col gap-3.5">
+                  <div className="flex justify-between items-center w-full">
+                    <Skeleton className="h-5 w-16 bg-muted/20 rounded-full animate-pulse" />
+                    <Skeleton className="h-8 w-8 bg-muted/20 rounded-full animate-pulse" />
+                  </div>
                   <Skeleton className="h-4 w-3/4 bg-muted/20 animate-pulse" />
-                  <Skeleton className="h-3.5 w-1/2 bg-muted/20 animate-pulse" />
+                  <div className="flex gap-1.5">
+                    <Skeleton className="h-4 w-12 bg-muted/20 rounded-full animate-pulse" />
+                    <Skeleton className="h-4 w-12 bg-muted/20 rounded-full animate-pulse" />
+                  </div>
                 </Card>
               </div>
             ))}
