@@ -378,7 +378,227 @@ Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includ
     return { translation: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null };
   } catch {
     console.error("Errore di parsing del JSON di traduzione di OpenRouter. Output grezzo:", responseText);
-    throw new Error("Il testo tradotto generato dall'IA non è un JSON valido");
+    throw new Error("Il testo generato dall'IA non è un JSON valido");
   }
 }
 
+/**
+ * Trasforma una ricetta in versione vegana, vegetariana o senza lattosio.
+ */
+export async function transformRecipe(
+  recipe: any,
+  targetType: "vegan" | "vegetarian" | "lactose_free" | "gluten_free"
+): Promise<any> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error("Manca la chiave d'ambiente OPENROUTER_API_KEY");
+  }
+
+  const modelId = "google/gemini-3.1-flash-lite";
+  console.log(`Chiamata a OpenRouter (Transform) con modello: ${modelId} per tipo: ${targetType}`);
+
+  let transformationGuideline = "";
+  if (targetType === "vegan") {
+    transformationGuideline = "Rendi la ricetta 100% vegana. Sostituisci TUTTI gli ingredienti di origine animale (carne, pesce, pollame, crostacei, uova, latte e derivati come burro, formaggio, yogurt, panna, strutto, miele, ecc.) con i loro equivalenti vegani/vegetali più vicini e adatti (es. latte vaccino -> latte di soia/avena; burro -> burro vegetale/margarina/olio; carne -> tofu/tempeh/seitan/legumi; uova in impasti -> fecola/banana/sostituto dell'uovo o acquafaba; formaggio -> formaggio vegetale, ecc.).";
+  } else if (targetType === "vegetarian") {
+    transformationGuideline = "Rendi la ricetta vegetariana. Sostituisci tutti gli ingredienti a base di carne, pesce, pollame, strutto, o derivati del pesce (es. colla di pesce) con alternative vegetariane adeguate (es. carne -> soia disidratata/tofu/tempeh/legumi/verdure; strutto -> olio/burro; colla di pesce -> agar agar). Nota: latticini e uova sono ammessi nella cucina vegetariana (latto-ovo-vegetariana).";
+  } else if (targetType === "lactose_free") {
+    transformationGuideline = "Rendi la ricetta priva di lattosio (lactose-free). Sostituisci tutti i latticini e ingredienti contenenti lattosio (latte vaccino, burro, panna, formaggi frescos come ricotta, mozzarella, ecc.) con le loro versioni delattosate (senza lattosio) o alternative vegetali (es. latte senza lattosio, latte di soia/mandorla, burro senza lattosio o margarina, olio). Nota: i formaggi naturalmente privi di lattosio a causa di lunga stagionatura (es. Parmigiano Reggiano oltre i 24-30 mesi) possono essere mantenuti specificando 'stagionato' o 'senza lattosio'.";
+  } else if (targetType === "gluten_free") {
+    transformationGuideline = "Rendi la ricetta priva di glutine (gluten-free). Sostituisci tutti gli ingredienti contenenti glutine (grano, farina di grano/frumento, farro, orzo, segale, avena non certificata, pane, pasta tradizionale, birra, lievito di birra industriale se non certificato gluten-free, ecc.) con i loro equivalenti certificati senza glutine o alternative naturalmente prive di glutine (es. farina senza glutine / mix universale, pasta di riso/mais/legumi, pane gluten-free, riso, mais, quinoa, ecc.). Assicurati che non vi siano contaminazioni crociate negli ingredienti.";
+  }
+
+  const prompt = `
+Sei uno chef e nutrizionista esperto. Il tuo compito è trasformare la ricetta originale fornita seguendo questa linea guida dietetica:
+${transformationGuideline}
+
+Regole importanti:
+1. Compila la ricetta direttamente nella stessa lingua originale in cui è scritta la ricetta di partenza (il campo "sourceLanguage" indica la lingua rilevata, es. 'it' per italiano, 'en' per inglese).
+2. Sostituisci solo gli ingredienti non conformi con le alternative più vicine e gustose. Mantieni gli altri ingredienti inalterati.
+3. Riscrivi i passaggi delle istruzioni (instructions) per riflettere le sostituzioni degli ingredienti (ad esempio se il burro è sostituito con l'olio d'oliva, le istruzioni dovranno fare riferimento all'aggiunta di olio anziché burro).
+4. Stima nuovamente in modo coerente e preciso le calorie (kcal) e i macronutrienti (proteins, carbs, fats, fiber, sugar) per 100g di prodotto finito della nuova ricetta modificata. Sii quanto più realistico possibile. Ricalcola anche la valutazione Nutri-Score ("nutritionalRating": 'A', 'B', 'C', 'D' o 'E') e scrivi una nuova frase sintetica di commento nutrizionale in "nutritionalAssessment" (max 120 caratteri).
+5. Mantieni coerenti porzioni (servings), tempo di preparazione (prepTimeMinutes) e categoria (category) a meno che la trasformazione non richieda variazioni significative nei tempi.
+
+Ricetta originale da trasformare (JSON):
+\`\`\`json
+${JSON.stringify(recipe, null, 2)}
+\`\`\`
+
+Devi restituire esclusivamente un oggetto JSON che rispetta esattamente la stessa struttura della ricetta originale, contenente i testi adattati nella lingua originale:
+{
+  "title": "Titolo adattato, ad esempio includendo il tag (es. 'Tiramisù Vegano' o 'Carbonara senza lattosio' o indicando la variante) (string)",
+  "sourceLanguage": "Stesso codice lingua originale (string)",
+  "servings": "Numero di porzioni (integer)",
+  "prepTimeMinutes": "Tempo totale in minuti (integer, nullo o non inserito se non deducibile)",
+  "category": "Stessa categoria della ricetta originale (string)",
+  "kcal": "Nuove calorie stimate per 100g di ricetta finita in kcal (integer, null se non calcolabile)",
+  "proteins": "Nuova stima proteine per 100g (number, null)",
+  "carbs": "Nuova stima carboidrati per 100g (number, null)",
+  "fats": "Nuova stima grassi per 100g (number, null)",
+  "fiber": "Nuova stima fibre per 100g (number, null)",
+  "sugar": "Nuova stima zuccheri per 100g (number, null)",
+  "nutritionalRating": "Nuova valutazione sintetica Nutri-Score ('A', 'B', 'C', 'D' o 'E', null)",
+  "nutritionalAssessment": "Nuovo commento nutrizionale nella stessa lingua originale, max 120 caratteri (string, null)",
+  "ingredients": [
+    {
+      "name": "Nome dell'ingrediente modificato o mantenuto (string)",
+      "quantity": "Quantità numerica (number, null)",
+      "unit": "Unità di misura (string)"
+    }
+  ],
+  "instructions": [
+    "Istruzioni modificate passo dopo passo in ordine cronologico (array of strings)"
+  ]
+}
+
+Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
+`;
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://gustosmart.it",
+      "X-Title": "GustoSmart Recipe Transform"
+    },
+    body: JSON.stringify({
+      model: modelId,
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: {
+        type: "json_object"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Errore risposta OpenRouter per trasformazione:", errorText);
+    throw new Error(`Errore OpenRouter API durante la trasformazione: ${response.status} - ${errorText}`);
+  }
+
+  const resJson = await response.json();
+  const responseText = resJson.choices?.[0]?.message?.content;
+
+  if (!responseText) {
+    throw new Error("Risposta OpenRouter vuota durante la trasformazione");
+  }
+
+  let cleanText = responseText.trim();
+  if (cleanText.startsWith("```")) {
+    cleanText = cleanText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+  }
+
+  try {
+    return { transformation: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null };
+  } catch {
+    console.error("Errore di parsing del JSON di trasformazione di OpenRouter. Output grezzo:", responseText);
+    throw new Error("Il testo generato dall'IA per la trasformazione non è un JSON valido");
+  }
+}
+
+/**
+ * Analizza gli ingredienti e la preparazione di una ricetta per determinare i flag dietetici.
+ */
+export async function analyzeDietaryFlags(recipe: any): Promise<{
+  isVegan: boolean;
+  isVegetarian: boolean;
+  isLactoseFree: boolean;
+  isGlutenFree: boolean;
+  generationId?: string;
+  usage?: any;
+}> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error("Manca la chiave d'ambiente OPENROUTER_API_KEY");
+  }
+
+  const modelId = "google/gemini-3.1-flash-lite";
+  console.log(`Chiamata a OpenRouter (Dietary Analysis) con modello: ${modelId}`);
+
+  const prompt = `
+Sei uno chef e nutrizionista esperto. Analizza accuratamente gli ingredienti e la preparazione della seguente ricetta per determinare se rispetta le seguenti caratteristiche dietetiche:
+- Vegana (isVegan): non contiene carne, pesce, pollame, uova, latte e derivati, miele o altri ingredienti di origine animale.
+- Vegetariana (isVegetarian): non contiene carne, pesce, pollame o altri derivati da macellazione (es. strutto, colla di pesce). Latticini e uova sono ammessi.
+- Senza Lattosio (isLactoseFree): non contiene lattosio. Latticini o derivati devono essere assenti o delattosati/vegetali.
+- Senza Glutine (isGlutenFree): non contiene glutine. Cereali con glutine (frumento, orzo, farro, segale, avena non certificata) o loro derivati devono essere assenti o sostituiti con varianti gluten-free certificate.
+
+Ricetta da analizzare:
+Titolo: ${recipe.title}
+Ingredienti:
+${(recipe.ingredients || []).map((i: any) => `- ${i.quantity || ""} ${i.unit || ""} ${i.name}`).join("\n")}
+
+Istruzioni:
+${(recipe.instructions || []).map((inst: any, idx: number) => `${idx + 1}. ${inst}`).join("\n")}
+
+Restituisci esclusivamente un oggetto JSON con questa struttura esatta:
+{
+  "isVegan": true/false (boolean),
+  "isVegetarian": true/false (boolean),
+  "isLactoseFree": true/false (boolean),
+  "isGlutenFree": true/false (boolean)
+}
+
+Non includere blocchi di markdown o testo al di fuori dell'oggetto JSON.
+`;
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://gustosmart.it",
+      "X-Title": "GustoSmart Recipe Dietary Analysis"
+    },
+    body: JSON.stringify({
+      model: modelId,
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: {
+        type: "json_object"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Errore risposta OpenRouter per analisi dietetica:", errorText);
+    throw new Error(`Errore OpenRouter API durante l'analisi: ${response.status} - ${errorText}`);
+  }
+
+  const resJson = await response.json();
+  const responseText = resJson.choices?.[0]?.message?.content;
+
+  if (!responseText) {
+    throw new Error("Risposta OpenRouter vuota durante l'analisi");
+  }
+
+  let cleanText = responseText.trim();
+  if (cleanText.startsWith("```")) {
+    cleanText = cleanText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+  }
+
+  try {
+    const analysis = JSON.parse(cleanText);
+    return {
+      isVegan: !!analysis.isVegan,
+      isVegetarian: !!analysis.isVegetarian,
+      isLactoseFree: !!analysis.isLactoseFree,
+      isGlutenFree: !!analysis.isGlutenFree,
+      generationId: resJson.id || "",
+      usage: resJson.usage || null
+    };
+  } catch {
+    console.error("Errore di parsing del JSON di analisi dietetica di OpenRouter. Output grezzo:", responseText);
+    throw new Error("Il testo generato dall'IA per l'analisi dietetica non è un JSON valido");
+  }
+}

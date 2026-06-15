@@ -42,15 +42,29 @@ service cloud.firestore {
       // The createdBy field must match the requesting user's UID
       allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
 
-      // Global recipes are immutable after creation (no update/delete from clients)
-      // Updates and deletions are not allowed on the global recipe document
-      allow update, delete: if false;
+      // Global recipes are immutable after creation, EXCEPT for setting the dietary flags when missing
+      allow update: if isAuthenticated() && (
+        (!("isVegan" in resource.data) || resource.data.isVegan == null) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isVegan', 'isVegetarian', 'isLactoseFree', 'isGlutenFree'])
+      );
+      allow delete: if false;
 
       // Translations subcollection — any authenticated user can read and contribute
       // translations (they are shared across all users for the same recipe)
       match /translations/{langCode} {
         allow read: if isAuthenticated();
         allow write: if isAuthenticated();
+      }
+
+      // Versions subcollection — any authenticated user can read and write alternative versions
+      match /versions/{versionId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+
+        match /translations/{langCode} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
       }
     }
 
