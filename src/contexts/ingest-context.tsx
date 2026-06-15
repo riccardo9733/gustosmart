@@ -8,6 +8,7 @@ import { useAddToUserRecipes } from "@/hooks/useRecipes";
 import { doc, setDoc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { identifyPlatform } from "@/lib/scraping/detector";
+import { cleanUrl } from "@/lib/scraping/urlCleaner";
 import { toast } from "sonner";
 import { ImportDrawer } from "@/components/import-drawer";
 import { trackEvent } from "@/lib/analytics";
@@ -74,9 +75,11 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const cleanedUrl = cleanUrl(targetUrl);
+
     // Reset pre-esistenza
     resetIngest();
-    setUrl(targetUrl);
+    setUrl(cleanedUrl);
     setIsIngesting(true);
     setStep("scraping");
     setProgress(5);
@@ -85,7 +88,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
     // Rileva piattaforma prima delle verifiche
     let detectedPlatform = "web";
     try {
-      detectedPlatform = identifyPlatform(targetUrl);
+      detectedPlatform = identifyPlatform(cleanedUrl);
     } catch (e) {
       console.error("Errore identificazione piattaforma:", e);
     }
@@ -93,7 +96,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
     try {
       // 1. Check client-side: esiste già una ricetta globale con questo URL?
       const { checkRecipeExistsByUrl } = await import("@/lib/firestore/recipes");
-      const existingRecipeId = await checkRecipeExistsByUrl(targetUrl);
+      const existingRecipeId = await checkRecipeExistsByUrl(cleanedUrl);
 
       if (existingRecipeId) {
         // Traccia avvio con cache hit
@@ -162,7 +165,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch("/api/ingest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl, userId: user.uid, userEmail: user.email || null }),
+        body: JSON.stringify({ url: cleanedUrl, userId: user.uid, userEmail: user.email || null }),
       });
 
       if (!response.ok) {
@@ -244,7 +247,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 // 4. Salva la ricetta globale in /recipes/{recipeId} (lato client)
                 const db = getFirebaseDb();
                 const recipeDoc = {
-                  sourceUrl: targetUrl,
+                  sourceUrl: recipe.sourceUrl || cleanedUrl,
                   sourcePlatform: detectedPlatform,
                   title: recipe.title,
                   sourceLanguage: recipe.sourceLanguage || "it",

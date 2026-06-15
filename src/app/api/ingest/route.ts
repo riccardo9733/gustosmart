@@ -1,11 +1,12 @@
 import { identifyPlatform } from "@/lib/scraping/detector";
 import { getFirebaseDb } from "@/lib/firebase";
-import { collection, doc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { scrapeInstagram, scrapeTikTok, scrapeFacebook, scrapeYouTube } from "@/lib/scraping/scrapecreators";
 import { scrapeWebPage } from "@/lib/scraping/web";
 import { generateRecipeFromText, generateRecipeFromWeb } from "@/lib/scraping/gemini";
 import { validateAndFormatRecipe } from "@/lib/scraping/validation";
 import { uploadImageToB2 } from "@/lib/scraping/b2";
+import { cleanUrl, resolveRedirect } from "@/lib/scraping/urlCleaner";
 
 // Forza il tempo massimo di esecuzione a 60 secondi (utile per Vercel/Netlify)
 export const maxDuration = 60;
@@ -76,23 +77,49 @@ export async function POST(request: Request) {
         };
 
         try {
+          // 0. RISOLUZIONE E PULIZIA URL
+          console.log(`[Ingest Route] Risoluzione URL originale: ${url}`);
+          sendEvent("status", { step: "scraping", progress: 5 });
+
+          const resolvedUrl = await resolveRedirect(url);
+          const finalUrl = cleanUrl(resolvedUrl);
+          console.log(`[Ingest Route] URL risolto e pulito: ${finalUrl}`);
+
+          const cleanedPlatform = identifyPlatform(finalUrl);
+
+          // Controllo duplicati secondario sul server (dopo la risoluzione dei redirect)
+          const firestoreDb = getFirebaseDb();
+          const q = query(collection(firestoreDb, "recipes"), where("sourceUrl", "==", finalUrl));
+          const snap = await getDocs(q);
+
+          if (!snap.empty) {
+            const existingDoc = snap.docs[0];
+            const existingId = existingDoc.id;
+            const existingRecipe = existingDoc.data();
+            console.log(`[Ingest Route] Cache hit server-side per recipeId: ${existingId} e URL: ${finalUrl}`);
+
+            sendEvent("success", { recipe: existingRecipe, recipeId: existingId, generationId: "cache-hit" });
+            controller.close();
+            return;
+          }
+
           // STEP 1: SCRAPING
-          console.log(`[Ingest Route] STEP 1: Scraping per URL: ${url}`);
+          console.log(`[Ingest Route] STEP 1: Scraping per URL: ${finalUrl}`);
           sendEvent("status", { step: "scraping", progress: 15 });
 
-          const scrapedData = platform === "instagram"
-            ? await scrapeInstagram(url)
-            : platform === "tiktok"
-            ? await scrapeTikTok(url)
-            : platform === "facebook"
-            ? await scrapeFacebook(url)
-            : platform === "youtube"
-            ? await scrapeYouTube(url)
-            : await scrapeWebPage(url);
+          const scrapedData = cleanedPlatform === "instagram"
+            ? await scrapeInstagram(finalUrl)
+            : cleanedPlatform === "tiktok"
+            ? await scrapeTikTok(finalUrl)
+            : cleanedPlatform === "facebook"
+            ? await scrapeFacebook(finalUrl)
+            : cleanedPlatform === "youtube"
+            ? await scrapeYouTube(finalUrl)
+            : await scrapeWebPage(finalUrl);
 
           const cleanCaption = (scrapedData.caption || "").trim();
           const cleanTranscript = (scrapedData.transcript || "").trim();
-          const hasStructuredData = platform === "web" && !!scrapedData.recipeStructuredData;
+          const hasStructuredData = cleanedPlatform === "web" && !!scrapedData.recipeStructuredData;
 
           if (!cleanCaption && !cleanTranscript && !hasStructuredData) {
             throw new Error("INSUFFICIENT_RECIPE_DATA");
@@ -102,7 +129,7 @@ export async function POST(request: Request) {
           console.log(`[Ingest Route] STEP 2: AI Extraction & Cover upload in parallelo`);
           sendEvent("status", { step: "extracting", progress: 50 });
 
-          const geminiPromise = platform === "web"
+          const geminiPromise = cleanedPlatform === "web"
             ? generateRecipeFromWeb(scrapedData)
             : generateRecipeFromText(scrapedData.caption, scrapedData.transcript);
 
@@ -127,7 +154,7 @@ export async function POST(request: Request) {
               const expireAt = new Date();
               expireAt.setDate(expireAt.getDate() + 7);
 
-              await addDoc(collection(db, "analytics_events"), {
+              await addDoc(collection(firestoreDb, "analytics_events"), {
                 eventName: "openrouter_call",
                 userId: userId || null,
                 userEmail: userEmail || null,
@@ -156,7 +183,7 @@ export async function POST(request: Request) {
 
           const validatedRecipe = validateAndFormatRecipe(
             geminiOutput.recipe,
-            url,
+            finalUrl,
             b2ImageUrl,
             {
               username: scrapedData.creatorUsername,
