@@ -221,7 +221,7 @@ function LoginForm() {
             language: "it",
             measurementSystem: "metric",
           },
-          tokens: 10,
+          tokens: 100,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -262,7 +262,7 @@ function LoginForm() {
             language: "it",
             measurementSystem: "metric",
           },
-          tokens: 10,
+          tokens: 100,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });

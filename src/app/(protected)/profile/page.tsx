@@ -235,7 +235,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-2xl font-extrabold text-primary leading-none">
-                  {profile?.tokens ?? 10}
+                  {profile?.tokens ?? 100}
                 </span>
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1">
                   {t("tokensRemaining")}
@@ -247,13 +247,13 @@ export default function ProfilePage() {
             <div className="w-full bg-surface-container-low dark:bg-surface-container h-3 rounded-full overflow-hidden border border-white/5 relative">
               <div 
                 className="terracotta-gradient h-full rounded-full transition-all duration-500 shadow-sm"
-                style={{ width: `${Math.min(100, Math.max(0, ((profile?.tokens ?? 10) / 10) * 100))}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, ((profile?.tokens ?? 100) / 100) * 100))}%` }}
               />
             </div>
             
             <div className="flex justify-between text-[11px] font-semibold text-muted-foreground px-1">
-              <span>0 / 10 Scans</span>
-              <span>10 / 10 Scans</span>
+              <span>0 / 100 Scans</span>
+              <span>100 / 100 Scans</span>
             </div>
           </div>
         </div>
@@ -376,53 +376,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Notifications Section */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-bold px-1 text-primary uppercase tracking-wider opacity-80">
-            {t("notifications")}
-          </h3>
-          <div className="glass-panel rounded-[20px] overflow-hidden border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5">
-            {/* Smart Timer Alerts */}
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <div className="flex items-center gap-4">
-                <Bell className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium text-foreground">{t("timerAlerts")}</span>
-              </div>
-              <button 
-                onClick={() => setTimerAlerts(v => !v)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  timerAlerts ? "bg-primary" : "bg-outline-variant"
-                }`}
-              >
-                <span 
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    timerAlerts ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-            {/* Recipe Recommendations */}
-            <div className="flex items-center justify-between p-5">
-              <div className="flex items-center gap-4">
-                <Utensils className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium text-foreground">{t("recommendations")}</span>
-              </div>
-              <button 
-                onClick={() => setRecipeRecs(v => !v)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  recipeRecs ? "bg-primary" : "bg-outline-variant"
-                }`}
-              >
-                <span 
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    recipeRecs ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* App Installation Section */}
         {!isInstalled && (
           <div className="space-y-2 animate-in fade-in duration-300">
@@ -485,6 +438,7 @@ export default function ProfilePage() {
             {t("designedFor")}
           </p>
         </div>
+
       </div>
 
       {profile?.uid && (

@@ -22,7 +22,6 @@ import {
   ChefHat,
   Bookmark,
   BookmarkCheck,
-  ArrowUpRight,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -259,7 +258,6 @@ export default function HomeFeed() {
   const tDetails = useTranslations("Details");
 
   const [selectedDietaries, setSelectedDietaries] = useState<Set<string>>(new Set());
-  const [selectedSource, setSelectedSource] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   // Fetch infinite global recipes with active filters
@@ -271,7 +269,7 @@ export default function HomeFeed() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteGlobalRecipes({ dietaries: selectedDietaries, source: selectedSource, category: selectedCategory });
+  } = useInfiniteGlobalRecipes({ dietaries: selectedDietaries, source: "all", category: selectedCategory });
 
   // Fetch user's saved recipes to determine bookmark state
   const { data: userRecipes = [], isLoading: userLoading } = useRecipes();
@@ -283,11 +281,43 @@ export default function HomeFeed() {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const DIETARY_FILTERS = [
-    { key: "all", label: tRecipes("all") },
-    { key: "gluten_free", label: tRecipes("glutenFree") },
-    { key: "vegan", label: tRecipes("vegan") },
-    { key: "vegetarian", label: tRecipes("vegetarian") },
-    { key: "lactose_free", label: tRecipes("lactoseFree") },
+    { key: "all", label: tRecipes("all"), color: null },
+    {
+      key: "gluten_free",
+      label: tRecipes("glutenFree"),
+      color: {
+        base: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400",
+        active: "bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/25",
+        hover: "hover:bg-emerald-500/20",
+      },
+    },
+    {
+      key: "vegan",
+      label: tRecipes("vegan"),
+      color: {
+        base: "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
+        active: "bg-green-500 text-white border-green-600 shadow-green-500/25",
+        hover: "hover:bg-green-500/20",
+      },
+    },
+    {
+      key: "vegetarian",
+      label: tRecipes("vegetarian"),
+      color: {
+        base: "bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-400",
+        active: "bg-teal-500 text-white border-teal-600 shadow-teal-500/25",
+        hover: "hover:bg-teal-500/20",
+      },
+    },
+    {
+      key: "lactose_free",
+      label: tRecipes("lactoseFree"),
+      color: {
+        base: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+        active: "bg-blue-500 text-white border-blue-600 shadow-blue-500/25",
+        hover: "hover:bg-blue-500/20",
+      },
+    },
   ];
 
   const CATEGORY_FILTERS = [
@@ -378,13 +408,13 @@ export default function HomeFeed() {
 
   const resetFilters = () => {
     setSelectedDietaries(new Set());
-    setSelectedSource("all");
     setSelectedCategory("all");
   };
 
+
   const recipes = data?.pages.flatMap((page) => page.recipes) ?? [];
   const loading = isLoading || userLoading;
-  const hasActiveFilters = selectedDietaries.size > 0 || selectedSource !== "all" || selectedCategory !== "all";
+  const hasActiveFilters = selectedDietaries.size > 0 || selectedCategory !== "all";
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500 relative w-full pb-16">
@@ -423,62 +453,41 @@ export default function HomeFeed() {
 
           {/* Dietary Filters Row */}
           <div className="flex overflow-x-auto gap-2 scrollbar-none pb-0.5 shrink-0">
-            {DIETARY_FILTERS.map((cat) => {
-              const isActive = cat.key === "all" ? selectedDietaries.size === 0 : selectedDietaries.has(cat.key);
+            {DIETARY_FILTERS.map((filter) => {
+              const isActive = filter.key === "all" ? selectedDietaries.size === 0 : selectedDietaries.has(filter.key);
+              // "Tutte" uses the generic primary style
+              if (!filter.color) {
+                return (
+                  <button
+                    key={filter.key}
+                    onClick={() => toggleDietary(filter.key)}
+                    className={cn(
+                      "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border cursor-pointer",
+                      isActive
+                        ? "bg-primary text-white border-primary shadow-md shadow-primary/25"
+                        : "glass-panel border-white/5 text-foreground hover:bg-white/40 dark:hover:bg-white/10"
+                    )}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              }
+              // Dietary-specific colored badges
               return (
                 <button
-                  key={cat.key}
-                  onClick={() => toggleDietary(cat.key)}
+                  key={filter.key}
+                  onClick={() => toggleDietary(filter.key)}
                   className={cn(
-                    "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border border-white/5 cursor-pointer",
+                    "whitespace-nowrap px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all active:scale-95 duration-200 border cursor-pointer shadow-sm uppercase tracking-wide",
                     isActive
-                      ? "bg-primary text-white shadow-md shadow-primary/25"
-                      : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
+                      ? cn(filter.color.active, "shadow-md")
+                      : cn(filter.color.base, filter.color.hover)
                   )}
                 >
-                  {cat.label}
+                  {filter.label}
                 </button>
               );
             })}
-          </div>
-
-          {/* Source Filter Badges */}
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={() => setSelectedSource("all")}
-              className={cn(
-                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all active:scale-95 border border-white/5 cursor-pointer",
-                selectedSource === "all"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
-              )}
-            >
-              {tRecipes("allSources")}
-            </button>
-            <button
-              onClick={() => setSelectedSource("social")}
-              className={cn(
-                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-white/5 cursor-pointer",
-                selectedSource === "social"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
-              )}
-            >
-              <Film className="h-3 w-3" />
-              {tRecipes("socialSource")}
-            </button>
-            <button
-              onClick={() => setSelectedSource("web")}
-              className={cn(
-                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-white/5 cursor-pointer",
-                selectedSource === "web"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
-              )}
-            >
-              <LinkIcon className="h-3 w-3" />
-              {tRecipes("webSource")}
-            </button>
           </div>
         </div>
       </div>
@@ -512,6 +521,17 @@ export default function HomeFeed() {
             <p className="text-xs text-muted-foreground/80 leading-normal bg-background/50 p-3 rounded-xl border border-destructive/10 text-left font-mono overflow-x-auto max-w-full">
               {error instanceof Error ? error.message : String(error)}
             </p>
+            {/* Extract index creation link from error message */}
+            {(() => {
+              const msg = error instanceof Error ? error.message : String(error);
+              const match = msg.match(/https?:\/\/[^\s]+/);
+              const link = match ? match[0] : null;
+              return link ? (
+                <Button onClick={() => window.open(link, "_blank")} className="mt-2">
+                  Crea indice
+                </Button>
+              ) : null;
+            })()}
             <p className="text-xs leading-normal">
               Controlla la <strong>console del browser</strong> (F12 o tasto destro &rarr; Ispeziona) per trovare un link diretto fornito da Firebase e cliccalo per creare automaticamente l'indice richiesto.
             </p>
