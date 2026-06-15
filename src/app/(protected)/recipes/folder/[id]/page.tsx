@@ -13,11 +13,11 @@ import {
   useAddRecipesToFolder,
   useRemoveFromUserRecipes,
 } from "@/hooks/useRecipes";
+import type { Ingredient } from "@/lib/firestore/recipes";
 import {
   Search,
   Clock,
   Users,
-  Flame,
   Film,
   Link as LinkIcon,
   MoreVertical,
@@ -34,7 +34,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -234,7 +233,7 @@ export default function FolderDetailPage() {
     return (
       searchQuery.trim() === "" ||
       recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recipe.ingredients?.some((ing: any) =>
+      recipe.ingredients?.some((ing: Ingredient) =>
         ing.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     );
@@ -263,7 +262,7 @@ export default function FolderDetailPage() {
 
           {/* Delete Folder Button */}
           <AlertDialog>
-            <AlertDialogTrigger nativeButton={false} render={
+            <AlertDialogTrigger nativeButton={true} render={
               <Button
                 variant="ghost"
                 size="icon"
@@ -357,10 +356,6 @@ export default function FolderDetailPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {filteredRecipes.map((recipe) => {
-              const imageSrc = recipe.imageUrl
-                ? `/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`
-                : null;
-
               const getCategoryLabel = (category: string) => {
                 switch (category) {
                   case "first_courses": return t("primi");
@@ -379,21 +374,6 @@ export default function FolderDetailPage() {
                   onClick={() => router.push(`/recipes/${recipe.id}`)}
                   className="flex items-center gap-4 p-3 rounded-2xl glass-panel border-white/10 hover:translate-x-1.5 hover:shadow-lg transition-all duration-200 cursor-pointer w-full group"
                 >
-                  {/* Left Thumbnail */}
-                  <div className="relative size-16 rounded-xl overflow-hidden bg-muted/20 shrink-0 border border-white/5">
-                    {imageSrc ? (
-                      <img
-                        alt={recipe.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                        src={imageSrc}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-primary/30">
-                        <ChefHat className="size-6 stroke-[1.5]" />
-                      </div>
-                    )}
-                  </div>
-
                   {/* Middle Info */}
                   <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                     <h4 className="font-heading font-semibold text-sm sm:text-base text-foreground leading-snug truncate">
