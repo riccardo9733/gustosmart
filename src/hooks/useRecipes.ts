@@ -11,9 +11,15 @@ import {
   removeFromUserRecipes,
   saveUserRecipeCustomizations,
   mergeRecipe,
+  getUserFolders,
+  createUserFolder,
+  deleteUserFolder,
+  moveRecipeToFolder,
+  addRecipesToFolder,
   type MergedRecipe,
   type Ingredient,
   type GlobalRecipe,
+  type UserFolder,
 } from "@/lib/firestore/recipes";
 import { collection, query, orderBy, getDocs, doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
@@ -218,5 +224,93 @@ export function useUserProfile(uid: string) {
       };
     },
     staleTime: 24 * 60 * 60 * 1000, // cache 24 ore
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Folder hooks
+// ---------------------------------------------------------------------------
+
+export const folderKeys = {
+  all: (userId: string) => ["folders", userId] as const,
+};
+
+export function useUserFolders() {
+  const { user } = useAuth();
+
+  return useQuery<UserFolder[]>({
+    queryKey: folderKeys.all(user?.uid ?? ""),
+    enabled: !!user,
+    queryFn: async () => {
+      if (!user) return [];
+      return getUserFolders(user.uid);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateFolder() {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: (folderName: string) => {
+      if (!user) throw new Error("Not authenticated");
+      return createUserFolder(user.uid, folderName);
+    },
+    onSuccess: () => {
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: folderKeys.all(user.uid) });
+      }
+    },
+  });
+}
+
+export function useDeleteFolder() {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: (folderId: string) => {
+      if (!user) throw new Error("Not authenticated");
+      return deleteUserFolder(user.uid, folderId);
+    },
+    onSuccess: () => {
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: folderKeys.all(user.uid) });
+        queryClient.invalidateQueries({ queryKey: recipeKeys.all(user.uid) });
+      }
+    },
+  });
+}
+
+export function useMoveRecipeToFolder() {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: ({ recipeId, folderId }: { recipeId: string; folderId: string | null }) => {
+      if (!user) throw new Error("Not authenticated");
+      return moveRecipeToFolder(user.uid, recipeId, folderId);
+    },
+    onSuccess: (_data, { recipeId }) => {
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: recipeKeys.all(user.uid) });
+        queryClient.invalidateQueries({ queryKey: recipeKeys.detail(user.uid, recipeId) });
+      }
+    },
+  });
+}
+
+export function useAddRecipesToFolder() {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: ({ recipeIds, folderId }: { recipeIds: string[]; folderId: string }) => {
+      if (!user) throw new Error("Not authenticated");
+      return addRecipesToFolder(user.uid, recipeIds, folderId);
+    },
+    onSuccess: () => {
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: recipeKeys.all(user.uid) });
+      }
+    },
   });
 }

@@ -26,6 +26,11 @@ service cloud.firestore {
       match /recipes/{recipeId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Personal folders subcollection — only the owner can manage their own folders
+      match /folders/{folderId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // 2. Global Recipes collection — shared, public catalog

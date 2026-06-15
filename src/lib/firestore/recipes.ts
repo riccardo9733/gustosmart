@@ -50,6 +50,12 @@ export interface GlobalRecipe {
   creatorId?: string | null;
 }
 
+export interface UserFolder {
+  id: string;
+  name: string;
+  createdAt: any;
+}
+
 /** The personal override document in /users/{uid}/recipes/{recipeId} */
 export interface UserRecipeOverride {
   recipeId: string;
@@ -61,6 +67,7 @@ export interface UserRecipeOverride {
   personalNotes: string | null;
   rating: number | null;
   isCustomized: boolean;
+  folderId?: string | null;
 }
 
 /**
@@ -73,6 +80,7 @@ export interface MergedRecipe extends GlobalRecipe {
   personalNotes: string | null;
   rating: number | null;
   isCustomized: boolean;
+  folderId?: string | null;
   // effective display fields (custom or global)
   title: string;
   ingredients: Ingredient[];
@@ -151,6 +159,7 @@ export async function addToUserRecipes(userId: string, recipeId: string): Promis
     personalNotes: null,
     rating: null,
     isCustomized: false,
+    folderId: null,
   });
 }
 
@@ -210,8 +219,96 @@ export function mergeRecipe(
     personalNotes: override?.personalNotes ?? null,
     rating: override?.rating ?? null,
     isCustomized: override?.isCustomized ?? false,
+    folderId: override?.folderId ?? null,
     title: override?.customTitle ?? global.title,
     ingredients: override?.customIngredients ?? global.ingredients,
     instructions: override?.customInstructions ?? global.instructions,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Folder Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetches all folders created by the user from /users/{uid}/folders.
+ */
+export async function getUserFolders(userId: string): Promise<UserFolder[]> {
+  const db = getFirebaseDb();
+  const snap = await getDocs(collection(db, "users", userId, "folders"));
+  const folders = snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserFolder));
+  return folders.sort((a, b) => {
+    const aMs = a.createdAt?.toMillis?.() ?? 0;
+    const bMs = b.createdAt?.toMillis?.() ?? 0;
+    return bMs - aMs;
+  });
+}
+
+/**
+ * Creates a new folder for the user.
+ */
+export async function createUserFolder(userId: string, folderName: string): Promise<string> {
+  const db = getFirebaseDb();
+  const folderRef = doc(collection(db, "users", userId, "folders"));
+  await setDoc(folderRef, {
+    name: folderName,
+    createdAt: serverTimestamp(),
+  });
+  return folderRef.id;
+}
+
+/**
+ * Deletes a user folder. Does NOT delete the recipes in the folder; instead,
+ * it clears the folderId on all recipes belonging to this folder.
+ */
+export async function deleteUserFolder(userId: string, folderId: string): Promise<void> {
+  const db = getFirebaseDb();
+  
+  // 1. Fetch all user recipe overrides
+  const overridesCollection = collection(db, "users", userId, "recipes");
+  const snap = await getDocs(overridesCollection);
+  
+  // 2. Clear folderId for each matching override
+  const batchPromises: Promise<any>[] = [];
+  snap.docs.forEach((d) => {
+    const data = d.data();
+    if (data.folderId === folderId) {
+      batchPromises.push(
+        setDoc(d.ref, { folderId: null }, { merge: true })
+      );
+    }
+  });
+  await Promise.all(batchPromises);
+
+  // 3. Delete the folder document itself
+  await deleteDoc(doc(db, "users", userId, "folders", folderId));
+}
+
+/**
+ * Assigns or moves a user recipe override to a folder (or removes it from folder if folderId is null).
+ */
+export async function moveRecipeToFolder(
+  userId: string,
+  recipeId: string,
+  folderId: string | null
+): Promise<void> {
+  const db = getFirebaseDb();
+  const userRecipeRef = doc(db, "users", userId, "recipes", recipeId);
+  await setDoc(userRecipeRef, { folderId }, { merge: true });
+}
+
+/**
+ * Adds multiple recipes to a folder.
+ */
+export async function addRecipesToFolder(
+  userId: string,
+  recipeIds: string[],
+  folderId: string
+): Promise<void> {
+  const db = getFirebaseDb();
+  const promises = recipeIds.map((recipeId) => {
+    const userRecipeRef = doc(db, "users", userId, "recipes", recipeId);
+    return setDoc(userRecipeRef, { folderId }, { merge: true });
+  });
+  await Promise.all(promises);
 }

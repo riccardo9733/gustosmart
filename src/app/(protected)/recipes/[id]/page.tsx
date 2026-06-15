@@ -7,7 +7,14 @@ import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
-import { useRecipe, useRemoveFromUserRecipes, useRecipes, useAddToUserRecipes } from "@/hooks/useRecipes";
+import {
+  useRecipe,
+  useRemoveFromUserRecipes,
+  useRecipes,
+  useAddToUserRecipes,
+  useUserFolders,
+  useMoveRecipeToFolder,
+} from "@/hooks/useRecipes";
 import { useShoppingList, useUpdateShoppingList } from "@/hooks/useShoppingList";
 import { recalculateShoppingItems } from "@/lib/firestore/shopping-list";
 import {
@@ -24,7 +31,10 @@ import {
   Flame,
   Loader2,
   Globe,
-  Bookmark
+  Bookmark,
+  MoreVertical,
+  Folder,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -54,6 +64,20 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -161,11 +185,30 @@ export default function RecipeDetailPage() {
 
   const [scrollY, setScrollY] = useState(0);
 
+  // Folders queries/mutations
+  const { data: folders = [] } = useUserFolders();
+  const moveRecipeMutation = useMoveRecipeToFolder();
+  const [moveRecipeOpen, setMoveRecipeOpen] = useState(false);
+
   // Mutations
   const { mutateAsync: removeRecipe } = useRemoveFromUserRecipes();
   const { mutateAsync: addRecipe, isPending: addingRecipe } = useAddToUserRecipes();
 
   const isSaved = !!recipe?.addedAt;
+
+  const handleMoveRecipe = async (folderId: string | null) => {
+    try {
+      await moveRecipeMutation.mutateAsync({
+        recipeId: id,
+        folderId,
+      });
+      toast.success(tRecipes("recipeMoved"));
+      setMoveRecipeOpen(false);
+    } catch (error) {
+      console.error("Errore spostamento ricetta:", error);
+      toast.error(t("saveFailed"));
+    }
+  };
 
   const isSelectedInShopping = shoppingList?.selectedRecipes.some(
     (r) => r.recipeId === id
@@ -548,19 +591,40 @@ export default function RecipeDetailPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
 
-        {/* Remove from collection button */}
+        {/* Actions Dropdown Button */}
         {isSaved && (
           <AlertDialog>
-            <AlertDialogTrigger render={
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute top-24 right-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-destructive active:scale-95 transition-all"
-                aria-label={t("removeFromRecipes")}
-              >
-                <Trash2 className="h-5 w-5" />
-              </Button>
-            } />
+            <DropdownMenu>
+              <DropdownMenuTrigger nativeButton={true} render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute top-24 right-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-foreground active:scale-95 transition-all"
+                  aria-label={tRecipes("moveRecipeBtn")}
+                >
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              } />
+              <DropdownMenuContent align="end" className="w-48 rounded-xl z-50">
+                <DropdownMenuItem
+                  onClick={() => setMoveRecipeOpen(true)}
+                  className="cursor-pointer flex gap-2"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  {tRecipes("moveRecipeBtn")}
+                </DropdownMenuItem>
+                
+
+
+                <AlertDialogTrigger nativeButton={false} render={
+                  <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer flex gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    {tRecipes("removeBtn")}
+                  </DropdownMenuItem>
+                } />
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>{t("removeDialogTitle")}</AlertDialogTitle>
@@ -590,6 +654,12 @@ export default function RecipeDetailPage() {
                   {recipe.category && (
                     <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-primary/20 text-primary">
                       {getCategoryLabel(recipe.category)}
+                    </Badge>
+                  )}
+                  {recipe.folderId && (
+                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-amber-500/20 text-amber-500 flex items-center gap-1 bg-amber-500/5">
+                      <Folder className="h-3.5 w-3.5" />
+                      {folders.find(f => f.id === recipe.folderId)?.name || "Cartella"}
                     </Badge>
                   )}
                   {recipe.kcal && (
@@ -1162,7 +1232,38 @@ export default function RecipeDetailPage() {
 
       </main>
 
-
+      {/* Dialog: Sposta in Cartella */}
+      <Dialog open={moveRecipeOpen} onOpenChange={setMoveRecipeOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">{tRecipes("moveRecipeTitle")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-1 py-4 max-h-[300px] overflow-y-auto">
+            {/* Opzione nessuna cartella */}
+            <button
+              onClick={() => handleMoveRecipe(null)}
+              className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-muted text-left transition-colors text-sm font-semibold cursor-pointer active:scale-98"
+            >
+              <FolderOpen className="h-5 w-5 text-muted-foreground" />
+              <span>{tRecipes("noFolder")}</span>
+            </button>
+            {/* Lista delle cartelle */}
+            {folders.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => handleMoveRecipe(f.id)}
+                className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-muted text-left transition-colors text-sm font-semibold cursor-pointer active:scale-98"
+              >
+                <Folder className="h-5 w-5 text-primary" />
+                <span>{f.name}</span>
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="ghost" className="rounded-xl w-full">{tRecipes("cancelBtn")}</Button>} />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
