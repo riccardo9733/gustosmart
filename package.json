@@ -37,7 +37,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@rolldown/binding-darwin-arm64": "^1.1.1",
     "@tailwindcss/postcss": "^4",
     "@types/mozilla-readability": "^0.2.1",
     "@types/node": "^20",
