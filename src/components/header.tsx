@@ -49,12 +49,6 @@ export function Header() {
             </span>
           </div>
         )}
-        <button 
-          className="rounded-full p-2 text-primary transition-all hover:bg-primary/10 active:scale-95"
-          aria-label="Smart features"
-        >
-          <Zap className="h-5 w-5 fill-primary" />
-        </button>
       </div>
     </header>
   );

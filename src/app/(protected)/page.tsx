@@ -136,7 +136,7 @@ function FeedCard({
   };
 
   return (
-    <Card 
+    <Card
       onClick={onViewDetails}
       onDoubleClick={handleDoubleClick}
       className="group relative w-full overflow-hidden rounded-3xl border border-border/40 bg-card/40 dark:bg-surface-container/20 shadow-md hover:-translate-y-1 hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer select-none flex flex-col p-3.5 gap-3.5"
@@ -191,7 +191,7 @@ function FeedCard({
 
       {/* Card Body */}
       <div className="flex flex-col gap-2">
-        <h4 className="font-heading text-sm font-bold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2 text-left">
+        <h4 className="font-heading text-xl font-bold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2 text-left">
           {recipe.title}
         </h4>
 
@@ -252,7 +252,7 @@ function FeedCard({
 export default function HomeFeed() {
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const t = useTranslations("Home");
   const tRecipes = useTranslations("Recipes");
   const tDetails = useTranslations("Details");
@@ -363,13 +363,13 @@ export default function HomeFeed() {
       const { trackEvent } = await import("@/lib/analytics");
       if (isSaved) {
         await unsaveRecipe(recipe.id);
-        
+
         await trackEvent("recipe_removed", {
           recipe_id: recipe.id,
           userId: user.uid,
           userEmail: user.email || undefined,
         });
- 
+
         toast.success(t("removeSuccess") || "Ricetta rimossa dal ricettario!", { id: toastId });
       } else {
         await saveRecipe(recipe.id);
@@ -543,12 +543,12 @@ export default function HomeFeed() {
             </div>
             <h3 className="font-heading text-xl font-bold text-foreground mb-2">
               {hasActiveFilters
-                ? tRecipes("noResultsTitle") 
+                ? tRecipes("noResultsTitle")
                 : (t("noRecipesYet") || "Nessuna ricetta globale")}
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
               {hasActiveFilters
-                ? tRecipes("noResultsDesc") 
+                ? tRecipes("noResultsDesc")
                 : (t("noRecipesYetDesc") || "Nessuna ricetta è stata scansionata sul server. Usa il tasto '+' in basso per importare la prima!")}
             </p>
             {hasActiveFilters && (

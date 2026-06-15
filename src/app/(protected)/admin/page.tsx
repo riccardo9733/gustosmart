@@ -26,7 +26,11 @@ import {
   Activity,
   X,
   Info,
-  Flame
+  Flame,
+  Users,
+  Calendar,
+  Award,
+  Coins
 } from "lucide-react";
 import {
   Card,
@@ -107,6 +111,21 @@ interface LocalEvent {
   timestamp: string | null;
 }
 
+interface LocalUser {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL: string | null;
+  preferences: {
+    language: string;
+    measurementSystem: string;
+  };
+  tokens: number;
+  role: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
 interface OpenRouterCredits {
   total_credits: number;
   total_usage: number;
@@ -140,15 +159,46 @@ interface OpenRouterGeneration {
   };
 }
 
+const getAvatarGradient = (uid: string) => {
+  const gradients = [
+    "bg-gradient-to-br from-orange-500 to-rose-600",
+    "bg-gradient-to-br from-emerald-500 to-teal-600",
+    "bg-gradient-to-br from-blue-500 to-indigo-600",
+    "bg-gradient-to-br from-violet-500 to-purple-600",
+    "bg-gradient-to-br from-amber-500 to-orange-600",
+    "bg-gradient-to-br from-pink-500 to-rose-600",
+    "bg-gradient-to-br from-cyan-500 to-blue-600"
+  ];
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) {
+    hash = uid.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % gradients.length;
+  return gradients[index];
+};
+
 export default function AdminDashboard() {
   const profile = useAppSelector(selectUserProfile);
   const loadingUser = useAppSelector(selectUserLoading);
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "ingest" | "openrouter" | "logs">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "ingest" | "openrouter" | "logs" | "users">("overview");
   const [events, setEvents] = useState<LocalEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [logSearchQuery, setLogSearchQuery] = useState("");
+
+  // Users management states
+  const [users, setUsers] = useState<LocalUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSortBy, setUserSortBy] = useState<"scans" | "events" | "date" | "tokens">("scans");
+  const [userCurrentPage, setUserCurrentPage] = useState(1);
+  const userItemsPerPage = 12;
+
+  // Reset pagination on filter/sort change
+  useEffect(() => {
+    setUserCurrentPage(1);
+  }, [userSearchQuery, userSortBy]);
 
   // Pagination State for Event Logs
   const [currentPage, setCurrentPage] = useState(1);
@@ -215,6 +265,43 @@ export default function AdminDashboard() {
       (error) => {
         console.error("Errore sincronizzazione eventi:", error);
         setLoadingEvents(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [profile]);
+
+  // Real-time Firestore sync for users
+  useEffect(() => {
+    if (!profile || profile.role !== "admin") return;
+
+    const db = getFirebaseDb();
+    const unsubscribe = onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        const list: LocalUser[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            uid: docSnap.id,
+            email: data.email || "",
+            displayName: data.displayName || "Chef Gusto",
+            photoURL: data.photoURL || null,
+            preferences: {
+              language: data.preferences?.language || "it",
+              measurementSystem: data.preferences?.measurementSystem || "metric",
+            },
+            tokens: typeof data.tokens === "number" ? data.tokens : 100,
+            role: data.role || "user",
+            createdAt: data.createdAt ? (typeof data.createdAt.toDate === "function" ? data.createdAt.toDate().toISOString() : data.createdAt) : null,
+            updatedAt: data.updatedAt ? (typeof data.updatedAt.toDate === "function" ? data.updatedAt.toDate().toISOString() : data.updatedAt) : null,
+          };
+        });
+        setUsers(list);
+        setLoadingUsers(false);
+      },
+      (error) => {
+        console.error("Errore sincronizzazione utenti:", error);
+        setLoadingUsers(false);
       }
     );
 
@@ -474,6 +561,107 @@ export default function AdminDashboard() {
     openRouterPage * openRouterItemsPerPage
   );
 
+  // ---------------------------------------------------------------------------
+  // User statistics & KPI calculations
+  // ---------------------------------------------------------------------------
+  const userStats = useMemo(() => {
+    const stats: Record<string, { scans: number; saves: number; totalEvents: number }> = {};
+    
+    // Initialize
+    users.forEach((u) => {
+      stats[u.uid] = { scans: 0, saves: 0, totalEvents: 0 };
+    });
+
+    events.forEach((e) => {
+      if (!e.userId) return;
+      if (!stats[e.userId]) {
+        stats[e.userId] = { scans: 0, saves: 0, totalEvents: 0 };
+      }
+      stats[e.userId].totalEvents++;
+      if (e.eventName === "recipe_import_completed") {
+        stats[e.userId].scans++;
+      } else if (e.eventName === "recipe_saved") {
+        stats[e.userId].saves++;
+      }
+    });
+
+    return stats;
+  }, [users, events]);
+
+  const userKPIs = useMemo(() => {
+    const totalUsers = users.length;
+    const now = new Date();
+
+    // Active users: unique userIds in analytics events in the last 7 days
+    const activeUserIds = new Set<string>();
+    events.forEach((e) => {
+      if (e.userId) activeUserIds.add(e.userId);
+    });
+    const activeUsers = activeUserIds.size;
+
+    // Added last 7 days
+    const added7d = users.filter((u) => {
+      if (!u.createdAt) return false;
+      const created = new Date(u.createdAt);
+      const diff = now.getTime() - created.getTime();
+      return diff <= 7 * 24 * 60 * 60 * 1000;
+    }).length;
+
+    // Added last 24 hours
+    const added24h = users.filter((u) => {
+      if (!u.createdAt) return false;
+      const created = new Date(u.createdAt);
+      const diff = now.getTime() - created.getTime();
+      return diff <= 24 * 60 * 60 * 1000;
+    }).length;
+
+    return { totalUsers, activeUsers, added7d, added24h };
+  }, [users, events]);
+
+  const processedUsers = useMemo(() => {
+    let list = [...users];
+
+    // Search query filter
+    if (userSearchQuery.trim()) {
+      const q = userSearchQuery.toLowerCase();
+      list = list.filter(
+        (u) =>
+          u.displayName.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q)
+      );
+    }
+
+    // Sorting
+    list.sort((a, b) => {
+      const statsA = userStats[a.uid] || { scans: 0, saves: 0, totalEvents: 0 };
+      const statsB = userStats[b.uid] || { scans: 0, saves: 0, totalEvents: 0 };
+
+      if (userSortBy === "scans") {
+        return statsB.scans - statsA.scans;
+      }
+      if (userSortBy === "events") {
+        return statsB.totalEvents - statsA.totalEvents;
+      }
+      if (userSortBy === "tokens") {
+        return b.tokens - a.tokens;
+      }
+      if (userSortBy === "date") {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      }
+      return 0;
+    });
+
+    return list;
+  }, [users, userSearchQuery, userSortBy, userStats]);
+
+  const totalUserPages = Math.ceil(processedUsers.length / userItemsPerPage);
+  const paginatedUsers = processedUsers.slice(
+    (userCurrentPage - 1) * userItemsPerPage,
+    userCurrentPage * userItemsPerPage
+  );
+
   const getPlatformIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
       case "instagram": return <Film className="h-4 w-4 text-pink-500" />;
@@ -542,6 +730,17 @@ export default function AdminDashboard() {
         >
           <DollarSign className="h-3.5 w-3.5" />
           Spese OpenRouter
+        </button>
+        <button
+          onClick={() => setActiveTab("users")}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 flex items-center gap-1 ${
+            activeTab === "users"
+              ? "bg-primary text-white shadow-md shadow-primary/20"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Users className="h-3.5 w-3.5" />
+          Utenti ({users.length})
         </button>
         <button
           onClick={() => setActiveTab("logs")}
@@ -1277,6 +1476,239 @@ export default function AdminDashboard() {
 
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB 5: GESTIONE UTENTI */}
+          {activeTab === "users" && (
+            <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+              
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                {/* Total Users */}
+                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Utenti Registrati</span>
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <Users className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <h3 className="text-3xl font-extrabold text-foreground leading-none">{userKPIs.totalUsers}</h3>
+                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">Account totali nel database</p>
+                  </div>
+                </Card>
+
+                {/* Active Users */}
+                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Utenti Attivi (7gg)</span>
+                    <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+                      <Activity className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <h3 className="text-3xl font-extrabold text-foreground leading-none">{userKPIs.activeUsers}</h3>
+                    <p className="text-[10px] text-muted-foreground font-semibold mt-1 font-sans">Attivi negli ultimi 7 giorni</p>
+                  </div>
+                </Card>
+
+                {/* Added 7d */}
+                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Iscritti (7gg)</span>
+                    <div className="p-1.5 rounded-lg bg-secondary/10 text-secondary">
+                      <Calendar className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <h3 className="text-3xl font-extrabold text-foreground leading-none">{userKPIs.added7d}</h3>
+                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">Registrati negli ultimi 7 giorni</p>
+                  </div>
+                </Card>
+
+                {/* Added 24h */}
+                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Iscritti (24h)</span>
+                    <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
+                      <Zap className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <h3 className="text-3xl font-extrabold text-foreground leading-none">{userKPIs.added24h}</h3>
+                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">Registrati nelle ultime 24 ore</p>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Search and Sort row */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center">
+                
+                {/* Search Bar */}
+                <div className="relative flex-1 group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5 transition-colors group-focus-within:text-primary" />
+                  <Input
+                    type="text"
+                    value={userSearchQuery}
+                    onChange={(e) => setUserSearchQuery(e.target.value)}
+                    placeholder="Cerca utente per nome o email..."
+                    className="w-full pl-12 pr-4 py-5 rounded-2xl bg-surface-container/60 border-0 focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
+                  />
+                </div>
+
+                {/* Sorting Select */}
+                <div className="flex items-center gap-2 bg-surface-container/60 px-4 py-2.5 rounded-2xl border border-white/5 shadow-sm self-start sm:self-auto">
+                  <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Ordina per:</span>
+                  <select
+                    value={userSortBy}
+                    onChange={(e) => setUserSortBy(e.target.value as any)}
+                    className="bg-transparent border-none text-xs font-bold text-foreground focus:outline-none cursor-pointer pr-4"
+                  >
+                    <option value="scans" className="bg-background text-foreground">Scansioni (7gg)</option>
+                    <option value="events" className="bg-background text-foreground">Interazioni (7gg)</option>
+                    <option value="date" className="bg-background text-foreground">Data Iscrizione</option>
+                    <option value="tokens" className="bg-background text-foreground">Token Rimanenti</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Cards Grid */}
+              {loadingUsers ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <Card key={idx} className="glass-panel p-5 rounded-[24px] border border-white/10 h-44 animate-pulse flex flex-col justify-between" />
+                  ))}
+                </div>
+              ) : paginatedUsers.length === 0 ? (
+                <Card className="glass-panel rounded-[28px] border border-white/10 p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+                  <Users className="h-10 w-10 text-muted-foreground/50" />
+                  <p className="text-sm font-semibold">Nessun utente corrisponde alla ricerca.</p>
+                </Card>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {paginatedUsers.map((u) => {
+                      const stats = userStats[u.uid] || { scans: 0, saves: 0, totalEvents: 0 };
+                      const initials = u.displayName
+                        ? u.displayName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()
+                        : "CG";
+                      
+                      const creationDateStr = u.createdAt 
+                        ? new Date(u.createdAt).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })
+                        : "—";
+
+                      const isUserAdmin = u.role === "admin";
+                      const avatarGradient = getAvatarGradient(u.uid);
+
+                      return (
+                        <Card key={u.uid} className="glass-panel p-5 rounded-[24px] border border-white/10 flex flex-col justify-between hover:scale-[1.01] hover:border-white/20 transition-all shadow-md hover:shadow-lg">
+                          
+                          {/* Card Header (Profile Info) */}
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`size-10 rounded-full border border-white/10 text-white font-bold flex items-center justify-center text-xs tracking-wider flex-shrink-0 ${avatarGradient}`}>
+                                {initials}
+                              </div>
+                              <div className="flex flex-col max-w-[170px] sm:max-w-[200px]">
+                                <span className="font-heading text-sm font-bold text-foreground truncate block leading-tight">
+                                  {u.displayName}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground truncate block font-medium">
+                                  {u.email}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Role Badge */}
+                            {isUserAdmin ? (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-red-500/10 border border-red-500/20 text-red-500 tracking-wider">
+                                Admin
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-muted/40 border border-border/10 text-muted-foreground tracking-wider">
+                                User
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Stats Metrics */}
+                          <div className="border-y border-border/10 my-4 py-3 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+                            <div>
+                              <span className="text-[9px] text-muted-foreground uppercase tracking-wider block mb-0.5">Scansioni (7g)</span>
+                              <span className="text-sm font-extrabold text-foreground flex items-center justify-center gap-1">
+                                <Activity className="h-3 w-3 text-primary" />
+                                {stats.scans}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] text-muted-foreground uppercase tracking-wider block mb-0.5">Salvati (7g)</span>
+                              <span className="text-sm font-extrabold text-foreground flex items-center justify-center gap-1">
+                                <Bookmark className="h-3 w-3 text-secondary fill-secondary/10" />
+                                {stats.saves}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] text-muted-foreground uppercase tracking-wider block mb-0.5">Eventi (7g)</span>
+                              <span className="text-sm font-extrabold text-foreground flex items-center justify-center gap-1">
+                                <Flame className="h-3 w-3 text-amber-500 fill-amber-500/10" />
+                                {stats.totalEvents}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Footer Info */}
+                          <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
+                            <span className="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-lg border border-white/5">
+                              <Coins className="h-3 w-3 text-amber-500" />
+                              <span className="text-foreground">{u.tokens}</span>
+                              <span className="text-muted-foreground font-semibold">tokens</span>
+                            </span>
+                            <span className="font-medium text-[9px]">
+                              Iscritto: {creationDateStr}
+                            </span>
+                          </div>
+
+                        </Card>
+                      );
+                    })}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {totalUserPages > 1 && (
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 border border-white/10 rounded-[24px] bg-muted/5 text-xs text-muted-foreground font-semibold">
+                      <div>
+                        Mostrati {Math.min(processedUsers.length, (userCurrentPage - 1) * userItemsPerPage + 1)} - {Math.min(processedUsers.length, userCurrentPage * userItemsPerPage)} di {processedUsers.length} utenti
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setUserCurrentPage((p) => Math.max(1, p - 1))}
+                          disabled={userCurrentPage === 1}
+                          className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted/10"
+                        >
+                          Precedente
+                        </Button>
+                        <span className="px-3">
+                          Pagina {userCurrentPage} di {totalUserPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setUserCurrentPage((p) => Math.min(totalUserPages, p + 1))}
+                          disabled={userCurrentPage === totalUserPages}
+                          className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted/10"
+                        >
+                          Successiva
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
             </div>
           )}
 
