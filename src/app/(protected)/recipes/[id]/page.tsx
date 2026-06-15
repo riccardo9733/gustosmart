@@ -818,6 +818,12 @@ export default function RecipeDetailPage() {
   const hasAdaptationsAvailable = 
     recipe && 
     (!recipe.isVegan || !recipe.isVegetarian || !recipe.isLactoseFree || !recipe.isGlutenFree);
+  const isPendingAnalysis = !!recipe && (
+    recipe.isVegan === undefined || recipe.isVegan === null ||
+    recipe.isVegetarian === undefined || recipe.isVegetarian === null ||
+    recipe.isLactoseFree === undefined || recipe.isLactoseFree === null ||
+    recipe.isGlutenFree === undefined || recipe.isGlutenFree === null
+  );
   const baseServings = activeRecipe.servings || recipe.servings || 2;
   const imageSrc = recipe.imageUrl
     ? `/api/proxy-image?url=${encodeURIComponent(recipe.imageUrl)}`
@@ -1291,11 +1297,11 @@ export default function RecipeDetailPage() {
         </div>
 
         {/* Adapt Recipe Card */}
-        {(isAnalyzingDietary || hasAdaptationsAvailable) && (
+        {(isAnalyzingDietary || isPendingAnalysis || hasAdaptationsAvailable) && (
           <div className="glass-panel rounded-[24px] p-5 md:p-6 shadow-xl border border-primary/10 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 mb-8 overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
             
-            {isAnalyzingDietary ? (
+            {(isAnalyzingDietary || isPendingAnalysis) ? (
               <div className="flex items-center gap-3 py-3 relative z-10">
                 <Loader2 className="w-5 h-5 text-primary animate-spin" />
                 <div className="flex flex-col">
