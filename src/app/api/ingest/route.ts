@@ -117,6 +117,28 @@ export async function POST(request: Request) {
             ? await scrapeYouTube(finalUrl)
             : await scrapeWebPage(finalUrl);
 
+          // Log ScrapeCreators Credit Balance Event if present
+          if (scrapedData.scrapecreatorsCreditsRemaining !== undefined && scrapedData.scrapecreatorsCreditsRemaining !== null) {
+            try {
+              const expireAt = new Date();
+              expireAt.setDate(expireAt.getDate() + 7);
+
+              await addDoc(collection(firestoreDb, "analytics_events"), {
+                eventName: "scrapecreators_credits",
+                userId: userId || null,
+                userEmail: userEmail || null,
+                timestamp: serverTimestamp(),
+                expireAt,
+                params: {
+                  credits_remaining: scrapedData.scrapecreatorsCreditsRemaining,
+                  source_platform: cleanedPlatform
+                }
+              });
+            } catch (fsErr) {
+              console.error("[Ingest Route] Errore nel salvataggio del log crediti ScrapeCreators su Firestore:", fsErr);
+            }
+          }
+
           const cleanCaption = (scrapedData.caption || "").trim();
           const cleanTranscript = (scrapedData.transcript || "").trim();
           const hasStructuredData = cleanedPlatform === "web" && !!scrapedData.recipeStructuredData;
@@ -194,7 +216,12 @@ export async function POST(request: Request) {
 
           // SUCCESS
           console.log(`[Ingest Route] Ingest completato per recipeId: ${recipeId}`);
-          sendEvent("success", { recipe: validatedRecipe, recipeId, generationId: geminiOutput.generationId });
+          sendEvent("success", {
+            recipe: validatedRecipe,
+            recipeId,
+            generationId: geminiOutput.generationId,
+            scrapecreatorsCreditsRemaining: scrapedData.scrapecreatorsCreditsRemaining ?? null
+          });
           controller.close();
         } catch (err: any) {
           const errorMessage = err instanceof Error ? err.message : String(err);

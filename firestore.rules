@@ -35,8 +35,8 @@ service cloud.firestore {
 
     // 2. Global Recipes collection — shared, public catalog
     match /recipes/{recipeId} {
-      // Any authenticated user can read any global recipe
-      allow read: if isAuthenticated();
+      // Anyone can read global recipes (needed for unauthenticated server-side queries)
+      allow read: if true;
 
       // Any authenticated user can create a new global recipe (during ingest)
       // The createdBy field must match the requesting user's UID

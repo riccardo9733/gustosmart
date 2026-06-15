@@ -239,7 +239,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 currentStep = nextStep;
                 setProgress(data.progress);
               } else if (eventName === "success") {
-                const { recipe, recipeId: newRecipeId, generationId } = data;
+                const { recipe, recipeId: newRecipeId, generationId, scrapecreatorsCreditsRemaining } = data;
                 setStep("saving");
                 currentStep = "saving";
                 setProgress(95);
@@ -313,6 +313,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                   is_cached_hit: false,
                   duration_seconds: durationSeconds,
                   generation_id: generationId || null,
+                  scrapecreators_credits_remaining: scrapecreatorsCreditsRemaining !== undefined ? scrapecreatorsCreditsRemaining : null,
                   userId: user.uid,
                   userEmail: user.email || undefined,
                 });

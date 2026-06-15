@@ -335,6 +335,10 @@ export default function AdminDashboard() {
   const completedImports = events.filter((e) => e.eventName === "recipe_import_completed");
   const failedImports = events.filter((e) => e.eventName === "recipe_import_failed");
   const cacheHits = completedImports.filter((e) => e.params.is_cached_hit === true).length;
+
+  // ScrapeCreators credits metric
+  const latestScrapeCreditsEvent = events.find((e) => e.eventName === "scrapecreators_credits");
+  const scrapecreatorsCredits = latestScrapeCreditsEvent?.params?.credits_remaining as number | undefined;
   
   const successRate = initiatedImports.length > 0 
     ? Math.round((completedImports.length / initiatedImports.length) * 100)
@@ -860,9 +864,16 @@ export default function AdminDashboard() {
               {/* Ingestion Success Log Summary */}
               <div className="lg:col-span-6">
                 <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 h-full">
-                  <h3 className="font-heading text-lg font-bold text-foreground mb-4">
-                    Stato Globale Ingestione
-                  </h3>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                    <h3 className="font-heading text-lg font-bold text-foreground">
+                      Stato Globale Ingestione
+                    </h3>
+                    {scrapecreatorsCredits !== undefined && (
+                      <span className="text-xs font-bold px-3 py-1.5 rounded-full border border-white/10 bg-primary/10 text-primary">
+                        Token ScrapeCreators: {scrapecreatorsCredits.toLocaleString("it-IT")}
+                      </span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-muted/10 p-4 rounded-2xl border border-white/5">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Import Completati</span>

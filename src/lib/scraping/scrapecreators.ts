@@ -16,6 +16,7 @@ export interface ScrapedData {
     calories?: string;
     imageUrl?: string;
   } | null;
+  scrapecreatorsCreditsRemaining?: number | null;
 }
 
 /**
@@ -26,6 +27,8 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
   if (!apiKey) {
     throw new Error("Manca la chiave d'ambiente SCRAPECREATORS_API_KEY");
   }
+
+  let creditsRemaining: number | null = null;
 
   // Eseguiamo la chiamata ai dettagli del post e alla trascrizione in parallelo.
   // La trascrizione ha un timeout di 5 secondi per evitare di bloccare o far fallire l'intera importazione.
@@ -57,6 +60,9 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
         return "";
       }
       const data = await res.json();
+      if (data.credits_remaining !== undefined) {
+        creditsRemaining = data.credits_remaining;
+      }
       return data.transcripts?.[0]?.text || "";
     } catch {
       clearTimeout(timeoutId);
@@ -77,6 +83,9 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
   }
 
   const postData = await postResponse.json();
+  if (postData.credits_remaining !== undefined) {
+    creditsRemaining = postData.credits_remaining;
+  }
   const media = postData.data?.xdt_shortcode_media;
 
   if (!media) {
@@ -97,6 +106,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
     creatorUsername,
     creatorFullName,
     creatorId,
+    scrapecreatorsCreditsRemaining: creditsRemaining,
   };
 }
 
@@ -143,6 +153,7 @@ export async function scrapeTikTok(url: string): Promise<ScrapedData> {
   }
 
   const data = await response.json();
+  const creditsRemaining = data.credits_remaining !== undefined ? data.credits_remaining : null;
   const detail = data.aweme_detail;
 
   if (!detail) {
@@ -171,6 +182,7 @@ export async function scrapeTikTok(url: string): Promise<ScrapedData> {
     creatorUsername,
     creatorFullName,
     creatorId,
+    scrapecreatorsCreditsRemaining: creditsRemaining,
   };
 }
 
@@ -182,6 +194,8 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
   if (!apiKey) {
     throw new Error("Manca la chiave d'ambiente SCRAPECREATORS_API_KEY");
   }
+
+  let creditsRemaining: number | null = null;
 
   // Eseguiamo la chiamata ai dettagli del post e alla trascrizione in parallelo.
   const fetchPost = fetch(
@@ -212,6 +226,9 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
         return "";
       }
       const data = await res.json();
+      if (data.credits_remaining !== undefined) {
+        creditsRemaining = data.credits_remaining;
+      }
       return data.transcript || "";
     } catch {
       clearTimeout(timeoutId);
@@ -232,6 +249,9 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
   }
 
   const postData = await postResponse.json();
+  if (postData.credits_remaining !== undefined) {
+    creditsRemaining = postData.credits_remaining;
+  }
   if (!postData.success) {
     console.error("Risposta ScrapeCreators Facebook fallita:", postData);
     throw new Error("Lo scraping di Facebook ha restituito esito negativo.");
@@ -263,6 +283,7 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
     creatorUsername,
     creatorFullName,
     creatorId,
+    scrapecreatorsCreditsRemaining: creditsRemaining,
   };
 }
 
@@ -274,6 +295,8 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
   if (!apiKey) {
     throw new Error("Manca la chiave d'ambiente SCRAPECREATORS_API_KEY");
   }
+
+  let creditsRemaining: number | null = null;
 
   const fetchPost = fetch(
     `https://api.scrapecreators.com/v1/youtube/video?url=${encodeURIComponent(url)}`,
@@ -293,6 +316,9 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
   }
 
   const postData = await postResponse.json();
+  if (postData.credits_remaining !== undefined) {
+    creditsRemaining = postData.credits_remaining;
+  }
   if (!postData.success) {
     console.error("Risposta ScrapeCreators YouTube fallita:", postData);
     throw new Error("Lo scraping di YouTube ha restituito esito negativo.");
@@ -327,6 +353,9 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
       clearTimeout(timeoutId);
       if (res.ok) {
         const transData = await res.json();
+        if (transData.credits_remaining !== undefined) {
+          creditsRemaining = transData.credits_remaining;
+        }
         transcriptText = transData.transcript_only_text || "";
       } else {
         console.warn(`Errore recupero trascrizione YouTube Short (status ${res.status})`);
@@ -344,5 +373,6 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
     creatorUsername,
     creatorFullName,
     creatorId,
+    scrapecreatorsCreditsRemaining: creditsRemaining,
   };
 }
