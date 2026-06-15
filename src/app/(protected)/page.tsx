@@ -1,19 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  useGlobalRecipes,
+  useInfiniteGlobalRecipes,
   useRecipes,
   useUserProfile,
   useAddToUserRecipes,
   useRemoveFromUserRecipes,
 } from "@/hooks/useRecipes";
 import {
-  Search,
   Clock,
   Flame,
   Users,
@@ -27,7 +26,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -260,12 +258,20 @@ export default function HomeFeed() {
   const tRecipes = useTranslations("Recipes");
   const tDetails = useTranslations("Details");
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDietary, setSelectedDietary] = useState("all");
+  const [selectedDietaries, setSelectedDietaries] = useState<Set<string>>(new Set());
   const [selectedSource, setSelectedSource] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Fetch all global recipes
-  const { data: globalRecipes = [], isLoading: globalLoading } = useGlobalRecipes();
+  // Fetch infinite global recipes with active filters
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteGlobalRecipes({ dietaries: selectedDietaries, source: selectedSource, category: selectedCategory });
 
   // Fetch user's saved recipes to determine bookmark state
   const { data: userRecipes = [], isLoading: userLoading } = useRecipes();
@@ -274,6 +280,8 @@ export default function HomeFeed() {
   const { mutateAsync: saveRecipe } = useAddToUserRecipes();
   const { mutateAsync: unsaveRecipe } = useRemoveFromUserRecipes();
 
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   const DIETARY_FILTERS = [
     { key: "all", label: tRecipes("all") },
     { key: "gluten_free", label: tRecipes("glutenFree") },
@@ -281,6 +289,39 @@ export default function HomeFeed() {
     { key: "vegetarian", label: tRecipes("vegetarian") },
     { key: "lactose_free", label: tRecipes("lactoseFree") },
   ];
+
+  const CATEGORY_FILTERS = [
+    { key: "all", label: tRecipes("all") },
+    { key: "first_courses", label: tRecipes("primi") },
+    { key: "second_courses", label: tRecipes("secondi") },
+    { key: "appetizers", label: tRecipes("antipasti") },
+    { key: "desserts", label: tRecipes("dolci") },
+    { key: "sides", label: tRecipes("contorni") },
+    { key: "single_dishes", label: tRecipes("singleDishes") },
+    { key: "other", label: tRecipes("other") },
+  ];
+
+  // Set up scroll observer to load next page automatically
+  useEffect(() => {
+    const currentSentinel = sentinelRef.current;
+    if (!currentSentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(currentSentinel);
+
+    return () => {
+      observer.unobserve(currentSentinel);
+    };
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const handleToggleSave = async (recipe: GlobalRecipe, isSaved: boolean, method = "button_click") => {
     if (!user) {
@@ -298,7 +339,7 @@ export default function HomeFeed() {
           userId: user.uid,
           userEmail: user.email || undefined,
         });
-
+ 
         toast.success(t("removeSuccess") || "Ricetta rimossa dal ricettario!", { id: toastId });
       } else {
         await saveRecipe(recipe.id);
@@ -319,51 +360,31 @@ export default function HomeFeed() {
     }
   };
 
-  const resetFilters = () => {
-    setSearchQuery("");
-    setSelectedDietary("all");
-    setSelectedSource("all");
+  const toggleDietary = (key: string) => {
+    setSelectedDietaries((prev) => {
+      const next = new Set(prev);
+      if (key === "all") {
+        next.clear();
+      } else {
+        if (next.has(key)) {
+          next.delete(key);
+        } else {
+          next.add(key);
+        }
+      }
+      return next;
+    });
   };
 
-  // Client-side filtering
-  const filteredRecipes = globalRecipes.filter((recipe) => {
-    const matchesSearch =
-      searchQuery.trim() === "" ||
-      recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recipe.ingredients?.some((ing) =>
-        ing.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const resetFilters = () => {
+    setSelectedDietaries(new Set());
+    setSelectedSource("all");
+    setSelectedCategory("all");
+  };
 
-    const matchesDietary =
-      selectedDietary === "all" ||
-      (selectedDietary === "gluten_free" && recipe.isGlutenFree === true) ||
-      (selectedDietary === "vegan" && recipe.isVegan === true) ||
-      (selectedDietary === "vegetarian" && recipe.isVegetarian === true) ||
-      (selectedDietary === "lactose_free" && recipe.isLactoseFree === true);
-
-    let matchesSource = true;
-    if (selectedSource === "social") {
-      matchesSource =
-        recipe.sourcePlatform === "instagram" ||
-        recipe.sourcePlatform === "tiktok" ||
-        recipe.sourcePlatform === "youtube" ||
-        recipe.sourcePlatform === "facebook" ||
-        !recipe.sourceUrl?.includes(".");
-    } else if (selectedSource === "web") {
-      matchesSource =
-        recipe.sourcePlatform === "web" ||
-        !!(recipe.sourceUrl &&
-          !recipe.sourceUrl.includes("instagram.com") &&
-          !recipe.sourceUrl.includes("tiktok.com") &&
-          !recipe.sourceUrl.includes("youtube.com") &&
-          !recipe.sourceUrl.includes("youtu.be") &&
-          !recipe.sourceUrl.includes("facebook.com"));
-    }
-
-    return matchesSearch && matchesDietary && matchesSource;
-  });
-
-  const loading = globalLoading || userLoading;
+  const recipes = data?.pages.flatMap((page) => page.recipes) ?? [];
+  const loading = isLoading || userLoading;
+  const hasActiveFilters = selectedDietaries.size > 0 || selectedSource !== "all" || selectedCategory !== "all";
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500 relative w-full pb-16">
@@ -378,32 +399,38 @@ export default function HomeFeed() {
         </p>
       </section>
 
-      {/* Sticky Search and Filters */}
+      {/* Sticky Filters */}
       <div className="sticky top-16 z-30 -mx-6 px-6 py-4 bg-background/80 backdrop-blur-md border-b border-border/40 flex flex-col gap-3 transition-shadow">
-        {/* Search Input */}
-        <div className="relative w-full group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5 transition-colors group-focus-within:text-primary" />
-          <Input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t("feedSearchPlaceholder") || "Cerca ricette o ingredienti..."}
-            className="w-full pl-12 pr-4 py-6 rounded-2xl bg-surface-container/60 border-0 focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
-          />
-        </div>
-
         {/* Filters Panel */}
-        <div className="flex flex-col gap-3">
-          {/* Categories Horizontal Scroller */}
-          <div className="flex overflow-x-auto gap-2 scrollbar-none pb-1 shrink-0">
+        <div className="flex flex-col gap-2">
+          {/* Category Filters Row */}
+          <div className="flex overflow-x-auto gap-2 scrollbar-none pb-0.5 shrink-0">
+            {CATEGORY_FILTERS.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => setSelectedCategory(cat.key)}
+                className={cn(
+                  "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border border-white/5 cursor-pointer",
+                  selectedCategory === cat.key
+                    ? "bg-primary text-white shadow-md shadow-primary/25"
+                    : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
+                )}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Dietary Filters Row */}
+          <div className="flex overflow-x-auto gap-2 scrollbar-none pb-0.5 shrink-0">
             {DIETARY_FILTERS.map((cat) => {
-              const isActive = selectedDietary === cat.key;
+              const isActive = cat.key === "all" ? selectedDietaries.size === 0 : selectedDietaries.has(cat.key);
               return (
                 <button
                   key={cat.key}
-                  onClick={() => setSelectedDietary(cat.key)}
+                  onClick={() => toggleDietary(cat.key)}
                   className={cn(
-                    "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border border-white/5",
+                    "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border border-white/5 cursor-pointer",
                     isActive
                       ? "bg-primary text-white shadow-md shadow-primary/25"
                       : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
@@ -420,7 +447,7 @@ export default function HomeFeed() {
             <button
               onClick={() => setSelectedSource("all")}
               className={cn(
-                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all active:scale-95 border border-white/5",
+                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all active:scale-95 border border-white/5 cursor-pointer",
                 selectedSource === "all"
                   ? "bg-primary text-white shadow-sm shadow-primary/20"
                   : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
@@ -431,7 +458,7 @@ export default function HomeFeed() {
             <button
               onClick={() => setSelectedSource("social")}
               className={cn(
-                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-white/5",
+                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-white/5 cursor-pointer",
                 selectedSource === "social"
                   ? "bg-primary text-white shadow-sm shadow-primary/20"
                   : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
@@ -443,7 +470,7 @@ export default function HomeFeed() {
             <button
               onClick={() => setSelectedSource("web")}
               className={cn(
-                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-white/5",
+                "whitespace-nowrap px-4 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-white/5 cursor-pointer",
                 selectedSource === "web"
                   ? "bg-primary text-white shadow-sm shadow-primary/20"
                   : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
@@ -476,50 +503,86 @@ export default function HomeFeed() {
               </div>
             ))}
           </div>
-        ) : globalRecipes.length === 0 ? (
+        ) : isError ? (
+          <div className="flex flex-col gap-4 p-6 rounded-3xl bg-destructive/10 border border-destructive/20 text-destructive text-sm max-w-lg mx-auto mb-6 text-center animate-in fade-in duration-300">
+            <h4 className="font-heading font-bold text-base">Errore nel caricamento del Feed</h4>
+            <p className="leading-relaxed">
+              Questo errore potrebbe essere dovuto alla mancanza di un <strong>indice composito di Firestore</strong> per la combinazione di filtri selezionata.
+            </p>
+            <p className="text-xs text-muted-foreground/80 leading-normal bg-background/50 p-3 rounded-xl border border-destructive/10 text-left font-mono overflow-x-auto max-w-full">
+              {error instanceof Error ? error.message : String(error)}
+            </p>
+            <p className="text-xs leading-normal">
+              Controlla la <strong>console del browser</strong> (F12 o tasto destro &rarr; Ispeziona) per trovare un link diretto fornito da Firebase e cliccalo per creare automaticamente l'indice richiesto.
+            </p>
+          </div>
+        ) : recipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-700 max-w-md mx-auto">
             <div className="w-48 h-48 mb-8 rounded-full bg-primary/5 flex items-center justify-center relative shadow-inner">
               <ChefHat className="w-24 h-24 stroke-[1] text-primary/20 relative z-10" />
             </div>
             <h3 className="font-heading text-xl font-bold text-foreground mb-2">
-              {t("noRecipesYet") || "Nessuna ricetta globale"}
+              {hasActiveFilters
+                ? tRecipes("noResultsTitle") 
+                : (t("noRecipesYet") || "Nessuna ricetta globale")}
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              {t("noRecipesYetDesc") || "Nessuna ricetta è stata scansionata sul server. Usa il tasto '+' in basso per importare la prima!"}
+              {hasActiveFilters
+                ? tRecipes("noResultsDesc") 
+                : (t("noRecipesYetDesc") || "Nessuna ricetta è stata scansionata sul server. Usa il tasto '+' in basso per importare la prima!")}
             </p>
-          </div>
-        ) : filteredRecipes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-500 max-w-sm mx-auto">
-            <ChefHat className="h-16 w-16 text-primary/40 mb-4 stroke-[1.2]" />
-            <h3 className="text-lg font-bold text-foreground mb-2">{tRecipes("noResultsTitle")}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              {tRecipes("noResultsDesc")}
-            </p>
-            <Button
-              onClick={resetFilters}
-              variant="outline"
-              className="border-primary/20 text-primary hover:bg-primary/5 rounded-full px-6"
-            >
-              {tRecipes("clearFilters")}
-            </Button>
+            {hasActiveFilters && (
+              <Button
+                onClick={resetFilters}
+                variant="outline"
+                className="border-primary/20 text-primary hover:bg-primary/5 rounded-full px-6"
+              >
+                {tRecipes("clearFilters")}
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 w-full">
-            {filteredRecipes.map((recipe) => {
-              const isSaved = userRecipes.some((ur) => ur.id === recipe.id);
-              return (
-                <div key={recipe.id} className="break-inside-avoid mb-4 w-full">
-                  <FeedCard
-                    recipe={recipe}
-                    isSaved={isSaved}
-                    onToggleSave={(method) => handleToggleSave(recipe, isSaved, method)}
-                    onViewDetails={() => router.push(`/recipes/${recipe.id}`)}
-                    tRecipes={tRecipes}
-                    tDetails={tDetails}
-                  />
+          <div className="flex flex-col gap-6">
+            <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 w-full">
+              {recipes.map((recipe) => {
+                const isSaved = userRecipes.some((ur) => ur.id === recipe.id);
+                return (
+                  <div key={recipe.id} className="break-inside-avoid mb-4 w-full">
+                    <FeedCard
+                      recipe={recipe}
+                      isSaved={isSaved}
+                      onToggleSave={(method) => handleToggleSave(recipe, isSaved, method)}
+                      onViewDetails={() => router.push(`/recipes/${recipe.id}`)}
+                      tRecipes={tRecipes}
+                      tDetails={tDetails}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Scroll Sentinel for Infinite Loading */}
+            <div ref={sentinelRef} className="w-full py-4 min-h-[50px] flex items-center justify-center">
+              {isFetchingNextPage && (
+                <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 w-full">
+                  {Array.from({ length: 4 }).map((_, idx) => (
+                    <div key={idx} className="break-inside-avoid mb-4 w-full">
+                      <Card className="overflow-hidden rounded-3xl border border-border/40 bg-card/40 p-3.5 flex flex-col gap-3.5">
+                        <div className="flex justify-between items-center w-full">
+                          <Skeleton className="h-5 w-16 bg-muted/20 rounded-full animate-pulse" />
+                          <Skeleton className="h-8 w-8 bg-muted/20 rounded-full animate-pulse" />
+                        </div>
+                        <Skeleton className="h-4 w-3/4 bg-muted/20 animate-pulse" />
+                        <div className="flex gap-1.5">
+                          <Skeleton className="h-4 w-12 bg-muted/20 rounded-full animate-pulse" />
+                          <Skeleton className="h-4 w-12 bg-muted/20 rounded-full animate-pulse" />
+                        </div>
+                      </Card>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+              )}
+            </div>
           </div>
         )}
       </section>

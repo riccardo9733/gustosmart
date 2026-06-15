@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -21,7 +21,19 @@ import {
   type GlobalRecipe,
   type UserFolder,
 } from "@/lib/firestore/recipes";
-import { collection, query, orderBy, getDocs, doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  getDocs,
+  doc,
+  getDoc,
+  limit,
+  startAfter,
+  where,
+  type QueryDocumentSnapshot,
+  type DocumentData,
+} from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 
 // ---------------------------------------------------------------------------
@@ -205,6 +217,87 @@ export function useGlobalRecipes() {
     staleTime: 2 * 60 * 1000, // 2 minuti
   });
 }
+
+// ---------------------------------------------------------------------------
+// useInfiniteGlobalRecipes — lista paginata e filtrata del catalogo globale
+// ---------------------------------------------------------------------------
+export interface GlobalRecipesFilters {
+  dietaries: Set<string>;
+  source: string;
+  category: string;
+}
+
+export function useInfiniteGlobalRecipes(filters: GlobalRecipesFilters) {
+  const { dietaries, source, category } = filters;
+  const dietariesArray = Array.from(dietaries).sort();
+  const queryKey = ["global-recipes-infinite", dietariesArray, source, category];
+
+  return useInfiniteQuery({
+    queryKey,
+    initialPageParam: null as QueryDocumentSnapshot<DocumentData> | null,
+    queryFn: async ({ pageParam }) => {
+      const db = getFirebaseDb();
+      const recipesCol = collection(db, "recipes");
+      const constraints: any[] = [];
+
+      // 1. Dietary filters (AND logic)
+      if (dietaries.has("gluten_free")) {
+        constraints.push(where("isGlutenFree", "==", true));
+      }
+      if (dietaries.has("vegan")) {
+        constraints.push(where("isVegan", "==", true));
+      }
+      if (dietaries.has("vegetarian")) {
+        constraints.push(where("isVegetarian", "==", true));
+      }
+      if (dietaries.has("lactose_free")) {
+        constraints.push(where("isLactoseFree", "==", true));
+      }
+
+      // 2. Category filter
+      if (category && category !== "all") {
+        constraints.push(where("category", "==", category));
+      }
+
+      // 3. Source filter
+      if (source === "social") {
+        constraints.push(
+          where("sourcePlatform", "in", ["instagram", "tiktok", "youtube", "facebook"])
+        );
+      } else if (source === "web") {
+        constraints.push(where("sourcePlatform", "==", "web"));
+      }
+
+      // 3. Sorting & Pagination limit
+      constraints.push(orderBy("createdAt", "desc"));
+      constraints.push(limit(20));
+
+      if (pageParam) {
+        constraints.push(startAfter(pageParam));
+      }
+
+      const q = query(recipesCol, ...constraints);
+      const snap = await getDocs(q);
+
+      const recipes = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      } as GlobalRecipe));
+
+      const lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+
+      return {
+        recipes,
+        lastDoc,
+      };
+    },
+    getNextPageParam: (lastPage) => {
+      return lastPage.lastDoc || undefined;
+    },
+    staleTime: 2 * 60 * 1000, // 2 minuti
+  });
+}
+
 
 // ---------------------------------------------------------------------------
 // useUserProfile — recupera il profilo utente (displayName, photoURL) da ID
