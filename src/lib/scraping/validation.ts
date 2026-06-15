@@ -24,6 +24,10 @@ export const RecipeSchema = z.object({
   sugar: z.number().nonnegative().nullable().optional().default(null),
   nutritionalRating: z.enum(['A', 'B', 'C', 'D', 'E']).nullable().optional().default(null),
   nutritionalAssessment: z.string().nullable().optional().default(null),
+  isGlutenFree: z.boolean().nullable().optional().default(null),
+  isVegan: z.boolean().nullable().optional().default(null),
+  isVegetarian: z.boolean().nullable().optional().default(null),
+  isLactoseFree: z.boolean().nullable().optional().default(null),
   creatorUsername: z.string().nullable().optional().default(null),
   creatorFullName: z.string().nullable().optional().default(null),
   creatorId: z.string().nullable().optional().default(null),
@@ -120,6 +124,10 @@ export function validateAndFormatRecipe(
     nutritionalAssessment: geminiOutput.nutritionalAssessment !== undefined && geminiOutput.nutritionalAssessment !== null
       ? String(geminiOutput.nutritionalAssessment).trim()
       : null,
+    isGlutenFree: geminiOutput.isGlutenFree !== undefined && geminiOutput.isGlutenFree !== null ? Boolean(geminiOutput.isGlutenFree) : null,
+    isVegan: geminiOutput.isVegan !== undefined && geminiOutput.isVegan !== null ? Boolean(geminiOutput.isVegan) : null,
+    isVegetarian: geminiOutput.isVegetarian !== undefined && geminiOutput.isVegetarian !== null ? Boolean(geminiOutput.isVegetarian) : null,
+    isLactoseFree: geminiOutput.isLactoseFree !== undefined && geminiOutput.isLactoseFree !== null ? Boolean(geminiOutput.isLactoseFree) : null,
     creatorUsername: creatorInfo?.username || null,
     creatorFullName: creatorInfo?.fullName || null,
     creatorId: creatorInfo?.id || null,

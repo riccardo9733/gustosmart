@@ -352,6 +352,26 @@ export default function RecipesPage() {
                           {getCategoryLabel(recipe.category)}
                         </Badge>
                       )}
+                      {recipe.isGlutenFree && (
+                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-emerald-500/25 text-[9px] uppercase tracking-wider text-emerald-500 bg-emerald-500/5">
+                          {tDetails("glutenFree")}
+                        </Badge>
+                      )}
+                      {recipe.isVegan && (
+                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-green-500/25 text-[9px] uppercase tracking-wider text-green-500 bg-green-500/5">
+                          {tDetails("vegan")}
+                        </Badge>
+                      )}
+                      {recipe.isVegetarian && (
+                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-teal-500/25 text-[9px] uppercase tracking-wider text-teal-500 bg-teal-500/5">
+                          {tDetails("vegetarian")}
+                        </Badge>
+                      )}
+                      {recipe.isLactoseFree && (
+                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-blue-500/25 text-[9px] uppercase tracking-wider text-blue-500 bg-blue-500/5">
+                          {tDetails("lactoseFree")}
+                        </Badge>
+                      )}
                       {recipe.prepTimeMinutes && (
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />

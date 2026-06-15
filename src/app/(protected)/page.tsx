@@ -225,6 +225,26 @@ function FeedCard({
                 {tRecipes("ingredients", { count: recipe.ingredients.length })}
               </span>
             )}
+            {recipe.isGlutenFree && (
+              <span className="flex items-center gap-0.5 bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-full border border-emerald-500/10 dark:text-emerald-400">
+                {tDetails("glutenFree")}
+              </span>
+            )}
+            {recipe.isVegan && (
+              <span className="flex items-center gap-0.5 bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full border border-green-500/10 dark:text-green-400">
+                {tDetails("vegan")}
+              </span>
+            )}
+            {recipe.isVegetarian && (
+              <span className="flex items-center gap-0.5 bg-teal-500/10 text-teal-600 px-1.5 py-0.5 rounded-full border border-teal-500/10 dark:text-teal-400">
+                {tDetails("vegetarian")}
+              </span>
+            )}
+            {recipe.isLactoseFree && (
+              <span className="flex items-center gap-0.5 bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded-full border border-blue-500/10 dark:text-blue-400">
+                {tDetails("lactoseFree")}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -241,7 +261,7 @@ export default function HomeFeed() {
   const tDetails = useTranslations("Details");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedDietary, setSelectedDietary] = useState("all");
   const [selectedSource, setSelectedSource] = useState("all");
 
   // Fetch all global recipes
@@ -254,15 +274,12 @@ export default function HomeFeed() {
   const { mutateAsync: saveRecipe } = useAddToUserRecipes();
   const { mutateAsync: unsaveRecipe } = useRemoveFromUserRecipes();
 
-  const CATEGORIES = [
+  const DIETARY_FILTERS = [
     { key: "all", label: tRecipes("all") },
-    { key: "first_courses", label: tRecipes("primi") },
-    { key: "second_courses", label: tRecipes("secondi") },
-    { key: "desserts", label: tRecipes("dolci") },
-    { key: "appetizers", label: tRecipes("antipasti") },
-    { key: "sides", label: tRecipes("contorni") },
-    { key: "single_dishes", label: tRecipes("singleDishes") },
-    { key: "other", label: tRecipes("other") },
+    { key: "gluten_free", label: tRecipes("glutenFree") },
+    { key: "vegan", label: tRecipes("vegan") },
+    { key: "vegetarian", label: tRecipes("vegetarian") },
+    { key: "lactose_free", label: tRecipes("lactoseFree") },
   ];
 
   const handleToggleSave = async (recipe: GlobalRecipe, isSaved: boolean, method = "button_click") => {
@@ -304,7 +321,7 @@ export default function HomeFeed() {
 
   const resetFilters = () => {
     setSearchQuery("");
-    setSelectedCategory("all");
+    setSelectedDietary("all");
     setSelectedSource("all");
   };
 
@@ -317,8 +334,12 @@ export default function HomeFeed() {
         ing.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
 
-    const matchesCategory =
-      selectedCategory === "all" || recipe.category === selectedCategory;
+    const matchesDietary =
+      selectedDietary === "all" ||
+      (selectedDietary === "gluten_free" && recipe.isGlutenFree === true) ||
+      (selectedDietary === "vegan" && recipe.isVegan === true) ||
+      (selectedDietary === "vegetarian" && recipe.isVegetarian === true) ||
+      (selectedDietary === "lactose_free" && recipe.isLactoseFree === true);
 
     let matchesSource = true;
     if (selectedSource === "social") {
@@ -339,7 +360,7 @@ export default function HomeFeed() {
           !recipe.sourceUrl.includes("facebook.com"));
     }
 
-    return matchesSearch && matchesCategory && matchesSource;
+    return matchesSearch && matchesDietary && matchesSource;
   });
 
   const loading = globalLoading || userLoading;
@@ -375,12 +396,12 @@ export default function HomeFeed() {
         <div className="flex flex-col gap-3">
           {/* Categories Horizontal Scroller */}
           <div className="flex overflow-x-auto gap-2 scrollbar-none pb-1 shrink-0">
-            {CATEGORIES.map((cat) => {
-              const isActive = selectedCategory === cat.key;
+            {DIETARY_FILTERS.map((cat) => {
+              const isActive = selectedDietary === cat.key;
               return (
                 <button
                   key={cat.key}
-                  onClick={() => setSelectedCategory(cat.key)}
+                  onClick={() => setSelectedDietary(cat.key)}
                   className={cn(
                     "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border border-white/5",
                     isActive

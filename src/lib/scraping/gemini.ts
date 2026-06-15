@@ -41,6 +41,10 @@ Devi restituire esclusivamente un oggetto JSON che rispetta esattamente il segue
   "sugar": "Stima dei grammi di zuccheri per 100g di ricetta pronta/finita (number, null se non calcolabile)",
   "nutritionalRating": "Valutazione sintetica della ricetta in scala da 'A' (molto salutare) a 'E' (poco salutare) in stile Nutri-Score (string: 'A', 'B', 'C', 'D' o 'E', null se non calcolabile)",
   "nutritionalAssessment": "Breve frase di commento nutrizionale sulla ricetta nella stessa lingua originale del post, max 120 caratteri (string, null se non calcolabile)",
+  "isGlutenFree": "true se la ricetta è senza glutine (gluten-free) basandoti sugli ingredienti indicati, false altrimenti (boolean)",
+  "isVegan": "true se la ricetta è vegana (nessun ingrediente di origine animale) basandoti sugli ingredienti, false altrimenti (boolean)",
+  "isVegetarian": "true se la ricetta è vegetariana (niente carne o pesce) basandoti sugli ingredienti, false altrimenti (boolean)",
+  "isLactoseFree": "true se la ricetta è priva di lattosio (lactose-free) o se non contiene latte/derivati, false altrimenti (boolean)",
   "ingredients": [
     {
       "name": "Nome dell'ingrediente, es. Farina 00, Uova (string)",
@@ -180,6 +184,10 @@ Devi restituire esclusivamente un oggetto JSON che rispetta esattamente il segue
   "sugar": "Stima dei grammi di zuccheri per 100g di ricetta pronta/finita (number, null se non calcolabile)",
   "nutritionalRating": "Valutazione sintetica della ricetta in scala da 'A' (molto salutare) a 'E' (poco salutare) in stile Nutri-Score (string: 'A', 'B', 'C', 'D' o 'E', null se non calcolabile)",
   "nutritionalAssessment": "Breve frase di commento nutrizionale sulla ricetta nella stessa lingua originale, max 120 caratteri (string, null se non calcolabile)",
+  "isGlutenFree": "true se la ricetta è senza glutine (gluten-free) basandoti sugli ingredienti indicati, false altrimenti (boolean)",
+  "isVegan": "true se la ricetta è vegana (nessun ingrediente di origine animale) basandoti sugli ingredienti, false altrimenti (boolean)",
+  "isVegetarian": "true se la ricetta è vegetariana (niente carne o pesce) basandoti sugli ingredienti, false altrimenti (boolean)",
+  "isLactoseFree": "true se la ricetta è priva di lattosio (lactose-free) o se non contiene latte/derivati, false altrimenti (boolean)",
   "ingredients": [
     {
       "name": "Nome dell'ingrediente, es. Farina 00, Uova (string)",

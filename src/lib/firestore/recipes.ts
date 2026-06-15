@@ -43,6 +43,10 @@ export interface GlobalRecipe {
   sugar?: number | null;
   nutritionalRating?: string | null;
   nutritionalAssessment?: string | null;
+  isGlutenFree?: boolean | null;
+  isVegan?: boolean | null;
+  isVegetarian?: boolean | null;
+  isLactoseFree?: boolean | null;
   createdAt: any;
   createdBy: string;
   creatorUsername?: string | null;

@@ -656,6 +656,26 @@ export default function RecipeDetailPage() {
                       {getCategoryLabel(recipe.category)}
                     </Badge>
                   )}
+                  {recipe.isGlutenFree && (
+                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-emerald-500/20 text-emerald-600 bg-emerald-500/5 dark:text-emerald-400">
+                      {t("glutenFree")}
+                    </Badge>
+                  )}
+                  {recipe.isVegan && (
+                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-green-500/20 text-green-600 bg-green-500/5 dark:text-green-400">
+                      {t("vegan")}
+                    </Badge>
+                  )}
+                  {recipe.isVegetarian && (
+                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-teal-500/20 text-teal-600 bg-teal-500/5 dark:text-teal-400">
+                      {t("vegetarian")}
+                    </Badge>
+                  )}
+                  {recipe.isLactoseFree && (
+                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-blue-500/20 text-blue-600 bg-blue-500/5 dark:text-blue-400">
+                      {t("lactoseFree")}
+                    </Badge>
+                  )}
                   {recipe.folderId && (
                     <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-amber-500/20 text-amber-500 flex items-center gap-1 bg-amber-500/5">
                       <Folder className="h-3.5 w-3.5" />
