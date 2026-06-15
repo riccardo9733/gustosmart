@@ -280,6 +280,9 @@ export function mergeRecipe(
     rating: override?.rating ?? null,
     isCustomized: override?.isCustomized ?? false,
     folderId: override?.folderId ?? null,
+    creatorUsername: global?.creatorUsername ?? null,
+    creatorFullName: global?.creatorFullName ?? null,
+    creatorId: global?.creatorId ?? null,
   };
 }
 
