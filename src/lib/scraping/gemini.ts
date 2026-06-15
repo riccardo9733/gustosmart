@@ -387,7 +387,7 @@ Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includ
  */
 export async function transformRecipe(
   recipe: any,
-  targetType: "vegan" | "vegetarian" | "lactose_free" | "gluten_free"
+  targetType: "vegan" | "vegetarian" | "lactose_free" | "gluten_free" | "light"
 ): Promise<any> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -405,7 +405,9 @@ export async function transformRecipe(
   } else if (targetType === "lactose_free") {
     transformationGuideline = "Rendi la ricetta priva di lattosio (lactose-free). Sostituisci tutti i latticini e ingredienti contenenti lattosio (latte vaccino, burro, panna, formaggi frescos come ricotta, mozzarella, ecc.) con le loro versioni delattosate (senza lattosio) o alternative vegetali (es. latte senza lattosio, latte di soia/mandorla, burro senza lattosio o margarina, olio). Nota: i formaggi naturalmente privi di lattosio a causa di lunga stagionatura (es. Parmigiano Reggiano oltre i 24-30 mesi) possono essere mantenuti specificando 'stagionato' o 'senza lattosio'.";
   } else if (targetType === "gluten_free") {
-    transformationGuideline = "Rendi la ricetta priva di glutine (gluten-free). Sostituisci tutti gli ingredienti contenenti glutine (grano, farina di grano/frumento, farro, orzo, segale, avena non certificata, pane, pasta tradizionale, birra, lievito di birra industriale se non certificato gluten-free, ecc.) con i loro equivalenti certificati senza glutine o alternative naturalmente prive di glutine (es. farina senza glutine / mix universale, pasta di riso/mais/legumi, pane gluten-free, riso, mais, quinoa, ecc.). Assicurati che non vi siano contaminazioni crociate negli ingredienti.";
+    transformationGuideline = "Rendi la ricetta priva di glutine (gluten-free). Sostituisci tutti gli ingredienti contenenti glutine (grano, farina di grano/frumento, farro, orzo, segale, avena non certificata, pane, pasta tradicional, birra, lievito di birra industriale se non certificato gluten-free, ecc.) con i loro equivalenti certificati senza glutine o alternative naturalmente prive di glutine (es. farina senza glutine / mix universale, pasta di riso/mais/legumi, pane gluten-free, riso, mais, quinoa, ecc.). Assicurati che non vi siano contaminazioni crociate negli ingredienti.";
+  } else if (targetType === "light") {
+    transformationGuideline = "Rendi la ricetta in versione light, con l'obiettivo di ridurre le calorie (kcal) complessive di almeno il 30-40% rispetto alla ricetta originale. Sostituisci o riduci gli ingredienti ad alto contenuto calorico (es. ridurre o sostituire grassi come burro, olio e panna con yogurt greco magro, ricotta light, purè di mele o grassi insaturi in quantità minore; ridurre gli zuccheri o sostituirli con edulcoranti naturali a zero calorie come eritritolo o stevia). Cerca di massimizzare o preservare le proteine e le fibre alimentari, mantenendo comunque il volume e la consistenza della preparazione finale.";
   }
 
   const prompt = `

@@ -278,7 +278,7 @@ export default function RecipeDetailPage() {
     const fetchVersions = async () => {
       try {
         const db = getFirebaseDb();
-        const versionIds = ["vegan", "vegetarian", "lactose_free", "gluten_free"];
+        const versionIds = ["vegan", "vegetarian", "lactose_free", "gluten_free", "light"];
         const loadedVersions: Record<string, any> = {};
 
         for (const vId of versionIds) {
@@ -297,7 +297,7 @@ export default function RecipeDetailPage() {
     fetchVersions();
   }, [recipe?.id, versionsFetched]);
 
-  const handleTransform = async (targetType: "vegan" | "vegetarian" | "lactose_free" | "gluten_free") => {
+  const handleTransform = async (targetType: "vegan" | "vegetarian" | "lactose_free" | "gluten_free" | "light") => {
     if (!recipe || !user) return;
     setLoadingVersionType(targetType);
     const toastId = toast.loading(t("generatingVersion"));
@@ -816,8 +816,13 @@ export default function RecipeDetailPage() {
 
   const activeRecipe = activeVersionId && versions[activeVersionId] ? versions[activeVersionId] : recipe;
   const hasAdaptationsAvailable = 
-    recipe && 
-    (!recipe.isVegan || !recipe.isVegetarian || !recipe.isLactoseFree || !recipe.isGlutenFree);
+    recipe && (
+      !recipe.isVegan || 
+      !recipe.isVegetarian || 
+      !recipe.isLactoseFree || 
+      !recipe.isGlutenFree ||
+      (recipe.kcal !== undefined && recipe.kcal !== null && recipe.kcal > 350)
+    );
   const isPendingAnalysis = !!recipe && (
     recipe.isVegan === undefined || recipe.isVegan === null ||
     recipe.isVegetarian === undefined || recipe.isVegetarian === null ||
@@ -1473,6 +1478,40 @@ export default function RecipeDetailPage() {
                         </span>
                       </Button>
                     )}
+
+                    {/* Light version button */}
+                    {recipe.kcal !== undefined && recipe.kcal !== null && recipe.kcal > 350 && (
+                      <Button
+                        disabled={loadingVersionType !== null}
+                        onClick={() => {
+                          if (versions.light) {
+                            setActiveVersionId(activeVersionId === "light" ? null : "light");
+                          } else {
+                            handleTransform("light");
+                          }
+                        }}
+                        variant={activeVersionId === "light" ? "default" : "secondary"}
+                        className={cn(
+                          "rounded-full flex items-center gap-2 text-xs font-semibold shadow-sm transition-all duration-200",
+                          activeVersionId === "light"
+                            ? "bg-rose-600 hover:bg-rose-700 text-white"
+                            : "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                        )}
+                      >
+                        {loadingVersionType === "light" ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : versions.light ? (
+                          <Flame className="w-4 h-4" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
+                        <span>
+                          {versions.light
+                            ? activeVersionId === "light" ? t("light") : t("viewLight")
+                            : t("makeLight")}
+                        </span>
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -1490,7 +1529,9 @@ export default function RecipeDetailPage() {
                             ? "Vegetariana"
                             : activeVersionId === "lactose_free"
                             ? "Senza Lattosio"
-                            : "Senza Glutine"}
+                            : activeVersionId === "gluten_free"
+                            ? "Senza Glutine"
+                            : "Light"}
                         </span>
                       </span>
                     </div>

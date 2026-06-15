@@ -14,7 +14,7 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    if (!targetType || !["vegan", "vegetarian", "lactose_free", "gluten_free"].includes(targetType)) {
+    if (!targetType || !["vegan", "vegetarian", "lactose_free", "gluten_free", "light"].includes(targetType)) {
       return NextResponse.json(
         { success: false, error: "Il tipo di adattamento non è valido" },
         { status: 400 }
