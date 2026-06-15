@@ -28,6 +28,7 @@ import {
   getDocs,
   doc,
   getDoc,
+  updateDoc,
   limit,
   startAfter,
   where,
@@ -52,12 +53,11 @@ export const recipeKeys = {
 /**
  * Fetches all recipes in the user's personal collection.
  * Strategy:
- * 1. getDocs on /users/{uid}/recipes/ (all user's recipe references)
- * 2. For each ref, getDoc on /recipes/{id} (global recipe data)
- *    — TanStack Query deduplicates if a recipe detail was already fetched.
- * 3. Merge global + personal override into MergedRecipe[]
+ * 1. getDocs on /users/{uid}/recipes/ (fetches all personal overrides + denormalized card fields)
+ * 2. Self-healing lazy migration: if any document lacks denormalized card fields, fetches the global recipe and updates the override on the fly.
+ * 3. Directly maps overrides into MergedRecipe[] without global fetches for migrated recipes.
  *
- * staleTime: 5 minutes (from defaultOptions) — no re-fetch on navigation.
+ * staleTime: Infinity (cached indefinitely in memory, invalidated on mutations)
  */
 export function useRecipes() {
   const { user } = useAuth();
@@ -68,32 +68,58 @@ export function useRecipes() {
     queryFn: async () => {
       if (!user) return [];
 
-      // 1. Fetch all personal override docs (one query, returns only refs + customizations)
+      // 1. Fetch all personal override docs (one query, returns refs + customizations + denormalized card fields)
       const overrides = await getUserRecipeOverrides(user.uid);
       if (overrides.length === 0) return [];
 
-      // 2. Fetch all global recipe docs in parallel
-      const globals = await Promise.all(
-        overrides.map((o) => getGlobalRecipe(o.recipeId))
-      );
+      const db = getFirebaseDb();
+      const merged: MergedRecipe[] = [];
 
-      // 3. Merge and sort by addedAt descending
-      const merged: MergedRecipe[] = overrides
-        .map((override, idx) => {
-          const global = globals[idx];
-          if (!global) return null;
-          return mergeRecipe(global, override);
-        })
-        .filter((r): r is MergedRecipe => r !== null)
-        .sort((a, b) => {
-          const aMs = a.addedAt?.toMillis?.() ?? 0;
-          const bMs = b.addedAt?.toMillis?.() ?? 0;
-          return bMs - aMs;
-        });
+      // 2. Perform a lazy migration on the client for any documents that are missing denormalized fields
+      const migrationPromises = overrides.map(async (override) => {
+        if (override.title && override.category) {
+          merged.push(mergeRecipe(null, override));
+          return;
+        }
 
-      return merged;
+        // Fallback for non-migrated documents: fetch global and update user override document
+        try {
+          const global = await getGlobalRecipe(override.recipeId);
+          if (!global) return;
+
+          merged.push(mergeRecipe(global, override));
+
+          // Save the denormalized fields in the background
+          const userRecipeRef = doc(db, "users", user.uid, "recipes", override.recipeId);
+          updateDoc(userRecipeRef, {
+            title: global.title,
+            category: global.category || "other",
+            prepTimeMinutes: global.prepTimeMinutes || null,
+            servings: global.servings || 2,
+            sourcePlatform: global.sourcePlatform || "web",
+            ingredients: global.ingredients || [],
+            isGlutenFree: global.isGlutenFree ?? null,
+            isVegan: global.isVegan ?? null,
+            isVegetarian: global.isVegetarian ?? null,
+            isLactoseFree: global.isLactoseFree ?? null,
+          }).catch((err) => {
+            console.error("Error updating denormalized fields in background:", err);
+          });
+        } catch (error) {
+          console.error(`Error fetching fallback global recipe for ID ${override.recipeId}:`, error);
+        }
+      });
+
+      await Promise.all(migrationPromises);
+
+      // 3. Sort by addedAt descending
+      return merged.sort((a, b) => {
+        const aMs = a.addedAt?.toMillis?.() ?? 0;
+        const bMs = b.addedAt?.toMillis?.() ?? 0;
+        return bMs - aMs;
+      });
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
   });
 }
 

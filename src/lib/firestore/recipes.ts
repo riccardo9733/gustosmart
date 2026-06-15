@@ -72,6 +72,18 @@ export interface UserRecipeOverride {
   rating: number | null;
   isCustomized: boolean;
   folderId?: string | null;
+
+  // Denormalized fields from GlobalRecipe for card rendering
+  title?: string;
+  category?: string;
+  prepTimeMinutes?: number | null;
+  servings?: number;
+  sourcePlatform?: string;
+  ingredients?: Ingredient[];
+  isGlutenFree?: boolean | null;
+  isVegan?: boolean | null;
+  isVegetarian?: boolean | null;
+  isLactoseFree?: boolean | null;
 }
 
 /**
@@ -147,11 +159,17 @@ export async function getUserRecipeOverrides(userId: string): Promise<UserRecipe
 /**
  * Adds a recipe to the user's personal collection by creating
  * /users/{uid}/recipes/{recipeId} with a reference to the global recipe.
- * All custom fields are null (unmodified) on first add.
+ * Fetches the global recipe to populate denormalized fields.
  */
 export async function addToUserRecipes(userId: string, recipeId: string): Promise<void> {
   const db = getFirebaseDb();
   const globalRef = doc(db, "recipes", recipeId);
+  const globalSnap = await getDoc(globalRef);
+  if (!globalSnap.exists()) {
+    throw new Error(`Global recipe with ID ${recipeId} not found`);
+  }
+  const globalData = globalSnap.data() as GlobalRecipe;
+
   const userRecipeRef = doc(db, "users", userId, "recipes", recipeId);
 
   await setDoc(userRecipeRef, {
@@ -164,6 +182,18 @@ export async function addToUserRecipes(userId: string, recipeId: string): Promis
     rating: null,
     isCustomized: false,
     folderId: null,
+
+    // Denormalized fields
+    title: globalData.title,
+    category: globalData.category || "other",
+    prepTimeMinutes: globalData.prepTimeMinutes || null,
+    servings: globalData.servings || 2,
+    sourcePlatform: globalData.sourcePlatform || "web",
+    ingredients: globalData.ingredients || [],
+    isGlutenFree: globalData.isGlutenFree ?? null,
+    isVegan: globalData.isVegan ?? null,
+    isVegetarian: globalData.isVegetarian ?? null,
+    isLactoseFree: globalData.isLactoseFree ?? null,
   });
 }
 
@@ -211,22 +241,45 @@ export async function saveUserRecipeCustomizations(
 
 /**
  * Merges a global recipe with the user's personal override.
- * Custom fields take precedence; falls back to global values.
+ * Custom fields take precedence; falls back to global/denormalized values.
  */
 export function mergeRecipe(
-  global: GlobalRecipe,
+  global: GlobalRecipe | null,
   override: UserRecipeOverride | null
 ): MergedRecipe {
+  const effectiveId = override?.recipeId ?? global?.id ?? "";
+
   return {
-    ...global,
+    id: effectiveId,
+    sourceUrl: global?.sourceUrl ?? "",
+    sourcePlatform: override?.sourcePlatform ?? global?.sourcePlatform ?? "web",
+    title: override?.customTitle ?? override?.title ?? global?.title ?? "",
+    sourceLanguage: global?.sourceLanguage ?? "it",
+    ingredients: override?.customIngredients ?? override?.ingredients ?? global?.ingredients ?? [],
+    instructions: override?.customInstructions ?? global?.instructions ?? [],
+    imageUrl: global?.imageUrl ?? null,
+    prepTimeMinutes: override?.prepTimeMinutes ?? global?.prepTimeMinutes ?? null,
+    servings: override?.servings ?? global?.servings ?? 2,
+    category: override?.category ?? global?.category ?? "other",
+    kcal: global?.kcal ?? null,
+    proteins: global?.proteins ?? null,
+    carbs: global?.carbs ?? null,
+    fats: global?.fats ?? null,
+    fiber: global?.fiber ?? null,
+    sugar: global?.sugar ?? null,
+    nutritionalRating: global?.nutritionalRating ?? null,
+    nutritionalAssessment: global?.nutritionalAssessment ?? null,
+    isGlutenFree: override?.isGlutenFree ?? global?.isGlutenFree ?? null,
+    isVegan: override?.isVegan ?? global?.isVegan ?? null,
+    isVegetarian: override?.isVegetarian ?? global?.isVegetarian ?? null,
+    isLactoseFree: override?.isLactoseFree ?? global?.isLactoseFree ?? null,
+    createdAt: global?.createdAt ?? null,
+    createdBy: global?.createdBy ?? "",
     addedAt: override?.addedAt ?? null,
     personalNotes: override?.personalNotes ?? null,
     rating: override?.rating ?? null,
     isCustomized: override?.isCustomized ?? false,
     folderId: override?.folderId ?? null,
-    title: override?.customTitle ?? global.title,
-    ingredients: override?.customIngredients ?? global.ingredients,
-    instructions: override?.customInstructions ?? global.instructions,
   };
 }
 
