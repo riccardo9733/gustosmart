@@ -391,7 +391,7 @@ const policiesData: Record<
     },
     cookie: {
       title: "Informativa sui Cookie",
-      subtitle: "GustoSmart utilizza esclusivamente cookie tecnici essenziali. Non utilizziamo cookie di tracciamento, profilazione o pubblicità di terze parti. Di seguito trovi i dettagli su come gestiamo queste informazioni.",
+      subtitle: "GustoSmart utilizza cookie tecnici essenziali e, previo tuo consenso, cookie opzionali di tracciamento e diagnostica di terze parti per migliorare il servizio. Di seguito trovi i dettagli su come gestiamo queste informazioni.",
       lastUpdated: "Ultimo aggiornamento: Giugno 2026",
       sections: [
         {
@@ -423,6 +423,18 @@ const policiesData: Record<
           type: "Tecnico / Preferenza",
           purpose: "Memorizza la scelta del tema grafico dell'utente (Chiaro, Scuro, Sistema) gestito tramite next-themes.",
           duration: "Persistente",
+        },
+        {
+          name: "_ga, _ga_*",
+          type: "Analytics (Terze parti)",
+          purpose: "Utilizzato da Google Analytics per distinguere gli utenti e raccogliere dati sull'uso dell'app in forma aggregata e anonima.",
+          duration: "2 anni",
+        },
+        {
+          name: "betterstack",
+          type: "Diagnostica & Analytics (Terze parti)",
+          purpose: "Utilizzato per il tracciamento delle prestazioni dell'applicazione e per raccogliere log diagnostici.",
+          duration: "Sessione / Persistente",
         },
       ],
     },
@@ -467,7 +479,7 @@ const policiesData: Record<
     },
     cookie: {
       title: "Cookie Policy",
-      subtitle: "GustoSmart uses strictly technical cookies. We do not use tracking, profiling, or third-party advertising cookies. Below are the details of how we handle this information.",
+      subtitle: "GustoSmart uses essential technical cookies and, with your consent, optional third-party tracking and diagnostics cookies to improve the user experience. Below are the details of how we handle this information.",
       lastUpdated: "Last updated: June 2026",
       sections: [
         {
@@ -499,6 +511,18 @@ const policiesData: Record<
           type: "Technical / Preference",
           purpose: "Stores the user's graphic theme preference (Light, Dark, System) managed via next-themes.",
           duration: "Persistent",
+        },
+        {
+          name: "_ga, _ga_*",
+          type: "Analytics (Third-party)",
+          purpose: "Used by Google Analytics to distinguish users and gather aggregate, anonymous app usage data.",
+          duration: "2 years",
+        },
+        {
+          name: "betterstack",
+          type: "Diagnostics & Analytics (Third-party)",
+          purpose: "Used to monitor application performance and gather diagnostic logs.",
+          duration: "Session / Persistent",
         },
       ],
     },
@@ -543,7 +567,7 @@ const policiesData: Record<
     },
     cookie: {
       title: "Política de Cookies",
-      subtitle: "GustoSmart utiliza exclusivamente cookies técnicas esenciales. No utilizamos cookies de seguimiento, creación de perfiles ni publicidad de terceros. A continuación se detallan cómo tratamos esta información.",
+      subtitle: "GustoSmart utiliza cookies técnicas esenciales y, con su consentimiento, cookies opcionales de seguimiento y diagnóstico de terceros para mejorar la experiencia de usuario. A continuación se detallan cómo tratamos esta información.",
       lastUpdated: "Última actualización: Junio 2026",
       sections: [
         {
@@ -575,6 +599,18 @@ const policiesData: Record<
           type: "Técnica / Preferencia",
           purpose: "Memoriza la preferencia de tema gráfico del usuario (claro, oscuro, sistema) gestionado a través de next-themes.",
           duration: "Persistente",
+        },
+        {
+          name: "_ga, _ga_*",
+          type: "Análisis (Terceros)",
+          purpose: "Utilizado por Google Analytics para distinguir a los usuarios y recopilar datos agregados y anónimos de uso de la aplicación.",
+          duration: "2 años",
+        },
+        {
+          name: "betterstack",
+          type: "Diagnóstico y Análisis (Terceros)",
+          purpose: "Utilizado para supervisar el rendimiento de la aplicación y recopilar registros de diagnóstico.",
+          duration: "Sesión / Persistente",
         },
       ],
     },
@@ -619,13 +655,13 @@ const policiesData: Record<
     },
     cookie: {
       title: "Politique de Cookies",
-      subtitle: "GustoSmart utilise uniquement des cookies techniques essentiels. Nous n'utilisons pas de cookies de suivi, de profilage ou de publicité de tiers. Vous trouverez ci-dessous les détails sur la manière dont nous gérons ces informations.",
+      subtitle: "GustoSmart utilise des cookies techniques essentiels et, avec votre consentement, des cookies de suivi et de diagnostic tiers facultatifs pour améliorer l'expérience utilisateur. Vous trouverez ci-dessous les détails sur la manière dont nous gérons ces informations.",
       lastUpdated: "Dernière mise à jour: Juin 2026",
       sections: [
         {
           icon: "lock",
           title: "Que sont les cookies techniques?",
-          text: "Les cookies sont de petits fichiers texte enregistrés sur votre appareil lors de votre navigation. Les cookies techniques servent uniquement à faire fonctionner l'application ou à enregistrer vos préférences d'utilisation. Comme ils sont strictement nécessaires pour fournir le service, le RGPD ne requiert pas votre consentement explicite pour les activer, mais il est essentiel de vous en informer.",
+          text: "Les cookies sont de petits fichiers texte enregistés sur votre appareil lors de votre navigation. Les cookies techniques servent uniquement à faire fonctionner l'application ou à enregistrer vos préférences d'utilisation. Comme ils sont strictement nécessaires pour fournir le service, le RGPD ne requiert pas votre consentement explicite pour les activer, mais il est essentiel de vous en informer.",
         },
         {
           icon: "database",
@@ -651,6 +687,18 @@ const policiesData: Record<
           type: "Technique / Préférence",
           purpose: "Mémorise la préférence de thème graphique de l'utilisateur (clair, sombre, système) géré via next-themes.",
           duration: "Persistant",
+        },
+        {
+          name: "_ga, _ga_*",
+          type: "Analytics (Tierces)",
+          purpose: "Utilisé par Google Analytics pour distinguer les utilisateurs et collecter des données d'utilisation de l'application agrégées et anonymes.",
+          duration: "2 ans",
+        },
+        {
+          name: "betterstack",
+          type: "Diagnostics et Analytics (Tierces)",
+          purpose: "Utilisé pour surveiller les performances de l'application et collecter des journaux de diagnostic.",
+          duration: "Session / Persistant",
         },
       ],
     },
