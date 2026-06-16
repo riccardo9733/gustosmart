@@ -43,6 +43,7 @@ import { GoogleIcon } from "@/components/icons/google-icon";
 import { useAuth } from "@/contexts/auth-context";
 import { usePWA } from "@/contexts/pwa-context";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebase";
+import { PolicyDrawer } from "@/components/policy-drawer";
 
 /* -------------------------------------------------- */
 /*  Helpers                                           */
@@ -114,6 +115,7 @@ function LoginForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [activePolicy, setActivePolicy] = useState<"privacy" | "cookie" | null>(null);
   const blobsRef = useRef<HTMLDivElement>(null);
   const bannerTrackedRef = useRef(false);
 
@@ -624,9 +626,21 @@ function LoginForm() {
 
         {/* Footer */}
         <footer className="mt-8 flex justify-center gap-6 text-xs text-muted-foreground/60">
-          <Link href="#" className="transition-colors hover:text-primary">
+          <button
+            type="button"
+            onClick={() => setActivePolicy("privacy")}
+            className="transition-colors hover:text-primary cursor-pointer hover:underline focus:outline-none"
+          >
             {t("privacyPolicy")}
-          </Link>
+          </button>
+          <span>•</span>
+          <button
+            type="button"
+            onClick={() => setActivePolicy("cookie")}
+            className="transition-colors hover:text-primary cursor-pointer hover:underline focus:outline-none"
+          >
+            {t("cookiePolicy")}
+          </button>
           <span>•</span>
           <Link href="#" className="transition-colors hover:text-primary">
             {t("termsOfService")}
@@ -668,6 +682,12 @@ function LoginForm() {
           </div>
         </div>
       )}
+
+      <PolicyDrawer
+        isOpen={activePolicy !== null}
+        onClose={() => setActivePolicy(null)}
+        type={activePolicy}
+      />
     </div>
   );
 }

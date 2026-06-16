@@ -22,6 +22,7 @@
     "newToKitchen": "Nouveau en cuisine?",
     "alreadyHaveAccount": "Vous avez déjà un compte?",
     "privacyPolicy": "Politique de Confidentialité",
+    "cookiePolicy": "Politique de Cookies",
     "termsOfService": "Conditions d'Utilisation",
     "errorInvalidEmail": "L'adresse email n'est pas valide.",
     "errorUserDisabled": "Ce compte a été désactivé.",
@@ -132,7 +133,9 @@
     "typeError": "Type de fichier non pris en charge. Veuillez télécharger une image.",
     "dragDrop": "Glissez l'image ici ou cliquez pour parcourir",
     "limits": "Prend en charge JPG, PNG, WEBP, GIF (Max 10 Mo)",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "privacyPolicy": "Politique de Confidentialité",
+    "cookiePolicy": "Politique de Cookies"
   },
   "Recipes": {
     "title": "Votre Carnet de Recettes",

@@ -22,6 +22,7 @@
     "newToKitchen": "New to the kitchen?",
     "alreadyHaveAccount": "Already have an account?",
     "privacyPolicy": "Privacy Policy",
+    "cookiePolicy": "Cookie Policy",
     "termsOfService": "Terms of Service",
     "errorInvalidEmail": "The email address is invalid.",
     "errorUserDisabled": "This account has been disabled.",
@@ -132,7 +133,9 @@
     "typeError": "Unsupported file type. Please upload an image.",
     "dragDrop": "Drag image here or click to browse",
     "limits": "Supports JPG, PNG, WEBP, GIF (Max 10MB)",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "privacyPolicy": "Privacy Policy",
+    "cookiePolicy": "Cookie Policy"
   },
   "Recipes": {
     "title": "Your Recipes",

@@ -22,6 +22,7 @@
     "newToKitchen": "Nuovo in cucina?",
     "alreadyHaveAccount": "Hai già un account?",
     "privacyPolicy": "Privacy Policy",
+    "cookiePolicy": "Cookie Policy",
     "termsOfService": "Termini di Servizio",
     "errorInvalidEmail": "L'indirizzo email non è valido.",
     "errorUserDisabled": "Questo account è stato disattivato.",
@@ -132,7 +133,9 @@
     "typeError": "Tipo di file non supportato. Carica un'immagine.",
     "dragDrop": "Trascina qui l'immagine o clicca per sfogliare",
     "limits": "Supporta JPG, PNG, WEBP, GIF (Max 10MB)",
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "privacyPolicy": "Privacy Policy",
+    "cookiePolicy": "Cookie Policy"
   },
   "Recipes": {
     "title": "Il Tuo Ricettario",

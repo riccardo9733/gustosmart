@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ProfileImageDrawer } from "@/components/profile-image-drawer";
+import { PolicyDrawer } from "@/components/policy-drawer";
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
@@ -46,6 +47,7 @@ export default function ProfilePage() {
   const [timerAlerts, setTimerAlerts] = useState(true);
   const [recipeRecs, setRecipeRecs] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [activePolicy, setActivePolicy] = useState<"privacy" | "cookie" | null>(null);
 
   const [languages, setLanguages] = useState<any[]>([
     { code: "it", name: "Italiano", flag: "🇮🇹" },
@@ -429,14 +431,33 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Version Info */}
-        <div className="text-center pt-6 pb-10 space-y-1">
-          <p className="text-[11px] font-bold text-muted-foreground tracking-wide">
-            {t("version")}
-          </p>
-          <p className="text-[11px] text-muted-foreground/60">
-            {t("designedFor")}
-          </p>
+        {/* Version Info & Legal Links */}
+        <div className="text-center pt-6 pb-10 space-y-3">
+          <div className="space-y-1">
+            <p className="text-[11px] font-bold text-muted-foreground tracking-wide">
+              {t("version")}
+            </p>
+            <p className="text-[11px] text-muted-foreground/60">
+              {t("designedFor")}
+            </p>
+          </div>
+          <div className="flex justify-center gap-4 text-[11px] text-muted-foreground/60">
+            <button
+              type="button"
+              onClick={() => setActivePolicy("privacy")}
+              className="hover:text-primary transition-colors cursor-pointer hover:underline focus:outline-none"
+            >
+              {t("privacyPolicy")}
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => setActivePolicy("cookie")}
+              className="hover:text-primary transition-colors cursor-pointer hover:underline focus:outline-none"
+            >
+              {t("cookiePolicy")}
+            </button>
+          </div>
         </div>
 
       </div>
@@ -448,6 +469,12 @@ export default function ProfilePage() {
           userId={profile.uid}
         />
       )}
+
+      <PolicyDrawer
+        isOpen={activePolicy !== null}
+        onClose={() => setActivePolicy(null)}
+        type={activePolicy}
+      />
     </div>
   );
 }
