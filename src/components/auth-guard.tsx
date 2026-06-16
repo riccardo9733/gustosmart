@@ -18,7 +18,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && (!user || !user.emailVerified)) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
     }
   }, [user, loading, router, pathname]);
@@ -35,11 +35,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // --- Not authenticated → redirect in progress ---
-  if (!user) {
+  // --- Not authenticated or not verified → redirect in progress ---
+  if (!user || !user.emailVerified) {
     return null;
   }
 
-  // --- Authenticated ---
+  // --- Authenticated & Verified ---
   return <>{children}</>;
 }

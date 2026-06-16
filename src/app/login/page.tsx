@@ -10,8 +10,11 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   updateProfile,
+  sendEmailVerification,
+  signOut,
   type AuthError,
 } from "firebase/auth";
+import { isWhitelistedEmail } from "@/lib/email-validation";
 import {
   doc,
   getDoc,
@@ -110,15 +113,18 @@ function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [verificationSent, setVerificationSent] = useState(false);
   const blobsRef = useRef<HTMLDivElement>(null);
   const bannerTrackedRef = useRef(false);
 
   const redirectTo = searchParams.get("redirect") || "/";
 
-  /* ------ If already authenticated, redirect away ------ */
+  /* ------ If already authenticated and email verified, redirect away ------ */
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace(redirectTo);
+      if (user.emailVerified) {
+        router.replace(redirectTo);
+      }
     }
   }, [user, authLoading, router, redirectTo]);
 
@@ -165,6 +171,7 @@ function LoginForm() {
     setError(null);
     setPassword("");
     setConfirmPassword("");
+    setVerificationSent(false);
   }
 
   /* ------ Email / Password form submission ------ */
@@ -174,11 +181,33 @@ function LoginForm() {
 
     setError(null);
 
+    // Validate email domain against whitelist
+    if (!isWhitelistedEmail(email)) {
+      setError(t("errorInvalidEmailDomain"));
+      return;
+    }
+
     if (mode === "login") {
       setIsSubmitting(true);
       try {
         const auth = getFirebaseAuth();
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const signedInUser = userCredential.user;
+
+        if (!signedInUser.emailVerified) {
+          try {
+            await sendEmailVerification(signedInUser);
+            setError(t("errorEmailNotVerified"));
+          } catch (verifErr) {
+            console.error("Error sending verification email during login:", verifErr);
+            setError(t("errorEmailNotVerified"));
+          } finally {
+            await signOut(auth);
+            setIsSubmitting(false);
+          }
+          return;
+        }
+
         handleSuccess();
       } catch (err) {
         setError(getErrorMessage(err as AuthError, t));
@@ -226,7 +255,21 @@ function LoginForm() {
           updatedAt: serverTimestamp(),
         });
 
-        handleSuccess();
+        // 4. Send email verification
+        try {
+          await sendEmailVerification(registeredUser);
+        } catch (verifErr) {
+          console.error("Error sending verification email during signup:", verifErr);
+        }
+
+        // 5. Sign out immediately so they must verify and log in
+        await signOut(auth);
+
+        // 6. Reset form state and show verification sent screen
+        setVerificationSent(true);
+        setPassword("");
+        setConfirmPassword("");
+        setIsSubmitting(false);
       } catch (err) {
         setError(getErrorMessage(err as AuthError, t));
         setIsSubmitting(false);
@@ -331,224 +374,251 @@ function LoginForm() {
         {/* -- Login/Signup Card -- */}
         <Card className="glass-panel border-0 rounded-[32px] shadow-2xl shadow-primary/5">
           <CardContent className="p-8">
-            {/* Card title */}
-            <div className="mb-8 space-y-1 text-center">
-              <h2 className="font-heading text-2xl font-semibold text-foreground">
-                {mode === "login" ? t("welcomeBack") : t("createAccount")}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {mode === "login" ? t("loginTitle") : t("signupTitle")}
-              </p>
-            </div>
-
-            {/* ---- Error Banner ---- */}
-            {error && (
-              <div className="mb-6 flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                <p className="text-sm text-destructive">{error}</p>
+            {verificationSent ? (
+              <div className="text-center space-y-6 py-4 animate-in fade-in duration-500">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <CheckCircle2 className="h-8 w-8" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="font-heading text-2xl font-semibold text-foreground">
+                    {t("createAccount")}
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t("signupVerificationSent")}
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setVerificationSent(false);
+                    setMode("login");
+                  }}
+                  className="w-full rounded-xl py-6 terracotta-gradient text-white font-semibold shadow-lg shadow-primary/20 hover:scale-[1.01] hover:shadow-primary/30 transition-transform duration-300"
+                >
+                  {t("login")}
+                </Button>
               </div>
-            )}
+            ) : (
+              <>
+                {/* Card title */}
+                <div className="mb-8 space-y-1 text-center">
+                  <h2 className="font-heading text-2xl font-semibold text-foreground">
+                    {mode === "login" ? t("welcomeBack") : t("createAccount")}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {mode === "login" ? t("loginTitle") : t("signupTitle")}
+                  </p>
+                </div>
 
-            {/* Google login */}
-            <Button
-              id="google-login-btn"
-              variant="outline"
-              disabled={isLoading || isSuccess}
-              onClick={handleGoogleLogin}
-              className="w-full gap-3 rounded-xl border-outline-variant bg-white py-6 text-sm font-semibold text-foreground shadow-sm transition-all duration-300 hover:bg-surface-container-low active:scale-[0.98] dark:bg-surface-container-lowest dark:hover:bg-surface-container-low"
-            >
-              {isGoogleLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <GoogleIcon />
-              )}
-              {mode === "login" ? t("googleLogin") : t("googleSignup")}
-            </Button>
-
-            {/* Divider */}
-            <div className="relative my-8">
-              <Separator className="bg-outline-variant" />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                {t("orEmail")}
-              </span>
-            </div>
-
-            {/* Email / Password form */}
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {/* Full Name (Sign Up only) */}
-              {mode === "signup" && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <Label htmlFor="name" className="px-1 text-sm font-semibold">
-                    {t("nameLabel")}
-                  </Label>
-                  <div className="relative">
-                    <UserIcon className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Chef Gusto"
-                      required
-                      disabled={isLoading || isSuccess}
-                      className="h-12 rounded-xl border-outline-variant bg-surface-container-lowest/50 pl-12 pr-4 text-base transition-all duration-300 placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
-                    />
+                {/* ---- Error Banner ---- */}
+                {error && (
+                  <div className="mb-6 flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                    <p className="text-sm text-destructive">{error}</p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="px-1 text-sm font-semibold">
-                  {t("emailLabel")}
-                </Label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="chef@gustosmart.com"
-                    required
-                    disabled={isLoading || isSuccess}
-                    className="h-12 rounded-xl border-outline-variant bg-surface-container-lowest/50 pl-12 pr-4 text-base transition-all duration-300 placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between px-1">
-                  <Label htmlFor="password" className="text-sm font-semibold">
-                    {t("passwordLabel")}
-                  </Label>
-                  {mode === "login" && (
-                    <Link
-                      href="#"
-                      className="text-xs font-medium text-primary transition-all hover:underline"
-                    >
-                      {t("forgotPassword")}
-                    </Link>
+                {/* Google login */}
+                <Button
+                  id="google-login-btn"
+                  variant="outline"
+                  disabled={isLoading || isSuccess}
+                  onClick={handleGoogleLogin}
+                  className="w-full gap-3 rounded-xl border-outline-variant bg-white py-6 text-sm font-semibold text-foreground shadow-sm transition-all duration-300 hover:bg-surface-container-low active:scale-[0.98] dark:bg-surface-container-lowest dark:hover:bg-surface-container-low"
+                >
+                  {isGoogleLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <GoogleIcon />
                   )}
-                </div>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    disabled={isLoading || isSuccess}
-                    className="h-12 rounded-xl border-outline-variant bg-surface-container-lowest/50 pl-12 pr-12 text-base transition-all duration-300 placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
-                  />
-                  <button
-                    type="button"
-                    id="toggle-password-btn"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-primary"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-[18px] w-[18px]" />
-                    ) : (
-                      <Eye className="h-[18px] w-[18px]" />
-                    )}
-                  </button>
-                </div>
-              </div>
+                  {mode === "login" ? t("googleLogin") : t("googleSignup")}
+                </Button>
 
-              {/* Confirm Password (Sign Up only) */}
-              {mode === "signup" && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <Label htmlFor="confirmPassword" className="px-1 text-sm font-semibold">
-                    {t("confirmPasswordLabel")}
-                  </Label>
-                  <div className="relative">
-                    <Lock className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="confirmPassword"
-                      type={showPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      disabled={isLoading || isSuccess}
-                      className="h-12 rounded-xl border-outline-variant bg-surface-container-lowest/50 pl-12 pr-12 text-base transition-all duration-300 placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
-                    />
+                {/* Divider */}
+                <div className="relative my-8">
+                  <Separator className="bg-outline-variant" />
+                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                    {t("orEmail")}
+                  </span>
+                </div>
+
+                {/* Email / Password form */}
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                  {/* Full Name (Sign Up only) */}
+                  {mode === "signup" && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <Label htmlFor="name" className="px-1 text-sm font-semibold">
+                        {t("nameLabel")}
+                      </Label>
+                      <div className="relative">
+                        <UserIcon className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="name"
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Chef Gusto"
+                          required
+                          disabled={isLoading || isSuccess}
+                          className="h-12 rounded-xl border-outline-variant bg-surface-container-lowest/50 pl-12 pr-4 text-base transition-all duration-300 placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="px-1 text-sm font-semibold">
+                      {t("emailLabel")}
+                    </Label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="chef@gustosmart.com"
+                        required
+                        disabled={isLoading || isSuccess}
+                        className="h-12 rounded-xl border-outline-variant bg-surface-container-lowest/50 pl-12 pr-4 text-base transition-all duration-300 placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
+                      />
+                    </div>
                   </div>
+
+                  {/* Password */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-1">
+                      <Label htmlFor="password" className="text-sm font-semibold">
+                        {t("passwordLabel")}
+                      </Label>
+                      {mode === "login" && (
+                        <Link
+                          href="#"
+                          className="text-xs font-medium text-primary transition-all hover:underline"
+                        >
+                          {t("forgotPassword")}
+                        </Link>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        disabled={isLoading || isSuccess}
+                        className="h-12 rounded-xl border-outline-variant bg-surface-container-lowest/50 pl-12 pr-12 text-base transition-all duration-300 placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
+                      />
+                      <button
+                        type="button"
+                        id="toggle-password-btn"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-primary"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-[18px] w-[18px]" />
+                        ) : (
+                          <Eye className="h-[18px] w-[18px]" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password (Sign Up only) */}
+                  {mode === "signup" && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <Label htmlFor="confirmPassword" className="px-1 text-sm font-semibold">
+                        {t("confirmPasswordLabel")}
+                      </Label>
+                      <div className="relative">
+                        <Lock className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="confirmPassword"
+                          type={showPassword ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="••••••••"
+                          required
+                          disabled={isLoading || isSuccess}
+                          className="h-12 rounded-xl border-outline-variant bg-surface-container-lowest/50 pl-12 pr-12 text-base transition-all duration-300 placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submit */}
+                  <Button
+                    id="submit-btn"
+                    type="submit"
+                    disabled={isLoading || isSuccess}
+                    className={`mt-8 w-full rounded-xl py-6 text-sm font-semibold shadow-lg transition-all duration-300 active:scale-[0.97] ${
+                      isSuccess
+                        ? "bg-secondary text-white shadow-secondary/20 hover:bg-secondary/90"
+                        : "terracotta-gradient text-white shadow-primary/20 hover:scale-[1.01] hover:shadow-primary/30"
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {mode === "login" ? t("verifying") : t("creating")}
+                      </>
+                    ) : isSuccess ? (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        {t("success")}
+                      </>
+                    ) : mode === "login" ? (
+                      t("loginBtn")
+                    ) : (
+                      t("registerBtn")
+                    )}
+                  </Button>
+                </form>
+
+                {/* Switch Mode CTA */}
+                <div className="mt-10 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {mode === "login" ? (
+                      <>
+                        {t("newToKitchen")}{" "}
+                        <button
+                          type="button"
+                          id="switch-to-signup-btn"
+                          onClick={toggleMode}
+                          className="group ml-1 inline-flex items-center font-semibold text-primary underline-offset-4 decoration-2 transition-all hover:underline cursor-pointer"
+                        >
+                          {t("register")}
+                          <span className="ml-1 inline-block transition-transform group-hover:translate-x-1">
+                            →
+                          </span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {t("alreadyHaveAccount")}{" "}
+                        <button
+                          type="button"
+                          id="switch-to-login-btn"
+                          onClick={toggleMode}
+                          className="group ml-1 inline-flex items-center font-semibold text-primary underline-offset-4 decoration-2 transition-all hover:underline cursor-pointer"
+                        >
+                          {t("login")}
+                          <span className="ml-1 inline-block transition-transform group-hover:translate-x-1">
+                            →
+                          </span>
+                        </button>
+                      </>
+                    )}
+                  </p>
                 </div>
-              )}
-
-              {/* Submit */}
-              <Button
-                id="submit-btn"
-                type="submit"
-                disabled={isLoading || isSuccess}
-                className={`mt-8 w-full rounded-xl py-6 text-sm font-semibold shadow-lg transition-all duration-300 active:scale-[0.97] ${
-                  isSuccess
-                    ? "bg-secondary text-white shadow-secondary/20 hover:bg-secondary/90"
-                    : "terracotta-gradient text-white shadow-primary/20 hover:scale-[1.01] hover:shadow-primary/30"
-                }`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {mode === "login" ? t("verifying") : t("creating")}
-                  </>
-                ) : isSuccess ? (
-                  <>
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    {t("success")}
-                  </>
-                ) : mode === "login" ? (
-                  t("loginBtn")
-                ) : (
-                  t("registerBtn")
-                )}
-              </Button>
-            </form>
-
-            {/* Switch Mode CTA */}
-            <div className="mt-10 text-center">
-              <p className="text-sm text-muted-foreground">
-                {mode === "login" ? (
-                  <>
-                    {t("newToKitchen")}{" "}
-                    <button
-                      type="button"
-                      id="switch-to-signup-btn"
-                      onClick={toggleMode}
-                      className="group ml-1 inline-flex items-center font-semibold text-primary underline-offset-4 decoration-2 transition-all hover:underline cursor-pointer"
-                    >
-                      {t("register")}
-                      <span className="ml-1 inline-block transition-transform group-hover:translate-x-1">
-                        →
-                      </span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {t("alreadyHaveAccount")}{" "}
-                    <button
-                      type="button"
-                      id="switch-to-login-btn"
-                      onClick={toggleMode}
-                      className="group ml-1 inline-flex items-center font-semibold text-primary underline-offset-4 decoration-2 transition-all hover:underline cursor-pointer"
-                    >
-                      {t("login")}
-                      <span className="ml-1 inline-block transition-transform group-hover:translate-x-1">
-                        →
-                      </span>
-                    </button>
-                  </>
-                )}
-              </p>
-            </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
