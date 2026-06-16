@@ -251,6 +251,7 @@ function LoginForm() {
           preferences: {
             language: "it",
             measurementSystem: "metric",
+            allowTracking: typeof window !== "undefined" ? localStorage.getItem("gustosmart_allow_tracking") !== "false" : true,
           },
           tokens: 100,
           createdAt: serverTimestamp(),
@@ -306,6 +307,7 @@ function LoginForm() {
           preferences: {
             language: "it",
             measurementSystem: "metric",
+            allowTracking: typeof window !== "undefined" ? localStorage.getItem("gustosmart_allow_tracking") !== "false" : true,
           },
           tokens: 100,
           createdAt: serverTimestamp(),

@@ -32,6 +32,14 @@ interface TrackEventParams {
  * Logs an event to GA4/Firebase Analytics and optionally mirrors it to Firestore analytics_events.
  */
 export async function trackEvent(eventName: string, params: TrackEventParams = {}) {
+  // Check tracking consent
+  if (typeof window !== "undefined") {
+    const allowTracking = localStorage.getItem("gustosmart_allow_tracking") !== "false";
+    if (!allowTracking) {
+      return;
+    }
+  }
+
   // 1. Log to GA4 (Firebase Analytics) if supported on client
   try {
     const analytics = await getFbAnalytics();

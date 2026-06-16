@@ -43,6 +43,9 @@ export function useSyncUser() {
             return;
           }
 
+          const allowTracking = data.preferences?.allowTracking !== false;
+          localStorage.setItem("gustosmart_allow_tracking", String(allowTracking));
+
           dispatch(
             setUserSuccess({
               uid: data.uid || user.uid,
@@ -52,6 +55,7 @@ export function useSyncUser() {
               preferences: {
                 language: dbLang,
                 measurementSystem: data.preferences?.measurementSystem || "metric",
+                allowTracking,
               },
               tokens: typeof data.tokens === "number" ? data.tokens : 10,
               role: data.role || "user",
@@ -70,6 +74,9 @@ export function useSyncUser() {
             return;
           }
 
+          const localAllowTracking = localStorage.getItem("gustosmart_allow_tracking") !== "false";
+          localStorage.setItem("gustosmart_allow_tracking", String(localAllowTracking));
+
           dispatch(
             setUserSuccess({
               uid: user.uid,
@@ -79,6 +86,7 @@ export function useSyncUser() {
               preferences: {
                 language: dbLang,
                 measurementSystem: "metric",
+                allowTracking: localAllowTracking,
               },
               tokens: 10,
               role: "user",

@@ -8,6 +8,7 @@ import { QueryProvider } from "@/providers/query-provider";
 import { PWAProvider } from "@/contexts/pwa-context";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { BetterStackScript } from "@/components/better-stack-script";
 import "./globals.css";
 
 const inter = Inter({
@@ -61,6 +62,7 @@ export default async function RootLayout({
               <StoreProvider>
                 <QueryProvider>
                   <PWAProvider>
+                    <BetterStackScript />
                     {children}
                     <Toaster />
                   </PWAProvider>

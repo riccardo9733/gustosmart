@@ -8,4 +8,15 @@ Sentry.init({
 
   // Setting this option to true will print useful information to the console if you're debugging.
   debug: false,
+
+  // Check user consent before sending error events to Better Stack
+  beforeSend(event) {
+    if (typeof window !== "undefined") {
+      const allowTracking = localStorage.getItem("gustosmart_allow_tracking") !== "false";
+      if (!allowTracking) {
+        return null; // Discard error report
+      }
+    }
+    return event;
+  },
 });

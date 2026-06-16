@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useLocale } from "next-intl";
 import {
   ShieldCheck,
@@ -23,6 +24,11 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { selectUserProfile, setUserSuccess } from "@/store/userSlice";
+import { getFirebaseDb } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { toast } from "sonner";
 
 interface PolicyDrawerProps {
   isOpen: boolean;
@@ -32,6 +38,89 @@ interface PolicyDrawerProps {
 
 export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
   const locale = useLocale() as "it" | "en" | "es" | "fr";
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector(selectUserProfile);
+  const [allowTracking, setAllowTracking] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && isOpen) {
+      if (profile?.preferences?.hasOwnProperty("allowTracking")) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setAllowTracking(profile.preferences.allowTracking !== false);
+      } else {
+        const localVal = localStorage.getItem("gustosmart_allow_tracking") !== "false";
+        setAllowTracking(localVal);
+      }
+    }
+  }, [profile, isOpen]);
+
+  const handleToggleTracking = async () => {
+    const newValue = !allowTracking;
+    setAllowTracking(newValue);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("gustosmart_allow_tracking", String(newValue));
+    }
+
+    if (profile) {
+      try {
+        const db = getFirebaseDb();
+        const userRef = doc(db, "users", profile.uid);
+        const updatedPreferences = {
+          ...profile.preferences,
+          allowTracking: newValue,
+        };
+
+        await setDoc(
+          userRef,
+          {
+            preferences: updatedPreferences,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+
+        dispatch(
+          setUserSuccess({
+            ...profile,
+            preferences: updatedPreferences,
+          })
+        );
+
+        toast.success(
+          locale === "it"
+            ? "Preferenze di tracciamento aggiornate"
+            : locale === "es"
+            ? "Preferencias de seguimiento actualizadas"
+            : locale === "fr"
+            ? "Préférences de suivi mises à jour"
+            : "Tracking preferences updated"
+        );
+      } catch (error) {
+        console.error("Error updating tracking consent:", error);
+        toast.error(
+          locale === "it"
+            ? "Errore durante l'aggiornamento del tracciamento"
+            : locale === "es"
+            ? "Error al actualizar las preferencias de seguimiento"
+            : locale === "fr"
+            ? "Erreur lors de la mise à jour des préférences de suivi"
+            : "Failed to update tracking preferences"
+        );
+        setAllowTracking(allowTracking); // revert state
+      }
+    } else {
+      toast.success(
+        locale === "it"
+          ? "Preferenze salvate localmente"
+          : locale === "es"
+          ? "Preferencias guardadas localmente"
+          : locale === "fr"
+          ? "Préférences enregistrées localement"
+          : "Preferences saved locally"
+      );
+    }
+  };
 
   if (!type) return null;
 
@@ -81,6 +170,47 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
 
           {/* Scrollable Policy Content */}
           <div className="overflow-y-auto max-h-[55vh] pr-2 space-y-4 scrollbar-thin scrollbar-thumb-muted">
+            {/* Render Switch if it is cookie policy */}
+            {type === "cookie" && (
+              <div className="glass-panel border border-white/20 dark:border-white/10 p-5 rounded-2xl shadow-sm flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h4 className="font-heading text-sm font-bold text-foreground">
+                    {locale === "it"
+                      ? "Consenti tracciamento e diagnostica"
+                      : locale === "es"
+                      ? "Permitir seguimiento y diagnóstico"
+                      : locale === "fr"
+                      ? "Autoriser le suivi et les diagnostics"
+                      : "Allow tracking and diagnostics"}
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-normal">
+                    {locale === "it"
+                      ? "Attivando questa opzione ci aiuti a monitorare le prestazioni (Better Stack) e l'utilizzo dell'app (GA4) per correggere gli errori."
+                      : locale === "es"
+                      ? "Activar esta opción nos ayuda a supervisar el rendimiento (Better Stack) y el uso de la aplicación (GA4) para corregir errores."
+                      : locale === "fr"
+                      ? "Activer cette option nous aide à surveiller les performances (Better Stack) et l'utilisation de l'application (GA4) pour corriger les erreurs."
+                      : "Enabling this option helps us monitor performance (Better Stack) and app usage (GA4) to resolve errors."}
+                  </p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={allowTracking}
+                  onClick={handleToggleTracking}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                    allowTracking ? "bg-primary" : "bg-muted-foreground/30"
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                      allowTracking ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            )}
+
             {content.sections.map((section, index) => {
               const IconComponent = getIcon(section.icon);
               return (

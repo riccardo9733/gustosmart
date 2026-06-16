@@ -4,6 +4,7 @@ import type { RootState } from "./store";
 export interface UserPreferences {
   language: string;
   measurementSystem: "metric" | "imperial";
+  allowTracking?: boolean;
 }
 
 export interface UserProfile {
