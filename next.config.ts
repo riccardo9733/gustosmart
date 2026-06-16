@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -29,4 +30,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSentryConfig(withNextIntl(nextConfig), {
+  // For Better Stack, we don't need/want sourcemaps uploaded to Sentry's servers
+  sourcemaps: {
+    disable: true,
+  },
+  // Suppress Sentry analyzer warnings
+  silent: true,
+});
