@@ -280,7 +280,11 @@
     "addToRecipes": "Aggiungi al ricettario",
     "addingRecipeProgress": "Aggiunta ricetta al ricettario...",
     "addToRecipesSuccess": "Ricetta aggiunta al tuo ricettario!",
-    "addToRecipesFailed": "Impossibile aggiungere la ricetta."
+    "addToRecipesFailed": "Impossibile aggiungere la ricetta.",
+    "shareBtn": "Condividi",
+    "shareSuccess": "Link copiato negli appunti!",
+    "loginToSave": "Accedi per salvare nel ricettario",
+    "shareMessage": "Guarda questa ricetta su GustoSmart!"
   },
   "Shopping": {
     "title": "Spesa Intelligente",

@@ -270,7 +270,11 @@
     "addToRecipes": "Añadir al recetario",
     "addingRecipeProgress": "Añadiendo receta al recetario...",
     "addToRecipesSuccess": "¡Receta añadida a tu recetario!",
-    "addToRecipesFailed": "No se pudo añadir la receta."
+    "addToRecipesFailed": "No se pudo añadir la receta.",
+    "shareBtn": "Compartir",
+    "shareSuccess": "¡Enlace copiado al portapapeles!",
+    "loginToSave": "Inicia sesión para guardar en tu recetario",
+    "shareMessage": "¡Mira esta receta en GustoSmart!"
   },
   "Shopping": {
     "title": "Compra Inteligente",

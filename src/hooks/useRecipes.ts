@@ -433,3 +433,27 @@ export function useAddRecipesToFolder() {
     },
   });
 }
+
+export function usePublicRecipe(recipeId: string) {
+  return useQuery<GlobalRecipe | null>({
+    queryKey: ["public-recipe", recipeId],
+    enabled: !!recipeId,
+    queryFn: () => getGlobalRecipe(recipeId),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useCheckUserHasRecipe(recipeId: string) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["user-has-recipe", user?.uid, recipeId],
+    enabled: !!user && !!recipeId,
+    queryFn: async () => {
+      if (!user) return false;
+      const override = await getUserRecipeOverride(user.uid, recipeId);
+      return !!override;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+

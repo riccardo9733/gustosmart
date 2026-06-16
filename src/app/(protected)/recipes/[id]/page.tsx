@@ -41,6 +41,7 @@ import {
   Milk,
   Undo2,
   Wheat,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -384,6 +385,39 @@ export default function RecipeDetailPage() {
   const { mutateAsync: addRecipe, isPending: addingRecipe } = useAddToUserRecipes();
 
   const isSaved = !!recipe?.addedAt;
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/recipes/share/${id}`;
+    
+    import("@/lib/analytics").then(({ trackEvent }) => {
+      trackEvent("recipe_shared", {
+        recipe_id: id,
+        userId: user?.uid,
+        userEmail: user?.email || undefined,
+      });
+    }).catch((err) => console.error("Analytics error:", err));
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: recipe?.title || "Ricetta",
+          text: t("shareMessage"),
+          url: shareUrl,
+        });
+      } catch (err) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          toast.error("Errore durante la condivisione");
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success(t("shareSuccess"));
+      } catch (err) {
+        toast.error("Impossibile copiare il link");
+      }
+    }
+  };
 
   const handleMoveRecipe = async (folderId: string | null) => {
     try {
@@ -890,6 +924,20 @@ export default function RecipeDetailPage() {
           onClick={() => router.back()}
         >
           <ArrowLeft className="h-5 w-5" />
+        </Button>
+
+        {/* Share Button */}
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "absolute top-24 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-foreground active:scale-95 transition-all",
+            isSaved ? "right-20" : "right-6"
+          )}
+          onClick={handleShare}
+          aria-label={t("shareBtn")}
+        >
+          <Share2 className="h-5 w-5" />
         </Button>
 
         {/* Actions Dropdown Button */}

@@ -280,7 +280,11 @@
     "addToRecipes": "Add to collection",
     "addingRecipeProgress": "Adding recipe to collection...",
     "addToRecipesSuccess": "Recipe added to your collection!",
-    "addToRecipesFailed": "Could not add recipe."
+    "addToRecipesFailed": "Could not add recipe.",
+    "shareBtn": "Share",
+    "shareSuccess": "Link copied to clipboard!",
+    "loginToSave": "Login to save in recipe book",
+    "shareMessage": "Check out this recipe on GustoSmart!"
   },
   "Shopping": {
     "title": "Smart Shopping",

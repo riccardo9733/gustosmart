@@ -270,7 +270,11 @@
     "addToRecipes": "Ajouter au carnet",
     "addingRecipeProgress": "Ajout de la recette au carnet...",
     "addToRecipesSuccess": "Recette ajoutée à votre carnet !",
-    "addToRecipesFailed": "Impossible d'ajouter la recette."
+    "addToRecipesFailed": "Impossible d'ajouter la recette.",
+    "shareBtn": "Partager",
+    "shareSuccess": "Lien copié dans le presse-papiers !",
+    "loginToSave": "Connectez-vous pour enregistrer dans votre carnet",
+    "shareMessage": "Découvrez cette recette sur GustoSmart !"
   },
   "Shopping": {
     "title": "Liste de Courses Intelligente",
