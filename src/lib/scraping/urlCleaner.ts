@@ -38,12 +38,34 @@ export function cleanUrl(url: string): string {
     } 
     // 2. TikTok
     else if (host.includes("tiktok.com")) {
+      // If it's a shortener host or shortener path, do not clean/normalize the hostname or search params,
+      // as it will corrupt the short URL if resolveRedirect failed.
+      const isShortener = 
+        host.includes("vm.tiktok.com") || 
+        host.includes("vt.tiktok.com") || 
+        host.includes("v.tiktok.com") || 
+        parsed.pathname.startsWith("/t/");
+        
+      if (isShortener) {
+        let result = parsed.toString();
+        if (result.endsWith("/")) {
+          result = result.slice(0, -1);
+        }
+        return result;
+      }
+
+      // If it's a login redirect, extract the actual target URL from the redirect_url query parameter
+      const redirectUrlParam = parsed.searchParams.get("redirect_url");
+      if (redirectUrlParam) {
+        return cleanUrl(redirectUrlParam);
+      }
+
       parsed.hostname = "www.tiktok.com";
       parsed.search = ""; // Remove all parameters
       
       const pathParts = parsed.pathname.split("/").filter(Boolean);
       // Canonical format: /@username/video/video_id
-      if (pathParts.length >= 3 && pathParts[1] === "video") {
+      if (pathParts.length >= 3 && pathParts[1].toLowerCase() === "video") {
         parsed.pathname = `/${pathParts[0]}/video/${pathParts[2]}`;
       }
     } 
@@ -120,6 +142,9 @@ export async function resolveRedirect(url: string): Promise<string> {
     // Check if it is a redirect domain
     const isShortUrl = 
       host.includes("vm.tiktok.com") ||
+      host.includes("vt.tiktok.com") ||
+      host.includes("v.tiktok.com") ||
+      (host.includes("tiktok.com") && parsed.pathname.startsWith("/t/")) ||
       host.includes("fb.watch") ||
       host.includes("youtu.be") ||
       host.includes("instagr.am") ||

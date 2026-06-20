@@ -13,7 +13,18 @@ import { toast } from "sonner";
 import { ImportDrawer } from "@/components/import-drawer";
 import { trackEvent } from "@/lib/analytics";
 
-export type IngestStep = "idle" | "scraping" | "extracting" | "saving" | "completed" | "failed";
+export type IngestStep = "idle" | "scraping" | "extracting" | "saving" | "completed" | "failed" | "needsCommentSearch";
+
+interface CommentSearchData {
+  caption: string;
+  transcript: string;
+  b2ImageUrl: string | null;
+  finalUrl: string;
+  recipeId: string;
+  creatorUsername: string | null;
+  creatorFullName: string | null;
+  creatorId: string | null;
+}
 
 interface IngestContextType {
   isIngesting: boolean;
@@ -24,7 +35,9 @@ interface IngestContextType {
   error: string | null;
   recipeResult: any | null;
   recipeId: string | null;
+  commentSearchData: CommentSearchData | null;
   startIngest: (targetUrl: string) => Promise<void>;
+  startCommentSearch: () => Promise<void>;
   openImportDrawer: () => void;
   closeImportDrawer: () => void;
   resetIngest: () => void;
@@ -41,6 +54,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [recipeResult, setRecipeResult] = useState<any | null>(null);
   const [recipeId, setRecipeId] = useState<string | null>(null);
+  const [commentSearchData, setCommentSearchData] = useState<CommentSearchData | null>(null);
 
   const { user } = useAuth();
   const profile = useAppSelector(selectUserProfile);
@@ -55,6 +69,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     setRecipeResult(null);
     setRecipeId(null);
+    setCommentSearchData(null);
   };
 
   const openImportDrawer = () => setIsDrawerOpen(true);
@@ -62,7 +77,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
     setIsDrawerOpen(false);
     // Se l'ingestione è terminata (con successo o errore), resetta lo stato all'idle
     // dopo l'animazione di chiusura per evitare sfarfallii visivi.
-    if (step === "completed" || step === "failed") {
+    if (step === "completed" || step === "failed" || step === "needsCommentSearch") {
       setTimeout(() => {
         resetIngest();
       }, 300);
@@ -319,18 +334,26 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 });
 
                 toast.success("Ricetta importata con successo!");
-              } else if (eventName === "error") {
-                const errType = data.error || "Errore durante l'elaborazione.";
-                setError(errType);
-                setStep("failed");
-                currentStep = "failed";
+              } else if (eventName === "needsCommentSearch") {
+                // Instagram: la ricetta non è stata trovata nel video/caption, proponi ricerca nei commenti
+                console.log("[IngestContext] Ricevuto evento needsCommentSearch");
+                setCommentSearchData({
+                  caption: data.caption || "",
+                  transcript: data.transcript || "",
+                  b2ImageUrl: data.b2ImageUrl || null,
+                  finalUrl: data.finalUrl || "",
+                  recipeId: data.recipeId || "",
+                  creatorUsername: data.creatorUsername || null,
+                  creatorFullName: data.creatorFullName || null,
+                  creatorId: data.creatorId || null,
+                });
+                setStep("needsCommentSearch");
+                currentStep = "needsCommentSearch";
                 setIsIngesting(false);
                 setIsDrawerOpen(true);
-                toast.error("Importazione fallita.");
 
-                await trackEvent("recipe_import_failed", {
+                await trackEvent("recipe_comment_search_prompted", {
                   source_platform: detectedPlatform,
-                  error_type: errType,
                   userId: user.uid,
                   userEmail: user.email || undefined,
                 });
@@ -342,9 +365,9 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Se usciamo dal loop e lo step non è completed o failed, significa che lo stream
-        // si è chiuso in modo anomalo senza inviare un evento di successo o errore.
-        if (currentStep !== "completed" && currentStep !== "failed") {
+        // Se usciamo dal loop e lo step non è completed, failed o needsCommentSearch,
+        // significa che lo stream si è chiuso in modo anomalo.
+        if (currentStep !== "completed" && currentStep !== "failed" && currentStep !== "needsCommentSearch") {
           throw new Error("La connessione con il server si è interrotta inaspettatamente.");
         }
       } finally {
@@ -368,6 +391,251 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+   * Ricerca approfondita nei commenti Instagram.
+   * Viene invocata dall'utente dopo che il primo ingest ha restituito needsCommentSearch.
+   */
+  const startCommentSearch = async () => {
+    if (!user || !commentSearchData) return;
+
+    const tokens = profile?.tokens ?? 10;
+    if (tokens <= 0) {
+      setError("NO_TOKENS");
+      setStep("failed");
+      setIsIngesting(false);
+      setIsDrawerOpen(true);
+      toast.error("Token esauriti.");
+      return;
+    }
+
+    setIsIngesting(true);
+    setStep("scraping");
+    setProgress(10);
+    setError(null);
+
+    const startTime = Date.now();
+
+    await trackEvent("recipe_comment_search_accepted", {
+      source_platform: "instagram",
+      userId: user.uid,
+      userEmail: user.email || undefined,
+    });
+
+    try {
+      const response = await fetch("/api/ingest/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: commentSearchData.finalUrl,
+          userId: user.uid,
+          userEmail: user.email || null,
+          caption: commentSearchData.caption,
+          transcript: commentSearchData.transcript,
+          b2ImageUrl: commentSearchData.b2ImageUrl,
+          recipeId: commentSearchData.recipeId,
+          creatorUsername: commentSearchData.creatorUsername,
+          creatorFullName: commentSearchData.creatorFullName,
+          creatorId: commentSearchData.creatorId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json();
+        throw new Error(errJson.error || "Errore nella ricerca commenti.");
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      if (!reader) {
+        throw new Error("Impossibile leggere lo stream di risposta.");
+      }
+
+      let currentStep: IngestStep = "scraping";
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() || "";
+
+          for (const part of parts) {
+            const lines = part.split("\n");
+            let eventName = "";
+            let dataStr = "";
+
+            for (const line of lines) {
+              if (line.startsWith("event:")) {
+                eventName = line.replace("event:", "").trim();
+              } else if (line.startsWith("data:")) {
+                dataStr = line.replace("data:", "").trim();
+              }
+            }
+
+            if (eventName && dataStr) {
+              const data = JSON.parse(dataStr);
+
+              if (eventName === "status") {
+                const nextStep = data.step as IngestStep;
+                setStep(nextStep);
+                currentStep = nextStep;
+                setProgress(data.progress);
+              } else if (eventName === "success") {
+                const { recipe, recipeId: newRecipeId, generationId, scrapecreatorsCreditsRemaining } = data;
+                setStep("saving");
+                currentStep = "saving";
+                setProgress(95);
+
+                const db = getFirebaseDb();
+                const recipeDoc = {
+                  sourceUrl: recipe.sourceUrl || commentSearchData.finalUrl,
+                  sourcePlatform: "instagram",
+                  title: recipe.title,
+                  sourceLanguage: recipe.sourceLanguage || "it",
+                  servings: recipe.servings,
+                  ingredients: recipe.ingredients,
+                  instructions: recipe.instructions,
+                  imageUrl: recipe.imageUrl || null,
+                  prepTimeMinutes: recipe.prepTimeMinutes,
+                  category: recipe.category || "other",
+                  kcal: recipe.kcal !== undefined && recipe.kcal !== null ? recipe.kcal : null,
+                  proteins: recipe.proteins !== undefined && recipe.proteins !== null ? recipe.proteins : null,
+                  carbs: recipe.carbs !== undefined && recipe.carbs !== null ? recipe.carbs : null,
+                  fats: recipe.fats !== undefined && recipe.fats !== null ? recipe.fats : null,
+                  fiber: recipe.fiber !== undefined && recipe.fiber !== null ? recipe.fiber : null,
+                  sugar: recipe.sugar !== undefined && recipe.sugar !== null ? recipe.sugar : null,
+                  nutritionalRating: recipe.nutritionalRating || null,
+                  nutritionalAssessment: recipe.nutritionalAssessment || null,
+                  isGlutenFree: recipe.isGlutenFree !== undefined && recipe.isGlutenFree !== null ? recipe.isGlutenFree : null,
+                  isVegan: recipe.isVegan !== undefined && recipe.isVegan !== null ? recipe.isVegan : null,
+                  isVegetarian: recipe.isVegetarian !== undefined && recipe.isVegetarian !== null ? recipe.isVegetarian : null,
+                  isLactoseFree: recipe.isLactoseFree !== undefined && recipe.isLactoseFree !== null ? recipe.isLactoseFree : null,
+                  createdAt: serverTimestamp(),
+                  createdBy: user.uid,
+                  creatorUsername: recipe.creatorUsername || null,
+                  creatorFullName: recipe.creatorFullName || null,
+                  creatorId: recipe.creatorId || null,
+                };
+
+                await setDoc(doc(db, "recipes", newRecipeId), recipeDoc);
+
+                const { addToUserRecipes: addFn } = await import("@/lib/firestore/recipes");
+                await addFn(user.uid, newRecipeId);
+
+                const { queryClient } = await import("@/lib/query-client");
+                const { recipeKeys } = await import("@/hooks/useRecipes");
+                queryClient.invalidateQueries({ queryKey: recipeKeys.all(user.uid) });
+                queryClient.invalidateQueries({ queryKey: recipeKeys.detail(user.uid, newRecipeId) });
+
+                // Detrae 2 token: 1 per lo scrape iniziale + 1 per la ricerca commenti
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, {
+                  tokens: increment(-2),
+                  updatedAt: new Date().toISOString(),
+                });
+
+                setRecipeId(newRecipeId);
+                setRecipeResult(recipe);
+                setStep("completed");
+                currentStep = "completed";
+                setProgress(100);
+                setIsIngesting(false);
+                setCommentSearchData(null);
+                setIsDrawerOpen(true);
+
+                const durationSeconds = Math.round((Date.now() - startTime) / 1000);
+                await trackEvent("recipe_import_completed", {
+                  source_platform: "instagram",
+                  is_cached_hit: false,
+                  is_comment_search: true,
+                  duration_seconds: durationSeconds,
+                  generation_id: generationId || null,
+                  scrapecreators_credits_remaining: scrapecreatorsCreditsRemaining !== undefined ? scrapecreatorsCreditsRemaining : null,
+                  userId: user.uid,
+                  userEmail: user.email || undefined,
+                });
+
+                toast.success("Ricetta importata con successo!");
+              } else if (eventName === "error") {
+                const errType = data.error || "Errore durante la ricerca nei commenti.";
+                setError(errType);
+                setStep("failed");
+                currentStep = "failed";
+                setIsIngesting(false);
+                setCommentSearchData(null);
+                setIsDrawerOpen(true);
+
+                // Detrae 1 token per lo scrape iniziale (il retry ha fallito)
+                try {
+                  const db = getFirebaseDb();
+                  const userRef = doc(db, "users", user.uid);
+                  await updateDoc(userRef, {
+                    tokens: increment(-1),
+                    updatedAt: new Date().toISOString(),
+                  });
+                } catch (tokenErr) {
+                  console.error("Errore detrazione token post-fallimento:", tokenErr);
+                }
+
+                toast.error("Importazione fallita.");
+
+                await trackEvent("recipe_import_failed", {
+                  source_platform: "instagram",
+                  error_type: errType,
+                  is_comment_search: true,
+                  userId: user.uid,
+                  userEmail: user.email || undefined,
+                });
+
+                reader.cancel();
+                return;
+              }
+            }
+          }
+        }
+
+        if (currentStep !== "completed" && currentStep !== "failed") {
+          throw new Error("La connessione con il server si è interrotta inaspettatamente.");
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    } catch (err: any) {
+      console.error("Errore durante la ricerca nei commenti:", err);
+      const errType = err.message || "Errore imprevisto durante la ricerca nei commenti";
+      setError(errType);
+      setStep("failed");
+      setIsIngesting(false);
+      setCommentSearchData(null);
+      setIsDrawerOpen(true);
+      toast.error("Importazione fallita.");
+
+      // Detrae 1 token per lo scrape iniziale
+      try {
+        const db = getFirebaseDb();
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, {
+          tokens: increment(-1),
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (tokenErr) {
+        console.error("Errore detrazione token post-fallimento:", tokenErr);
+      }
+
+      await trackEvent("recipe_import_failed", {
+        source_platform: "instagram",
+        error_type: errType,
+        is_comment_search: true,
+        userId: user.uid,
+        userEmail: user.email || undefined,
+      });
+    }
+  };
+
   return (
     <IngestContext.Provider
       value={{
@@ -379,7 +647,9 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
         error,
         recipeResult,
         recipeId,
+        commentSearchData,
         startIngest,
+        startCommentSearch,
         openImportDrawer,
         closeImportDrawer,
         resetIngest,

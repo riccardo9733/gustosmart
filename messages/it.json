@@ -91,7 +91,12 @@
     "drawerTitle": "Importa una Ricetta",
     "drawerDesc": "Incolla il link di un Reel di Instagram, un video TikTok o una ricetta web per scansionarla e aggiungerla al catalogo.",
     "saveSuccess": "Ricetta salvata nel ricettario!",
-    "removeSuccess": "Ricetta rimossa dal ricettario!"
+    "removeSuccess": "Ricetta rimossa dal ricettario!",
+    "commentSearchTitle": "Ricetta non trovata nel video",
+    "commentSearchDesc": "La ricetta potrebbe trovarsi nei commenti del post. Vuoi eseguire una ricerca più approfondita?",
+    "commentSearchCost": "Costerà 1 token aggiuntivo",
+    "commentSearchBtn": "Cerca nei commenti (1 token)",
+    "commentSearchCancel": "Annulla"
   },
   "Profile": {
     "title": "Profilo",

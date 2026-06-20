@@ -14,6 +14,10 @@ describe('cleanUrl', () => {
 
   it('normalizes TikTok URLs and removes parameters', () => {
     expect(cleanUrl('https://tiktok.com/@chef/video/1234567890?is_copy_url=1&sender_device=pc')).toBe('https://www.tiktok.com/@chef/video/1234567890');
+    expect(cleanUrl('https://tiktok.com/@chef/Video/1234567890?is_copy_url=1&sender_device=pc')).toBe('https://www.tiktok.com/@chef/video/1234567890');
+    expect(cleanUrl('https://tiktok.com/@chef/VIDEO/1234567890/extra/path')).toBe('https://www.tiktok.com/@chef/video/1234567890');
+    expect(cleanUrl('https://vm.tiktok.com/ZNR3ne9tF/')).toBe('https://vm.tiktok.com/ZNR3ne9tF');
+    expect(cleanUrl('https://www.tiktok.com/login?redirect_url=https%3A%2F%2Fwww.tiktok.com%2F%40cucinamammaela%2Fvideo%2F7522131636473875734%3F_r%3D1%26_t%3DZN-97MeW1a0JqJ&lang=en')).toBe('https://www.tiktok.com/@cucinamammaela/video/7522131636473875734');
   });
 
   it('normalizes YouTube URLs', () => {

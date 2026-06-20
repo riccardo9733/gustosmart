@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
+  MessageSquare,
 } from "lucide-react";
 
 const YouTubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -72,6 +73,7 @@ export function ImportDrawer() {
     error,
     recipeId,
     startIngest,
+    startCommentSearch,
     resetIngest,
   } = useIngest();
 
@@ -295,6 +297,51 @@ export function ImportDrawer() {
                   className="text-sm text-muted-foreground cursor-pointer"
                 >
                   Importa un'altra ricetta
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* 3b. STATE: NEEDS COMMENT SEARCH (Instagram only) */}
+          {step === "needsCommentSearch" && (
+            <div className="flex flex-col items-center justify-center text-center gap-6 py-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full scale-125 animate-pulse"></div>
+                <div className="relative flex items-center justify-center bg-amber-500/10 rounded-full p-5 border border-amber-500/20">
+                  <MessageSquare className="h-10 w-10 text-amber-500" />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <h3 className="font-heading text-2xl font-bold text-amber-600 dark:text-amber-400">
+                  {t("commentSearchTitle")}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                  {t("commentSearchDesc")}
+                </p>
+                <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-1">
+                  {t("commentSearchCost")}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 w-full mt-2">
+                <Button
+                  onClick={() => startCommentSearch()}
+                  className="bg-amber-500 hover:bg-amber-600 text-white w-full rounded-xl py-6 font-bold text-base shadow-lg shadow-amber-500/20 cursor-pointer"
+                >
+                  <MessageSquare className="h-5 w-5 mr-2" />
+                  {t("commentSearchBtn")}
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    closeImportDrawer();
+                    resetIngest();
+                  }}
+                  className="text-sm text-muted-foreground cursor-pointer"
+                >
+                  {t("commentSearchCancel")}
                 </Button>
               </div>
             </div>

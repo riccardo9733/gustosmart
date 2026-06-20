@@ -5,6 +5,7 @@ export interface ScrapedData {
   creatorUsername: string | null;
   creatorFullName: string | null;
   creatorId: string | null;
+  comments?: string[];
   recipeStructuredData?: {
     title?: string;
     ingredients?: string[];
@@ -31,7 +32,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
   let creditsRemaining: number | null = null;
 
   // Eseguiamo la chiamata ai dettagli del post e alla trascrizione in parallelo.
-  // La trascrizione ha un timeout di 5 secondi per evitare di bloccare o far fallire l'intera importazione.
+  // La trascrizione ha un timeout di 15 secondi per evitare di bloccare o far fallire l'intera importazione.
   const fetchPost = fetch(
     `https://api.scrapecreators.com/v1/instagram/post?url=${encodeURIComponent(url)}`,
     {
@@ -43,7 +44,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
 
   const fetchTranscriptWithTimeout = async (): Promise<string> => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
     try {
       const res = await fetch(
         `https://api.scrapecreators.com/v2/instagram/media/transcript?url=${encodeURIComponent(url)}`,
@@ -66,7 +67,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
       return data.transcripts?.[0]?.text || "";
     } catch {
       clearTimeout(timeoutId);
-      console.warn("Richiesta trascrizione Instagram fallita o scaduta (timeout 5s).");
+      console.warn("Richiesta trascrizione Instagram fallita o scaduta (timeout 15s).");
       return "";
     }
   };
@@ -83,6 +84,10 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
   }
 
   const postData = await postResponse.json();
+  console.log("=========================================");
+  console.log("[scrapeInstagram] RAW RESPONSE FROM SCRAPECREATORS:");
+  console.log(JSON.stringify(postData, null, 2));
+  console.log("=========================================");
   if (postData.credits_remaining !== undefined) {
     creditsRemaining = postData.credits_remaining;
   }
@@ -99,6 +104,79 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
   const creatorFullName = media.owner?.full_name || null;
   const creatorId = media.owner?.id || null;
 
+  // Estrai i commenti fissati o regolari dalla risposta del post (Costo 0 crediti aggiuntivi)
+  const commentsList: string[] = [];
+  const seenCommentIds = new Set<string>();
+  const creatorUsernameLower = creatorUsername ? creatorUsername.toLowerCase() : "";
+
+  // 1. Commenti fissati (hoisted): li includiamo tutti indipendentemente dall'autore
+  const hoistedEdges = media.edge_media_to_hoisted_comment?.edges || [];
+  console.log(`[scrapeInstagram] Pinned comments count in raw response: ${hoistedEdges.length}`);
+  
+  for (const edge of hoistedEdges) {
+    const node = edge?.node;
+    if (node?.text) {
+      console.log(`[scrapeInstagram] Found pinned comment: ID=${node.id}, Text="${node.text.slice(0, 40)}..."`);
+      commentsList.push(node.text);
+      if (node.id) {
+        seenCommentIds.add(String(node.id));
+      }
+    }
+  }
+
+  // 2. Commenti parent/principali e anteprime: includiamo solo quelli scritti dall'autore del post
+  //    Deprioritizziamo le risposte (che iniziano con @username) e ordiniamo per lunghezza
+  //    perché il commento con la ricetta è tipicamente il più lungo.
+  if (creatorUsernameLower) {
+    const parentEdges = media.edge_media_to_parent_comment?.edges || [];
+    const previewEdges = media.edge_media_preview_comment?.edges || [];
+    const allParentEdges = [...parentEdges, ...previewEdges];
+    console.log(`[scrapeInstagram] Parent/Preview comments count in raw response: ${allParentEdges.length} (searching comments by @${creatorUsernameLower})`);
+
+    // Raccogli tutti i commenti del creatore non ancora visti
+    const creatorTopLevel: string[] = [];
+    const creatorReplies: string[] = [];
+
+    for (const edge of allParentEdges) {
+      const node = edge?.node;
+      if (node?.text) {
+        const commentIdStr = node.id ? String(node.id) : "";
+        if (commentIdStr && seenCommentIds.has(commentIdStr)) {
+          continue;
+        }
+        const commentOwner = node.owner?.username;
+        if (commentOwner && commentOwner.toLowerCase() === creatorUsernameLower) {
+          if (commentIdStr) {
+            seenCommentIds.add(commentIdStr);
+          }
+          // I commenti che iniziano con @username sono risposte ad altri utenti
+          const isReply = /^@\w+/.test(node.text.trim());
+          if (isReply) {
+            creatorReplies.push(node.text);
+          } else {
+            creatorTopLevel.push(node.text);
+          }
+        }
+      }
+    }
+
+    // Ordina per lunghezza decrescente (il commento-ricetta è tipicamente il più lungo)
+    creatorTopLevel.sort((a, b) => b.length - a.length);
+    creatorReplies.sort((a, b) => b.length - a.length);
+
+    // Prima i top-level, poi le risposte come fallback
+    for (const text of creatorTopLevel) {
+      console.log(`[scrapeInstagram] Found top-level comment by creator: Text="${text.slice(0, 40)}..."`);
+      commentsList.push(text);
+    }
+    for (const text of creatorReplies) {
+      console.log(`[scrapeInstagram] Found reply comment by creator (deprioritized): Text="${text.slice(0, 40)}..."`);
+      commentsList.push(text);
+    }
+  }
+
+  console.log(`[scrapeInstagram] Total comments extracted: ${commentsList.length}`, commentsList);
+
   return {
     caption,
     transcript: transcriptText,
@@ -106,8 +184,163 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
     creatorUsername,
     creatorFullName,
     creatorId,
+    comments: commentsList,
     scrapecreatorsCreditsRemaining: creditsRemaining,
   };
+}
+
+/**
+ * Esegue lo scraping dei commenti di un post Instagram tramite l'endpoint dedicato
+ * /v2/instagram/post/comments di ScrapeCreators (1 credito, 1 pagina).
+ * Filtra e restituisce solo i commenti rilevanti per l'estrazione della ricetta:
+ * - Commenti fissati (pinned)
+ * - Commenti top-level dell'autore del post (non risposte @username)
+ */
+export async function scrapeInstagramComments(
+  url: string,
+  creatorUsername: string | null
+): Promise<{ comments: string[]; creditsRemaining: number | null }> {
+  const apiKey = process.env.SCRAPECREATORS_API_KEY;
+  if (!apiKey) {
+    throw new Error("Manca la chiave d'ambiente SCRAPECREATORS_API_KEY");
+  }
+
+  const creatorUsernameLower = creatorUsername ? creatorUsername.toLowerCase() : "";
+  let creditsRemaining: number | null = null;
+  let cursor = "";
+  let page = 1;
+  const maxPages = 6;
+  const seenTexts = new Set<string>();
+
+  const creatorTopLevel: string[] = [];
+  const creatorReplies: string[] = [];
+  const pinnedComments: string[] = [];
+  let foundRecipe = false;
+
+  do {
+    console.log(`[scrapeInstagramComments] Fetching page ${page} for ${url} (cursor: ${cursor})`);
+    const fetchUrl = `https://api.scrapecreators.com/v2/instagram/post/comments?url=${encodeURIComponent(url)}${
+      cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""
+    }`;
+
+    let res: Response | null = null;
+    let attempt = 0;
+    const maxAttempts = 5;
+
+    while (attempt < maxAttempts) {
+      attempt++;
+      try {
+        console.log(`[scrapeInstagramComments] Attempt ${attempt}/${maxAttempts} for page ${page}`);
+        res = await fetch(fetchUrl, {
+          headers: {
+            "x-api-key": apiKey,
+          },
+        });
+
+        if (res.ok) {
+          break;
+        }
+
+        console.warn(`[scrapeInstagramComments] Attempt ${attempt} failed with status ${res.status}`);
+        const errText = await res.text();
+        console.warn(`[scrapeInstagramComments] Error response body: ${errText}`);
+
+        if ((res.status === 500 || res.status === 429) && attempt < maxAttempts) {
+          const delay = attempt * 2000; // 2s, 4s, 6s, 8s
+          console.log(`[scrapeInstagramComments] Retrying in ${delay / 1000} seconds...`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+      } catch (err: any) {
+        console.error(`[scrapeInstagramComments] Network error on attempt ${attempt}:`, err);
+        if (attempt < maxAttempts) {
+          const delay = attempt * 2000;
+          console.log(`[scrapeInstagramComments] Retrying in ${delay / 1000} seconds...`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    if (!res || !res.ok) {
+      console.error(`[scrapeInstagramComments] Failed to fetch comments page ${page} after ${maxAttempts} attempts`);
+      break;
+    }
+
+    const data = await res.json();
+    if (data.credits_remaining !== undefined) {
+      creditsRemaining = data.credits_remaining;
+    }
+
+    const pageComments = data.comments || [];
+    console.log(`[scrapeInstagramComments] Page ${page} returned ${pageComments.length} comments`);
+
+    for (const comment of pageComments) {
+      const text = comment?.text || comment?.comment_text || "";
+      if (!text || seenTexts.has(text)) continue;
+
+      const username = (
+        comment?.user?.username ||
+        comment?.owner?.username ||
+        comment?.username ||
+        ""
+      ).toLowerCase();
+      const isPinned = comment?.is_pinned || comment?.pinned || false;
+
+      if (isPinned) {
+        console.log(`[scrapeInstagramComments] Found PINNED comment: "${text.slice(0, 60)}..."`);
+        pinnedComments.push(text);
+        seenTexts.add(text);
+
+        // Se il commento fissato sembra la ricetta, possiamo fermarci per risparmiare crediti/tempo
+        if (text.length > 150 || /ingredienti|ricetta|procedimento/i.test(text)) {
+          foundRecipe = true;
+        }
+        continue;
+      }
+
+      if (creatorUsernameLower && username === creatorUsernameLower) {
+        seenTexts.add(text);
+        const isReply = /^@\w+/.test(text.trim());
+        if (isReply) {
+          creatorReplies.push(text);
+          console.log(`[scrapeInstagramComments] Found creator REPLY: "${text.slice(0, 60)}..."`);
+        } else {
+          creatorTopLevel.push(text);
+          console.log(`[scrapeInstagramComments] Found creator TOP-LEVEL: "${text.slice(0, 60)}..."`);
+
+          // Se il commento del creatore sembra la ricetta, fermiamo la paginazione
+          if (text.length > 150 || /ingredienti|ricetta|procedimento/i.test(text)) {
+            foundRecipe = true;
+          }
+        }
+      }
+    }
+
+    if (foundRecipe) {
+      console.log(`[scrapeInstagramComments] Found creator/pinned comment that looks like a recipe, stopping pagination early`);
+      break;
+    }
+
+    cursor = data.cursor || "";
+    page++;
+  } while (cursor && page <= maxPages);
+
+  // Ordina per lunghezza decrescente (il commento-ricetta è il più lungo)
+  creatorTopLevel.sort((a, b) => b.length - a.length);
+  creatorReplies.sort((a, b) => b.length - a.length);
+
+  // Priorità: fissati > top-level del creatore > risposte del creatore
+  const commentsList: string[] = [];
+  commentsList.push(...pinnedComments, ...creatorTopLevel, ...creatorReplies);
+
+  console.log(`[scrapeInstagramComments] Total filtered comments collected: ${commentsList.length}`);
+  if (commentsList.length > 0) {
+    console.log(`[scrapeInstagramComments] First comment preview: "${commentsList[0].slice(0, 100)}..."`);
+  }
+
+  return { comments: commentsList, creditsRemaining };
 }
 
 /**

@@ -91,7 +91,12 @@
     "drawerTitle": "Import a Recipe",
     "drawerDesc": "Paste an Instagram Reel, TikTok video, or web recipe link to scan and add it to the catalog.",
     "saveSuccess": "Recipe saved to your collection!",
-    "removeSuccess": "Recipe removed from your collection!"
+    "removeSuccess": "Recipe removed from your collection!",
+    "commentSearchTitle": "Recipe not found in video",
+    "commentSearchDesc": "The recipe might be in the post comments. Do you want to perform a deeper search?",
+    "commentSearchCost": "This will cost 1 additional token",
+    "commentSearchBtn": "Search comments (1 token)",
+    "commentSearchCancel": "Cancel"
   },
   "Profile": {
     "title": "Profile",

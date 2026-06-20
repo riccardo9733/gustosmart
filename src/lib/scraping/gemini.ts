@@ -4,7 +4,7 @@ import { type ScrapedData } from "./scrapecreators";
  * Utilizza OpenRouter (modello google/gemini-3.1-flash-lite) per estrarre una ricetta strutturata 
  * a partire da caption e trascrizione audio.
  */
-export async function generateRecipeFromText(caption: string, transcript: string): Promise<any> {
+export async function generateRecipeFromText(caption: string, transcript: string, comments?: string[]): Promise<any> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     throw new Error("Manca la chiave d'ambiente OPENROUTER_API_KEY");
@@ -14,7 +14,7 @@ export async function generateRecipeFromText(caption: string, transcript: string
   console.log(`Chiamata a OpenRouter con modello: ${modelId}`);
 
   const prompt = `
-Sei un assistente culinario esperto e meticoloso. Analizza attentamente la descrizione del post (Caption) e la trascrizione audio (Transcript) di un video di cucina per estrarre la ricetta strutturata.
+Sei un assistente culinario esperto e meticoloso. Analizza attentamente la descrizione del post (Caption), la trascrizione audio (Transcript) e i commenti (Comments) di un video di cucina per estrarre la ricetta strutturata.
 
 Dati del video:
 ---
@@ -23,11 +23,14 @@ ${caption || "(Nessuna caption fornita)"}
 
 TRASCRIZIONE AUDIO:
 ${transcript || "(Nessuna trascrizione audio fornita)"}
+
+COMMENTI DEL POST (utili se gli ingredienti o i passaggi sono spiegati nei commenti o nei commenti fissati):
+${comments && comments.length > 0 ? comments.join("\n") : "(Nessun commento fornito)"}
 ---
 
 Devi restituire esclusivamente un oggetto JSON che rispetta esattamente il seguente schema:
 {
-  "isRecipeDetailsPresent": "Imposta su true se e solo se la Caption o la Trascrizione Audio contengono dettagli effettivi sulla ricetta come ingredienti o passaggi di cottura. Imposta su false se non ci sono informazioni utili, se l'input contiene solo un titolo o parola chiave generica (es. 'Waffle') senza dettagli o se le informazioni fornite non permettono di ricreare fedelmente la ricetta (boolean)",
+  "isRecipeDetailsPresent": "Imposta su true se e solo se la Caption, la Trascrizione Audio o i Commenti contengono dettagli effettivi sulla ricetta come ingredienti o passaggi di cottura. Imposta su false se non ci sono informazioni utili, se l'input contiene solo un titolo o parola chiave generica (es. 'Waffle') senza dettagli o se le informazioni fornite non permettono di ricreare fedelmente la ricetta (boolean)",
   "title": "Il titolo accattivante e descrittivo della ricetta (string)",
   "sourceLanguage": "Il codice lingua ISO a due lettere rilevato del post sorgente, es. 'it', 'en', 'es', 'fr' (string)",
   "servings": "Numero di porzioni per cui sono calibrati gli ingredienti (integer, default: 2 se non specificato)",
@@ -58,7 +61,7 @@ Devi restituire esclusivamente un oggetto JSON che rispetta esattamente il segue
 }
 
 Istruzioni per l'estrazione:
-1. Deduci gli ingredienti sia dalla Caption che dalla Trascrizione Audio. Unisci le informazioni per avere una lista completa.
+1. Deduci gli ingredienti sia dalla Caption che dalla Trascrizione Audio e dai Commenti (in particolare presta attenzione ai commenti scritti dall'autore del post). Unisci le informazioni per avere una lista completa.
 2. Identifica la categoria culinaria adatta basandoti sul titolo e gli ingredienti. Deve corrispondere esattamente ad una delle seguenti stringhe:
    - 'first_courses' (primi piatti come pasta, risotti, zuppe, gnocchi)
    - 'second_courses' (secondi piatti di carne, pesce, uova o vegetariani strutturati)
@@ -75,9 +78,14 @@ Istruzioni per l'estrazione:
 5. Se non trovi indicazioni sul numero di porzioni, imposta 'servings' a 2 di default.
 6. Ordina i passaggi delle istruzioni in ordine cronologico e logico chiaro.
 7. Rileva la lingua principale del post/sorgente (es. Italiano, Inglese, Spagnolo) e compila tutti i campi di testo ('title', 'ingredients', 'instructions', 'nutritionalAssessment') direttamente in tale lingua originale del post. Imposta il relativo codice lingua a due lettere in 'sourceLanguage' (es. 'it', 'en', 'es', 'fr', 'de').
-8. Valuta attentamente se nei dati di input (Caption o Trascrizione Audio) sono presenti informazioni utili per estrarre una ricetta (almeno qualche ingrediente o qualche passaggio di preparazione). Se le informazioni sono insufficienti, o se è presente solo un titolo o una parola chiave generica (es. "waffle") senza nessun ingrediente o procedimento utile, imposta tassativamente il campo "isRecipeDetailsPresent" a false.
+8. Valuta attentamente se nei dati di input (Caption, Trascrizione Audio o Commenti) sono presenti informazioni utili per estrarre una ricetta (almeno qualche ingrediente o qualche passaggio di preparazione). Se le informazioni sono insufficienti, o se è presente solo un titolo o una parola chiave generica (es. "waffle") senza nessun ingrediente o procedimento utile, imposta tassativamente il campo "isRecipeDetailsPresent" a false.
 9. Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includere blocchi di markdown o testo aggiuntivo al di fuori dell'oggetto JSON.
 `;
+
+  console.log("=========================================");
+  console.log("[generateRecipeFromText] PROMPT SENT TO GEMINI:");
+  console.log(prompt);
+  console.log("=========================================");
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",

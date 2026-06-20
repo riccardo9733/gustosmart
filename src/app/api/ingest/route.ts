@@ -5,7 +5,7 @@ import { scrapeInstagram, scrapeTikTok, scrapeFacebook, scrapeYouTube } from "@/
 import { scrapeWebPage } from "@/lib/scraping/web";
 import { generateRecipeFromText, generateRecipeFromWeb } from "@/lib/scraping/gemini";
 import { validateAndFormatRecipe } from "@/lib/scraping/validation";
-import { uploadImageToB2 } from "@/lib/scraping/b2";
+import { uploadImageToB2, deleteImageByUrl } from "@/lib/scraping/b2";
 import { cleanUrl, resolveRedirect } from "@/lib/scraping/urlCleaner";
 
 // Forza il tempo massimo di esecuzione a 60 secondi (utile per Vercel/Netlify)
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
             console.error("Errore durante l'invio dell'evento nello stream:", e);
           }
         };
-
+        let b2ImageUrl: string | null = null;
         try {
           // 0. RISOLUZIONE E PULIZIA URL
           console.log(`[Ingest Route] Risoluzione URL originale: ${url}`);
@@ -153,7 +153,7 @@ export async function POST(request: Request) {
 
           const geminiPromise = cleanedPlatform === "web"
             ? generateRecipeFromWeb(scrapedData)
-            : generateRecipeFromText(scrapedData.caption, scrapedData.transcript);
+            : generateRecipeFromText(scrapedData.caption, scrapedData.transcript, scrapedData.comments);
 
           const uploadPromise = (async () => {
             if (scrapedData.coverImageUrl) {
@@ -167,7 +167,19 @@ export async function POST(request: Request) {
             return null;
           })();
 
-          const [geminiOutput, b2ImageUrl] = await Promise.all([geminiPromise, uploadPromise]);
+          const [geminiResult, uploadResult] = await Promise.allSettled([geminiPromise, uploadPromise]);
+          
+          let geminiOutput: any = null;
+
+          if (uploadResult.status === "fulfilled") {
+            b2ImageUrl = uploadResult.value;
+          }
+
+          if (geminiResult.status === "rejected") {
+            throw geminiResult.reason;
+          } else {
+            geminiOutput = geminiResult.value;
+          }
 
           // Log OpenRouter Call Event
           const usage = geminiOutput.usage;
@@ -196,6 +208,22 @@ export async function POST(request: Request) {
           }
 
           if (geminiOutput.recipe.isRecipeDetailsPresent === false) {
+            // Per Instagram: proponi la ricerca approfondita nei commenti
+            if (cleanedPlatform === "instagram") {
+              console.log(`[Ingest Route] isRecipeDetailsPresent=false per Instagram. Invio evento needsCommentSearch.`);
+              sendEvent("needsCommentSearch", {
+                caption: scrapedData.caption || "",
+                transcript: scrapedData.transcript || "",
+                b2ImageUrl: b2ImageUrl || null,
+                finalUrl,
+                recipeId,
+                creatorUsername: scrapedData.creatorUsername || null,
+                creatorFullName: scrapedData.creatorFullName || null,
+                creatorId: scrapedData.creatorId || null,
+              });
+              controller.close();
+              return;
+            }
             throw new Error("INSUFFICIENT_RECIPE_DATA");
           }
 
@@ -226,6 +254,16 @@ export async function POST(request: Request) {
         } catch (err: any) {
           const errorMessage = err instanceof Error ? err.message : String(err);
           console.error(`[Ingest Route] Errore durante lo streaming dell'ingest:`, errorMessage);
+          
+          if (b2ImageUrl) {
+            try {
+              console.log(`[Ingest Route] Ingest fallito. Avvio rimozione immagine orfana da B2: ${b2ImageUrl}`);
+              await deleteImageByUrl(b2ImageUrl);
+            } catch (cleanupErr) {
+              console.error("[Ingest Route] Errore durante la rimozione dell'immagine orfana da B2:", cleanupErr);
+            }
+          }
+
           sendEvent("error", { error: errorMessage || "Errore imprevisto durante l'elaborazione" });
           controller.close();
         }

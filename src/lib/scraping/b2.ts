@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 // Lazy-initialized S3 client to avoid build-time issues if env vars are missing
 let s3ClientInstance: S3Client | null = null;
@@ -156,3 +156,49 @@ export async function getB2Image(key: string): Promise<{ buffer: Buffer; content
 
   return { buffer, contentType };
 }
+
+/**
+ * Elimina un oggetto dal bucket Backblaze B2 tramite la sua chiave.
+ */
+export async function deleteB2Image(fileKey: string): Promise<void> {
+  const bucketName = process.env.B2_BUCKET_NAME;
+  if (!bucketName) {
+    throw new Error("Manca la chiave d'ambiente B2_BUCKET_NAME");
+  }
+
+  const client = getS3Client();
+  console.log(`B2: Avvio eliminazione file su B2 con chiave: ${fileKey}`);
+  const command = new DeleteObjectCommand({
+    Bucket: bucketName,
+    Key: fileKey,
+  });
+
+  await client.send(command);
+  console.log(`B2: File ${fileKey} eliminato con successo.`);
+}
+
+/**
+ * Elimina un'immagine dal bucket Backblaze B2 a partire dal suo URL completo.
+ */
+export async function deleteImageByUrl(imageUrl: string): Promise<void> {
+  const bucketName = process.env.B2_BUCKET_NAME;
+  if (!bucketName) {
+    throw new Error("Manca la chiave d'ambiente B2_BUCKET_NAME");
+  }
+
+  // Se l'immagine non è di B2 (es: url originale del social in fallback), non facciamo nulla
+  const endpoint = process.env.B2_ENDPOINT;
+  if (!endpoint || !imageUrl.includes(endpoint)) {
+    return;
+  }
+
+  const parts = imageUrl.split(`/${bucketName}/`);
+  if (parts.length < 2) {
+    console.warn(`[B2 Delete] Impossibile estrarre la chiave dall'URL: ${imageUrl}`);
+    return;
+  }
+
+  const fileKey = parts[parts.length - 1];
+  await deleteB2Image(fileKey);
+}
+
