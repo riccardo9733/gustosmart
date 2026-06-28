@@ -1,40 +1,58 @@
-import { identifyPlatform } from "@/lib/scraping/detector";
-import { getFirebaseDb } from "@/lib/firebase";
+import "../polyfill.ts";
+import "@supabase/functions-js/edge-runtime.d.ts";
+
+import { identifyPlatform } from "../_shared/detector.ts";
+import { getFirebaseDb } from "../_shared/firebase.ts";
 import { collection, doc, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
-import { scrapeInstagram, scrapeTikTok, scrapeFacebook, scrapeYouTube } from "@/lib/scraping/scrapecreators";
-import { scrapeWebPage } from "@/lib/scraping/web";
-import { generateRecipeFromText, generateRecipeFromWeb } from "@/lib/scraping/gemini";
-import { validateAndFormatRecipe } from "@/lib/scraping/validation";
-import { uploadImageToB2, deleteImageByUrl } from "@/lib/scraping/b2";
-import { cleanUrl, resolveRedirect } from "@/lib/scraping/urlCleaner";
+import { scrapeInstagram, scrapeTikTok, scrapeFacebook, scrapeYouTube } from "../_shared/scrapecreators.ts";
+import { scrapeWebPage } from "../_shared/web.ts";
+import { generateRecipeFromText, generateRecipeFromWeb } from "../_shared/gemini.ts";
+import { validateAndFormatRecipe } from "../_shared/validation.ts";
+import { uploadImageToB2, deleteImageByUrl } from "../_shared/b2.ts";
+import { cleanUrl, resolveRedirect } from "../_shared/urlCleaner.ts";
 
-// Forza il tempo massimo di esecuzione a 60 secondi (utile per Vercel/Netlify)
-export const maxDuration = 60;
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+};
 
-export async function POST(request: Request) {
+Deno.serve(async (req: Request) => {
+  // Handle CORS preflight request
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ success: false, error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
-    const body = await request.json();
+    const body = await req.json();
     const { url, userId, userEmail } = body;
 
     if (!url) {
       return new Response(JSON.stringify({ success: false, error: "L'URL è obbligatorio" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (!userId) {
       return new Response(JSON.stringify({ success: false, error: "L'ID utente è obbligatorio" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const apiKey = process.env.SCRAPECREATORS_API_KEY;
+    const apiKey = Deno.env.get("SCRAPECREATORS_API_KEY");
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ success: false, error: "Servizio di scraping non configurato: manca SCRAPECREATORS_API_KEY in .env.local" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "Servizio di scraping non configurato: manca SCRAPECREATORS_API_KEY" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -44,7 +62,7 @@ export async function POST(request: Request) {
     } catch (err: any) {
       return new Response(JSON.stringify({ success: false, error: err.message || "URL non valido" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -54,7 +72,7 @@ export async function POST(request: Request) {
           success: false,
           error: "Al momento supportiamo solo l'importazione da Instagram Reel, TikTok, YouTube, Facebook Reel e siti web di ricette.",
         }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -78,12 +96,12 @@ export async function POST(request: Request) {
         let b2ImageUrl: string | null = null;
         try {
           // 0. RISOLUZIONE E PULIZIA URL
-          console.log(`[Ingest Route] Risoluzione URL originale: ${url}`);
+          console.log(`[Ingest Function] Risoluzione URL originale: ${url}`);
           sendEvent("status", { step: "scraping", progress: 5 });
 
           const resolvedUrl = await resolveRedirect(url);
           const finalUrl = cleanUrl(resolvedUrl);
-          console.log(`[Ingest Route] URL risolto e pulito: ${finalUrl}`);
+          console.log(`[Ingest Function] URL risolto e pulito: ${finalUrl}`);
 
           const cleanedPlatform = identifyPlatform(finalUrl);
 
@@ -96,7 +114,7 @@ export async function POST(request: Request) {
             const existingDoc = snap.docs[0];
             const existingId = existingDoc.id;
             const existingRecipe = existingDoc.data();
-            console.log(`[Ingest Route] Cache hit server-side per recipeId: ${existingId} e URL: ${finalUrl}`);
+            console.log(`[Ingest Function] Cache hit server-side per recipeId: ${existingId} e URL: ${finalUrl}`);
 
             sendEvent("success", { recipe: existingRecipe, recipeId: existingId, generationId: "cache-hit" });
             controller.close();
@@ -104,7 +122,7 @@ export async function POST(request: Request) {
           }
 
           // STEP 1: SCRAPING
-          console.log(`[Ingest Route] STEP 1: Scraping per URL: ${finalUrl}`);
+          console.log(`[Ingest Function] STEP 1: Scraping per URL: ${finalUrl}`);
           sendEvent("status", { step: "scraping", progress: 15 });
 
           const scrapedData = cleanedPlatform === "instagram"
@@ -135,7 +153,7 @@ export async function POST(request: Request) {
                 }
               });
             } catch (fsErr) {
-              console.error("[Ingest Route] Errore nel salvataggio del log crediti ScrapeCreators su Firestore:", fsErr);
+              console.error("[Ingest Function] Errore nel salvataggio del log crediti ScrapeCreators su Firestore:", fsErr);
             }
           }
 
@@ -148,7 +166,7 @@ export async function POST(request: Request) {
           }
 
           // STEP 2: AI & IMAGE UPLOAD (IN PARALLELO)
-          console.log(`[Ingest Route] STEP 2: AI Extraction & Cover upload in parallelo`);
+          console.log(`[Ingest Function] STEP 2: AI Extraction & Cover upload in parallelo`);
           sendEvent("status", { step: "extracting", progress: 50 });
 
           const geminiPromise = cleanedPlatform === "web"
@@ -160,7 +178,7 @@ export async function POST(request: Request) {
               try {
                 return await uploadImageToB2(scrapedData.coverImageUrl, recipeId);
               } catch (b2Err) {
-                console.error("[Ingest Route] Caricamento immagine su B2 fallito, uso fallback URL originale:", b2Err);
+                console.error("[Ingest Function] Caricamento immagine su B2 fallito, uso fallback URL originale:", b2Err);
                 return scrapedData.coverImageUrl;
               }
             }
@@ -203,14 +221,14 @@ export async function POST(request: Request) {
                 }
               });
             } catch (fsErr) {
-              console.error("[Ingest Route] Errore nel salvataggio del log di chiamata OpenRouter su Firestore:", fsErr);
+              console.error("[Ingest Function] Errore nel salvataggio del log di chiamata OpenRouter su Firestore:", fsErr);
             }
           }
 
           if (geminiOutput.recipe.isRecipeDetailsPresent === false) {
             // Per Instagram: proponi la ricerca approfondita nei commenti
             if (cleanedPlatform === "instagram") {
-              console.log(`[Ingest Route] isRecipeDetailsPresent=false per Instagram. Invio evento needsCommentSearch.`);
+              console.log(`[Ingest Function] isRecipeDetailsPresent=false per Instagram. Invio evento needsCommentSearch.`);
               sendEvent("needsCommentSearch", {
                 caption: scrapedData.caption || "",
                 transcript: scrapedData.transcript || "",
@@ -228,7 +246,7 @@ export async function POST(request: Request) {
           }
 
           // STEP 3: VALIDATION
-          console.log(`[Ingest Route] STEP 3: Validazione e formattazione con Zod`);
+          console.log(`[Ingest Function] STEP 3: Validazione e formattazione con Zod`);
           sendEvent("status", { step: "saving", progress: 90 });
 
           const validatedRecipe = validateAndFormatRecipe(
@@ -243,7 +261,7 @@ export async function POST(request: Request) {
           );
 
           // SUCCESS
-          console.log(`[Ingest Route] Ingest completato per recipeId: ${recipeId}`);
+          console.log(`[Ingest Function] Ingest completato per recipeId: ${recipeId}`);
           sendEvent("success", {
             recipe: validatedRecipe,
             recipeId,
@@ -253,14 +271,14 @@ export async function POST(request: Request) {
           controller.close();
         } catch (err: any) {
           const errorMessage = err instanceof Error ? err.message : String(err);
-          console.error(`[Ingest Route] Errore durante lo streaming dell'ingest:`, errorMessage);
+          console.error(`[Ingest Function] Errore durante lo streaming dell'ingest:`, errorMessage);
           
           if (b2ImageUrl) {
             try {
-              console.log(`[Ingest Route] Ingest fallito. Avvio rimozione immagine orfana da B2: ${b2ImageUrl}`);
+              console.log(`[Ingest Function] Ingest fallito. Avvio rimozione immagine orfana da B2: ${b2ImageUrl}`);
               await deleteImageByUrl(b2ImageUrl);
             } catch (cleanupErr) {
-              console.error("[Ingest Route] Errore durante la rimozione dell'immagine orfana da B2:", cleanupErr);
+              console.error("[Ingest Function] Errore durante la rimozione dell'immagine orfana da B2:", cleanupErr);
             }
           }
 
@@ -272,16 +290,16 @@ export async function POST(request: Request) {
 
     return new Response(stream, {
       headers: {
+        ...corsHeaders,
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
       },
     });
   } catch (error: any) {
-    console.error("Errore nell'endpoint /api/ingest:", error);
+    console.error("Errore nell'endpoint ingest:", error);
     return new Response(JSON.stringify({ success: false, error: error.message || "Errore interno del server" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-}
+});

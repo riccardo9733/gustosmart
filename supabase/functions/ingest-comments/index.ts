@@ -1,16 +1,34 @@
-import { scrapeInstagramComments } from "@/lib/scraping/scrapecreators";
-import { generateRecipeFromText } from "@/lib/scraping/gemini";
-import { validateAndFormatRecipe } from "@/lib/scraping/validation";
-import { deleteImageByUrl } from "@/lib/scraping/b2";
+import "../polyfill.ts";
+import "@supabase/functions-js/edge-runtime.d.ts";
+
+import { scrapeInstagramComments } from "../_shared/scrapecreators.ts";
+import { generateRecipeFromText } from "../_shared/gemini.ts";
+import { validateAndFormatRecipe } from "../_shared/validation.ts";
+import { deleteImageByUrl } from "../_shared/b2.ts";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/firebase";
+import { getFirebaseDb } from "../_shared/firebase.ts";
 
-// Forza il tempo massimo di esecuzione a 60 secondi
-export const maxDuration = 60;
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+};
 
-export async function POST(request: Request) {
+Deno.serve(async (req: Request) => {
+  // CORS Preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ success: false, error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
-    const body = await request.json();
+    const body = await req.json();
     const {
       url,
       userId,
@@ -27,15 +45,15 @@ export async function POST(request: Request) {
     if (!url || !userId || !recipeId) {
       return new Response(
         JSON.stringify({ success: false, error: "Parametri obbligatori mancanti (url, userId, recipeId)" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const apiKey = process.env.SCRAPECREATORS_API_KEY;
+    const apiKey = Deno.env.get("SCRAPECREATORS_API_KEY");
     if (!apiKey) {
       return new Response(
         JSON.stringify({ success: false, error: "Servizio di scraping non configurato" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -59,7 +77,7 @@ export async function POST(request: Request) {
           const { comments, creditsRemaining } = await scrapeInstagramComments(url, creatorUsername);
 
           // Log crediti ScrapeCreators
-          if (creditsRemaining !== null) {
+          if (creditsRemaining !== null && creditsRemaining !== undefined) {
             try {
               const firestoreDb = getFirebaseDb();
               const expireAt = new Date();
@@ -193,16 +211,16 @@ export async function POST(request: Request) {
 
     return new Response(stream, {
       headers: {
+        ...corsHeaders,
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        Connection: "keep-alive",
       },
     });
   } catch (error: any) {
     console.error("[Ingest Comments] Errore endpoint:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message || "Errore interno del server" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-}
+});

@@ -177,7 +177,8 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 3. Esegue la chiamata all'API per lo streaming SSE
-      const response = await fetch("/api/ingest", {
+      const supabaseFunctionsUrl = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL || "http://127.0.0.1:54321/functions/v1";
+      const response = await fetch(`${supabaseFunctionsUrl}/ingest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: cleanedUrl, userId: user.uid, userEmail: user.email || null }),
@@ -422,7 +423,8 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
     });
 
     try {
-      const response = await fetch("/api/ingest/comments", {
+      const supabaseFunctionsUrl = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL || "http://127.0.0.1:54321/functions/v1";
+      const response = await fetch(`${supabaseFunctionsUrl}/ingest-comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
