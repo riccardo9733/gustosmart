@@ -81,6 +81,7 @@
     "importFailed": "Error de importación",
     "importFailedDesc": "No se pudo completar la importación. Inténtalo más tarde.",
     "insufficientDataError": "No se detectó información útil (ingredientes o pasos) para generar la receta.",
+    "analysisTimeoutError": "El análisis tardó demasiado y no obtuvo ningún resultado.",
     "websiteForbidden": "Este sitio web bloquea las conexiones automáticas por seguridad. Intenta copiar la receta de otro sitio o usa Instagram/TikTok.",
     "noTokensErrorTitle": "Tokens agotados",
     "noTokensErrorDesc": "¡Te has quedado sin tokens! La receta que intentas importar no está en el catálogo. Recarga tus tokens para escanear nuevas recetas.",

@@ -61,13 +61,25 @@ Deno.serve(async (req: Request) => {
 
     const stream = new ReadableStream({
       async start(controller) {
+        let isFinished = false;
         const sendEvent = (event: string, data: any) => {
+          if (isFinished) return;
           try {
             controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
           } catch (e) {
             console.error("[Ingest Comments] Errore invio evento SSE:", e);
           }
         };
+
+        const timeoutId = setTimeout(() => {
+          if (isFinished) return;
+          isFinished = true;
+          console.warn("[Ingest Comments] Timeout globale di 45s superato.");
+          sendEvent("error", { error: "ANALYSIS_TIMEOUT" });
+          try {
+            controller.close();
+          } catch (_) {}
+        }, 45000);
 
         try {
           // STEP 1: SCRAPING COMMENTI
@@ -111,7 +123,11 @@ Deno.serve(async (req: Request) => {
               }
             }
             sendEvent("error", { error: "INSUFFICIENT_RECIPE_DATA" });
-            controller.close();
+            if (!isFinished) {
+              isFinished = true;
+              clearTimeout(timeoutId);
+              controller.close();
+            }
             return;
           }
 
@@ -163,7 +179,11 @@ Deno.serve(async (req: Request) => {
               }
             }
             sendEvent("error", { error: "INSUFFICIENT_RECIPE_DATA" });
-            controller.close();
+            if (!isFinished) {
+              isFinished = true;
+              clearTimeout(timeoutId);
+              controller.close();
+            }
             return;
           }
 
@@ -189,8 +209,15 @@ Deno.serve(async (req: Request) => {
             generationId: geminiOutput.generationId,
             scrapecreatorsCreditsRemaining: creditsRemaining ?? null,
           });
-          controller.close();
+          if (!isFinished) {
+            isFinished = true;
+            clearTimeout(timeoutId);
+            controller.close();
+          }
         } catch (err: any) {
+          if (isFinished) return;
+          isFinished = true;
+          clearTimeout(timeoutId);
           const errorMessage = err instanceof Error ? err.message : String(err);
           console.error(`[Ingest Comments] Errore:`, errorMessage);
 
@@ -204,7 +231,9 @@ Deno.serve(async (req: Request) => {
           }
 
           sendEvent("error", { error: errorMessage || "Errore imprevisto durante la ricerca nei commenti" });
-          controller.close();
+          try {
+            controller.close();
+          } catch (_) {}
         }
       },
     });

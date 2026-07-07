@@ -32,7 +32,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
   let creditsRemaining: number | null = null;
 
   // Eseguiamo la chiamata ai dettagli del post e alla trascrizione in parallelo.
-  // La trascrizione ha un timeout di 15 secondi per evitare di bloccare o far fallire l'intera importazione.
+  // La trascrizione ha un timeout di 60 secondi per evitare di bloccare o far fallire l'intera importazione.
   const fetchPost = fetch(
     `https://api.scrapecreators.com/v1/instagram/post?url=${encodeURIComponent(url)}`,
     {
@@ -44,7 +44,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
 
   const fetchTranscriptWithTimeout = async (): Promise<string> => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
     try {
       const res = await fetch(
         `https://api.scrapecreators.com/v2/instagram/media/transcript?url=${encodeURIComponent(url)}`,
@@ -67,7 +67,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
       return data.transcripts?.[0]?.text || "";
     } catch {
       clearTimeout(timeoutId);
-      console.warn("Richiesta trascrizione Instagram fallita o scaduta (timeout 15s).");
+      console.warn("Richiesta trascrizione Instagram fallita o scaduta (timeout 60s).");
       return "";
     }
   };
@@ -225,17 +225,21 @@ export async function scrapeInstagramComments(
 
     let res: Response | null = null;
     let attempt = 0;
-    const maxAttempts = 5;
+    const maxAttempts = 3;
 
     while (attempt < maxAttempts) {
       attempt++;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout per tentativo
       try {
         console.log(`[scrapeInstagramComments] Attempt ${attempt}/${maxAttempts} for page ${page}`);
         res = await fetch(fetchUrl, {
           headers: {
             "x-api-key": apiKey,
           },
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         if (res.ok) {
           break;
@@ -246,20 +250,21 @@ export async function scrapeInstagramComments(
         console.warn(`[scrapeInstagramComments] Error response body: ${errText}`);
 
         if ((res.status === 500 || res.status === 429) && attempt < maxAttempts) {
-          const delay = attempt * 2000; // 2s, 4s, 6s, 8s
+          const delay = attempt * 1000; // 1s, 2s
           console.log(`[scrapeInstagramComments] Retrying in ${delay / 1000} seconds...`);
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
       } catch (err: any) {
-        console.error(`[scrapeInstagramComments] Network error on attempt ${attempt}:`, err);
+        clearTimeout(timeoutId);
+        console.error(`[scrapeInstagramComments] Network error or timeout on attempt ${attempt}:`, err.message || err);
         if (attempt < maxAttempts) {
-          const delay = attempt * 2000;
+          const delay = attempt * 1000; // 1s, 2s
           console.log(`[scrapeInstagramComments] Retrying in ${delay / 1000} seconds...`);
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
-        throw err;
+        break; // Non lanciamo l'errore per evitare di far fallire l'intera chiamata a monte
       }
     }
 
@@ -268,7 +273,18 @@ export async function scrapeInstagramComments(
       break;
     }
 
-    const data = await res.json();
+    let data: any = null;
+    try {
+      data = await res.json();
+    } catch (jsonErr) {
+      console.error("[scrapeInstagramComments] Failed to parse comments JSON response:", jsonErr);
+      break;
+    }
+
+    if (!data) {
+      break;
+    }
+
     if (data.credits_remaining !== undefined) {
       creditsRemaining = data.credits_remaining;
     }
@@ -442,7 +458,7 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
 
   const fetchTranscriptWithTimeout = async (): Promise<string> => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
     try {
       const res = await fetch(
         `https://api.scrapecreators.com/v1/facebook/post/transcript?url=${encodeURIComponent(url)}`,
@@ -465,7 +481,7 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
       return data.transcript || "";
     } catch {
       clearTimeout(timeoutId);
-      console.warn("Richiesta trascrizione Facebook fallita o scaduta (timeout 5s).");
+      console.warn("Richiesta trascrizione Facebook fallita o scaduta (timeout 60s).");
       return "";
     }
   };
@@ -572,7 +588,7 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
 
   if (isShort) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
     try {
       const res = await fetch(
         `https://api.scrapecreators.com/v1/youtube/video/transcript?url=${encodeURIComponent(url)}`,
@@ -595,7 +611,7 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
       }
     } catch {
       clearTimeout(timeoutId);
-      console.warn("Richiesta trascrizione YouTube Short fallita o scaduta (timeout 5s).");
+      console.warn("Richiesta trascrizione YouTube Short fallita o scaduta (timeout 60s).");
     }
   }
 

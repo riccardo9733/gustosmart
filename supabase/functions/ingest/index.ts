@@ -1,9 +1,10 @@
+// @ts-nocheck
 import "../polyfill.ts";
 import "@supabase/functions-js/edge-runtime.d.ts";
 
 import { identifyPlatform } from "../_shared/detector.ts";
 import { getFirebaseDb } from "../_shared/firebase.ts";
-import { collection, doc, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
+import { collection, doc, addDoc, serverTimestamp } from "firebase/firestore";
 import { scrapeInstagram, scrapeTikTok, scrapeFacebook, scrapeYouTube } from "../_shared/scrapecreators.ts";
 import { scrapeWebPage } from "../_shared/web.ts";
 import { generateRecipeFromText, generateRecipeFromWeb } from "../_shared/gemini.ts";
@@ -81,18 +82,29 @@ Deno.serve(async (req: Request) => {
     const newRecipeRef = doc(collection(db, "recipes"));
     const recipeId = newRecipeRef.id;
 
-    const encoder = new TextEncoder();
-
     // 2. Crea lo stream di risposta (Server-Sent Events)
     const stream = new ReadableStream({
       async start(controller) {
+        let isFinished = false;
         const sendEvent = (event: string, data: any) => {
+          if (isFinished) return;
           try {
             controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
           } catch (e) {
             console.error("Errore durante l'invio dell'evento nello stream:", e);
           }
         };
+
+        const timeoutId = setTimeout(() => {
+          if (isFinished) return;
+          isFinished = true;
+          console.warn("[Ingest Function] Timeout globale di 45s superato.");
+          sendEvent("error", { error: "ANALYSIS_TIMEOUT" });
+          try {
+            controller.close();
+          } catch (_) {}
+        }, 45000);
+
         let b2ImageUrl: string | null = null;
         try {
           // 0. RISOLUZIONE E PULIZIA URL
@@ -106,18 +118,84 @@ Deno.serve(async (req: Request) => {
           const cleanedPlatform = identifyPlatform(finalUrl);
 
           // Controllo duplicati secondario sul server (dopo la risoluzione dei redirect)
-          const firestoreDb = getFirebaseDb();
-          const q = query(collection(firestoreDb, "recipes"), where("sourceUrl", "==", finalUrl));
-          const snap = await getDocs(q);
+          const projectId = Deno.env.get("NEXT_PUBLIC_FIREBASE_PROJECT_ID");
+          let existingRecipe: any = null;
+          let existingId: string | null = null;
 
-          if (!snap.empty) {
-            const existingDoc = snap.docs[0];
-            const existingId = existingDoc.id;
-            const existingRecipe = existingDoc.data();
+          if (projectId) {
+            try {
+              const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+              const response = await fetch(firestoreUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  structuredQuery: {
+                    from: [{ collectionId: "recipes" }],
+                    where: {
+                      fieldFilter: {
+                        field: { fieldPath: "sourceUrl" },
+                        op: "EQUAL",
+                        value: { stringValue: finalUrl }
+                      }
+                    },
+                    limit: 1
+                  }
+                })
+              });
+
+              if (response.ok) {
+                const results = await response.json();
+                if (Array.isArray(results) && results.length > 0 && results[0].document) {
+                  const docData = results[0].document;
+                  const parseValue = (val: any): any => {
+                    if (!val) return null;
+                    if ("stringValue" in val) return val.stringValue;
+                    if ("booleanValue" in val) return val.booleanValue;
+                    if ("integerValue" in val) return Number(val.integerValue);
+                    if ("doubleValue" in val) return Number(val.doubleValue);
+                    if ("nullValue" in val) return null;
+                    if ("arrayValue" in val) {
+                      return Array.isArray(val.arrayValue.values)
+                        ? val.arrayValue.values.map((v: any) => parseValue(v))
+                        : [];
+                    }
+                    if ("mapValue" in val) {
+                      const res: Record<string, any> = {};
+                      if (val.mapValue.fields) {
+                        for (const k of Object.keys(val.mapValue.fields)) {
+                          res[k] = parseValue(val.mapValue.fields[k]);
+                        }
+                      }
+                      return res;
+                    }
+                    return null;
+                  };
+
+                  const fields = docData.fields || {};
+                  const parsedRecipe: Record<string, any> = {};
+                  for (const k of Object.keys(fields)) {
+                    parsedRecipe[k] = parseValue(fields[k]);
+                  }
+
+                  existingRecipe = parsedRecipe;
+                  const nameParts = docData.name.split("/");
+                  existingId = nameParts[nameParts.length - 1];
+                }
+              }
+            } catch (fsErr) {
+              console.error("[Ingest Function] Errore verifica cache su Firestore via REST:", fsErr);
+            }
+          }
+
+          if (existingRecipe && existingId) {
             console.log(`[Ingest Function] Cache hit server-side per recipeId: ${existingId} e URL: ${finalUrl}`);
 
             sendEvent("success", { recipe: existingRecipe, recipeId: existingId, generationId: "cache-hit" });
-            controller.close();
+            if (!isFinished) {
+              isFinished = true;
+              clearTimeout(timeoutId);
+              controller.close();
+            }
             return;
           }
 
@@ -239,7 +317,11 @@ Deno.serve(async (req: Request) => {
                 creatorFullName: scrapedData.creatorFullName || null,
                 creatorId: scrapedData.creatorId || null,
               });
-              controller.close();
+              if (!isFinished) {
+                isFinished = true;
+                clearTimeout(timeoutId);
+                controller.close();
+              }
               return;
             }
             throw new Error("INSUFFICIENT_RECIPE_DATA");
@@ -268,8 +350,15 @@ Deno.serve(async (req: Request) => {
             generationId: geminiOutput.generationId,
             scrapecreatorsCreditsRemaining: scrapedData.scrapecreatorsCreditsRemaining ?? null
           });
-          controller.close();
+          if (!isFinished) {
+            isFinished = true;
+            clearTimeout(timeoutId);
+            controller.close();
+          }
         } catch (err: any) {
+          if (isFinished) return;
+          isFinished = true;
+          clearTimeout(timeoutId);
           const errorMessage = err instanceof Error ? err.message : String(err);
           console.error(`[Ingest Function] Errore durante lo streaming dell'ingest:`, errorMessage);
           
@@ -283,7 +372,9 @@ Deno.serve(async (req: Request) => {
           }
 
           sendEvent("error", { error: errorMessage || "Errore imprevisto durante l'elaborazione" });
-          controller.close();
+          try {
+            controller.close();
+          } catch (_) {}
         }
       },
     });

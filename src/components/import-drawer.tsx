@@ -116,6 +116,9 @@ export function ImportDrawer() {
     if (error === "WEBSITE_FORBIDDEN") {
       return t("websiteForbidden");
     }
+    if (error === "ANALYSIS_TIMEOUT") {
+      return t("analysisTimeoutError");
+    }
     return error || t("importFailedDesc");
   };
 

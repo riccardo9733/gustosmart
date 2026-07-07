@@ -81,6 +81,7 @@
     "importFailed": "Errore di importazione",
     "importFailedDesc": "Impossibile completare lo scraping. Riprova più tardi.",
     "insufficientDataError": "Non sono state rilevate informazioni utili (ingredienti o passaggi) per generare la ricetta.",
+    "analysisTimeoutError": "L'analisi non ha portato a termine nessun risultato.",
     "websiteForbidden": "Questo sito web blocca le connessioni automatiche per sicurezza. Prova a copiare la ricetta da un altro sito o usa Instagram/TikTok.",
     "noTokensErrorTitle": "Token esauriti",
     "noTokensErrorDesc": "Hai esaurito i token! La ricetta che hai cercato di importare non fa ancora parte del catalogo e serve ricaricare i token.",

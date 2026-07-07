@@ -81,6 +81,7 @@
     "importFailed": "Erreur d'importation",
     "importFailedDesc": "Impossible de terminer l'importation. Veuillez réessayer plus tard.",
     "insufficientDataError": "Aucun détail de recette utile (ingrédients ou instructions) n'a été détecté dans la vidéo.",
+    "analysisTimeoutError": "L'analyse a pris trop de temps et n'a donné aucun résultat.",
     "websiteForbidden": "Ce site web bloque les connexions automatiques pour des raisons de sécurité. Essayez de copier la recette depuis un autre site ou utilisez Instagram/TikTok.",
     "noTokensErrorTitle": "Tokens épuisés",
     "noTokensErrorDesc": "Vous n'avez plus de tokens ! La recette que vous essayez d'importer n'est pas encore dans le catalogue. Rechargez vos tokens pour scanner de nouvelles recettes.",

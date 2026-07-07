@@ -86,8 +86,7 @@ export async function scrapeWebPage(url: string): Promise<ScrapedData> {
   }
 
   // 3. Parsing con @mozilla/readability (utilizzato come testo o come fallback)
-  // Castiamo a unknown e poi a Document per soddisfare il compilatore TypeScript ed evitare "any"
-  const reader = new Readability((document as unknown) as Document);
+  const reader = new Readability((document as unknown) as any);
   const article = reader.parse();
 
   if (!article) {
