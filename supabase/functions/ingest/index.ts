@@ -82,6 +82,8 @@ Deno.serve(async (req: Request) => {
     const newRecipeRef = doc(collection(db, "recipes"));
     const recipeId = newRecipeRef.id;
 
+    const encoder = new TextEncoder();
+
     // 2. Crea lo stream di risposta (Server-Sent Events)
     const stream = new ReadableStream({
       async start(controller) {
@@ -219,7 +221,7 @@ Deno.serve(async (req: Request) => {
               const expireAt = new Date();
               expireAt.setDate(expireAt.getDate() + 7);
 
-              await addDoc(collection(firestoreDb, "analytics_events"), {
+              await addDoc(collection(db, "analytics_events"), {
                 eventName: "scrapecreators_credits",
                 userId: userId || null,
                 userEmail: userEmail || null,
@@ -284,7 +286,7 @@ Deno.serve(async (req: Request) => {
               const expireAt = new Date();
               expireAt.setDate(expireAt.getDate() + 7);
 
-              await addDoc(collection(firestoreDb, "analytics_events"), {
+              await addDoc(collection(db, "analytics_events"), {
                 eventName: "openrouter_call",
                 userId: userId || null,
                 userEmail: userEmail || null,
