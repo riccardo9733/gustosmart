@@ -255,7 +255,11 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 setStep(nextStep);
                 currentStep = nextStep;
                 setProgress(data.progress);
+              } else if (eventName === "success") {
                 const { recipe, recipeId: newRecipeId, generationId, scrapecreatorsCreditsRemaining, scrapecreatorsCreditsUsed } = data;
+                if (!recipe) {
+                  throw new Error("Dati ricetta non validi ricevuti dal server.");
+                }
                 setStep("saving");
                 currentStep = "saving";
                 setProgress(95);
@@ -362,6 +366,9 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
 
                 reader.cancel();
                 return;
+              } else if (eventName === "error") {
+                const errMsg = data.error || "Errore durante l'importazione della ricetta";
+                throw new Error(errMsg);
               }
             }
           }
