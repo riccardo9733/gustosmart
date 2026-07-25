@@ -11,6 +11,7 @@ import { generateRecipeFromText, generateRecipeFromWeb } from "../_shared/gemini
 import { validateAndFormatRecipe } from "../_shared/validation.ts";
 import { uploadImageToB2, deleteImageByUrl } from "../_shared/b2.ts";
 import { cleanUrl, resolveRedirect } from "../_shared/urlCleaner.ts";
+import { getSupabaseClient } from "../_shared/supabase.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -107,6 +108,20 @@ Deno.serve(async (req: Request) => {
           } catch (_) {}
         }, 45000);
 
+        try {
+          const supabase = getSupabaseClient();
+          await supabase.from("ingestion_events").insert({
+            event_name: "recipe_import_initiated",
+            user_id: userId || null,
+            user_email: userEmail || null,
+            platform: platform,
+            status: "initiated",
+            is_cached: false,
+          });
+        } catch (e) {
+          console.error("[Ingest Function] Errore log import_initiated:", e);
+        }
+
         let b2ImageUrl: string | null = null;
         try {
           // 0. RISOLUZIONE E PULIZIA URL
@@ -192,6 +207,20 @@ Deno.serve(async (req: Request) => {
           if (existingRecipe && existingId) {
             console.log(`[Ingest Function] Cache hit server-side per recipeId: ${existingId} e URL: ${finalUrl}`);
 
+            try {
+              const supabase = getSupabaseClient();
+              await supabase.from("ingestion_events").insert({
+                event_name: "recipe_import_completed",
+                user_id: userId || null,
+                user_email: userEmail || null,
+                platform: cleanedPlatform,
+                status: "completed",
+                is_cached: true,
+              });
+            } catch (e) {
+              console.error("[Ingest Function] Errore log import_completed cache hit:", e);
+            }
+
             sendEvent("success", { recipe: existingRecipe, recipeId: existingId, generationId: "cache-hit" });
             if (!isFinished) {
               isFinished = true;
@@ -218,22 +247,16 @@ Deno.serve(async (req: Request) => {
           // Log ScrapeCreators Credit Balance Event if present
           if (scrapedData.scrapecreatorsCreditsRemaining !== undefined && scrapedData.scrapecreatorsCreditsRemaining !== null) {
             try {
-              const expireAt = new Date();
-              expireAt.setDate(expireAt.getDate() + 7);
-
-              await addDoc(collection(db, "analytics_events"), {
-                eventName: "scrapecreators_credits",
-                userId: userId || null,
-                userEmail: userEmail || null,
-                timestamp: serverTimestamp(),
-                expireAt,
-                params: {
-                  credits_remaining: scrapedData.scrapecreatorsCreditsRemaining,
-                  source_platform: cleanedPlatform
-                }
+              const supabase = getSupabaseClient();
+              await supabase.from("ingestion_events").insert({
+                event_name: "scrapecreators_credits",
+                user_id: userId || null,
+                user_email: userEmail || null,
+                platform: cleanedPlatform,
+                credits_remaining: scrapedData.scrapecreatorsCreditsRemaining,
               });
-            } catch (fsErr) {
-              console.error("[Ingest Function] Errore nel salvataggio del log crediti ScrapeCreators su Firestore:", fsErr);
+            } catch (sbErr) {
+              console.error("[Ingest Function] Errore nel salvataggio del log crediti ScrapeCreators su Supabase:", sbErr);
             }
           }
 
@@ -283,25 +306,19 @@ Deno.serve(async (req: Request) => {
           const usage = geminiOutput.usage;
           if (usage) {
             try {
-              const expireAt = new Date();
-              expireAt.setDate(expireAt.getDate() + 7);
-
-              await addDoc(collection(db, "analytics_events"), {
-                eventName: "openrouter_call",
-                userId: userId || null,
-                userEmail: userEmail || null,
-                timestamp: serverTimestamp(),
-                expireAt,
-                params: {
-                  generation_id: geminiOutput.generationId || "",
-                  type: "ingest",
-                  prompt_tokens: usage.prompt_tokens ?? 0,
-                  completion_tokens: usage.completion_tokens ?? 0,
-                  cost: usage.cost ?? 0
-                }
+              const supabase = getSupabaseClient();
+              await supabase.from("ai_usage_events").insert({
+                event_name: "openrouter_call",
+                user_id: userId || null,
+                user_email: userEmail || null,
+                action_type: "ingest",
+                model: geminiOutput.model || null,
+                prompt_tokens: usage.prompt_tokens ?? 0,
+                completion_tokens: usage.completion_tokens ?? 0,
+                cost: usage.cost ?? 0,
               });
-            } catch (fsErr) {
-              console.error("[Ingest Function] Errore nel salvataggio del log di chiamata OpenRouter su Firestore:", fsErr);
+            } catch (sbErr) {
+              console.error("[Ingest Function] Errore nel salvataggio del log di chiamata OpenRouter su Supabase:", sbErr);
             }
           }
 
@@ -346,6 +363,21 @@ Deno.serve(async (req: Request) => {
 
           // SUCCESS
           console.log(`[Ingest Function] Ingest completato per recipeId: ${recipeId}`);
+          // Log recipe_import_completed
+          try {
+            const supabase = getSupabaseClient();
+            await supabase.from("ingestion_events").insert({
+              event_name: "recipe_import_completed",
+              user_id: userId || null,
+              user_email: userEmail || null,
+              platform: cleanedPlatform,
+              status: "completed",
+              is_cached: false,
+            });
+          } catch (e) {
+            console.error("[Ingest Function] Errore log import_completed:", e);
+          }
+
           sendEvent("success", {
             recipe: validatedRecipe,
             recipeId,
@@ -374,6 +406,20 @@ Deno.serve(async (req: Request) => {
           }
 
           sendEvent("error", { error: errorMessage || "Errore imprevisto durante l'elaborazione" });
+          
+          try {
+            const supabase = getSupabaseClient();
+            await supabase.from("ingestion_events").insert({
+              event_name: "recipe_import_failed",
+              user_id: userId || null,
+              user_email: userEmail || null,
+              platform: cleanedPlatform,
+              status: "failed",
+              error_type: errorMessage || "UNKNOWN",
+            });
+          } catch (e) {
+            console.error("[Ingest Function] Errore log import_failed:", e);
+          }
           try {
             controller.close();
           } catch (_) {}

@@ -5,8 +5,7 @@ import { scrapeInstagramComments } from "../_shared/scrapecreators.ts";
 import { generateRecipeFromText } from "../_shared/gemini.ts";
 import { validateAndFormatRecipe } from "../_shared/validation.ts";
 import { deleteImageByUrl } from "../_shared/b2.ts";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getFirebaseDb } from "../_shared/firebase.ts";
+import { getSupabaseClient } from "../_shared/supabase.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -91,24 +90,16 @@ Deno.serve(async (req: Request) => {
           // Log crediti ScrapeCreators
           if (creditsRemaining !== null && creditsRemaining !== undefined) {
             try {
-              const firestoreDb = getFirebaseDb();
-              const expireAt = new Date();
-              expireAt.setDate(expireAt.getDate() + 7);
-
-              await addDoc(collection(firestoreDb, "analytics_events"), {
-                eventName: "scrapecreators_credits",
-                userId: userId || null,
-                userEmail: userEmail || null,
-                timestamp: serverTimestamp(),
-                expireAt,
-                params: {
-                  credits_remaining: creditsRemaining,
-                  source_platform: "instagram",
-                  type: "comment_search",
-                },
+              const supabase = getSupabaseClient();
+              await supabase.from("ingestion_events").insert({
+                event_name: "scrapecreators_credits",
+                user_id: userId || null,
+                user_email: userEmail || null,
+                platform: "instagram",
+                credits_remaining: creditsRemaining,
               });
-            } catch (fsErr) {
-              console.error("[Ingest Comments] Errore log crediti SC su Firestore:", fsErr);
+            } catch (sbErr) {
+              console.error("[Ingest Comments] Errore log crediti SC su Supabase:", sbErr);
             }
           }
 
@@ -142,29 +133,22 @@ Deno.serve(async (req: Request) => {
           );
 
           // Log OpenRouter Call
-          const firestoreDb = getFirebaseDb();
           const usage = geminiOutput.usage;
           if (usage) {
             try {
-              const expireAt = new Date();
-              expireAt.setDate(expireAt.getDate() + 7);
-
-              await addDoc(collection(firestoreDb, "analytics_events"), {
-                eventName: "openrouter_call",
-                userId: userId || null,
-                userEmail: userEmail || null,
-                timestamp: serverTimestamp(),
-                expireAt,
-                params: {
-                  generation_id: geminiOutput.generationId || "",
-                  type: "ingest_comment_search",
-                  prompt_tokens: usage.prompt_tokens ?? 0,
-                  completion_tokens: usage.completion_tokens ?? 0,
-                  cost: usage.cost ?? 0,
-                },
+              const supabase = getSupabaseClient();
+              await supabase.from("ai_usage_events").insert({
+                event_name: "openrouter_call",
+                user_id: userId || null,
+                user_email: userEmail || null,
+                action_type: "ingest_comment_search",
+                model: geminiOutput.model || null,
+                prompt_tokens: usage.prompt_tokens ?? 0,
+                completion_tokens: usage.completion_tokens ?? 0,
+                cost: usage.cost ?? 0,
               });
-            } catch (fsErr) {
-              console.error("[Ingest Comments] Errore log OpenRouter su Firestore:", fsErr);
+            } catch (sbErr) {
+              console.error("[Ingest Comments] Errore log OpenRouter su Supabase:", sbErr);
             }
           }
 

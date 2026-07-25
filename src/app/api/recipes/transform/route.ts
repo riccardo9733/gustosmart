@@ -25,30 +25,25 @@ export async function POST(request: Request) {
     const transformedJson = await transformRecipe(recipe, targetType);
     console.log(`Trasformazione completata con successo`);
 
-    // Log OpenRouter Call Event to Firestore
+    // Log OpenRouter Call Event to Supabase
     const usage = transformedJson.usage;
     if (usage) {
       try {
-        const db = getFirebaseDb();
-        const expireAt = new Date();
-        expireAt.setDate(expireAt.getDate() + 7);
+        const { getSupabaseAdmin } = await import("@/lib/supabase");
+        const supabase = getSupabaseAdmin();
 
-        await addDoc(collection(db, "analytics_events"), {
-          eventName: "openrouter_call",
-          userId: userId || null,
-          userEmail: userEmail || null,
-          timestamp: serverTimestamp(),
-          expireAt,
-          params: {
-            generation_id: transformedJson.generationId || "",
-            type: `transform_${targetType}`,
-            prompt_tokens: usage.prompt_tokens ?? 0,
-            completion_tokens: usage.completion_tokens ?? 0,
-            cost: usage.cost ?? 0
-          }
+        await supabase.from("ai_usage_events").insert({
+          event_name: "openrouter_call",
+          user_id: userId || null,
+          user_email: userEmail || null,
+          action_type: `transform_${targetType}`,
+          model: transformedJson.model || null,
+          prompt_tokens: usage.prompt_tokens ?? 0,
+          completion_tokens: usage.completion_tokens ?? 0,
+          cost: usage.cost ?? 0,
         });
-      } catch (fsErr) {
-        console.error("[Transform Route] Errore nel salvataggio del log di chiamata OpenRouter su Firestore:", fsErr);
+      } catch (sbErr) {
+        console.error("Errore nel salvataggio del log di chiamata OpenRouter su Supabase:", sbErr);
       }
     }
 

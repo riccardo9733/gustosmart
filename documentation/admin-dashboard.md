@@ -19,7 +19,7 @@ Real-time monitoring dashboard for app analytics, ingestion metrics, AI spending
 ┌──────────────────────────────────────────────────┐
 │  🛡 Area Amministrativa                          │
 │  Dashboard KPI & Analytics                       │
-│  Real-time data (last 7 days) [🟢 Live Sync]     │
+│  Real-time data (24h / 7d / 30d / 1y / Tutto) [🟢 Live Sync]│
 ├──────────────────────────────────────────────────┤
 │  [Panoramica] [Analisi Ingest] [Spese OpenRouter]│
 │  [Utenti (42)] [Registro Eventi (1,234)]         │
@@ -237,13 +237,21 @@ Non-admin users are redirected to home. A loading spinner shows during permissio
 
 ## Data Sources
 
-| Source | Method | Collection |
+| Source | Method | Space / Table |
 |---|---|---|
-| Analytics events | `onSnapshot` real-time | `analytics_events` (limit 500) |
-| Users | `onSnapshot` real-time | `users` |
+| Aggregated KPI Analytics | `GET /api/admin/analytics` (Supabase RPC `get_admin_kpis`) | `ingestion_events`, `ai_usage_events`, `engagement_events` |
+| Users | `onSnapshot` real-time | Firestore `users` |
 | OpenRouter credits | `fetch /api/admin/openrouter?endpoint=credits` | OpenRouter API proxy |
 | OpenRouter key info | `fetch /api/admin/openrouter?endpoint=key` | OpenRouter API proxy |
 | Generation detail | `fetch /api/admin/openrouter?endpoint=generation&id=X` | OpenRouter API proxy |
+
+---
+
+## Supabase Analytics Tables Schema
+
+- **`ingestion_events`**: Stores imports and scraper events (`recipe_import_initiated`, `recipe_import_completed`, `recipe_import_failed`, `scrapecreators_credits`).
+- **`ai_usage_events`**: Stores LLM / OpenRouter calls and costs (`openrouter_call`, `recipe_translated`, `recipe_transformed`, `dietary_analyzed`).
+- **`engagement_events`**: Stores user feature interactions (`recipe_saved`, `recipe_servings_changed`, `cooking_check_item`, `shopping_*`, `pwa_install_prompt_action`).
 
 ---
 
@@ -257,5 +265,5 @@ Non-admin users are redirected to home. A loading spinner shows during permissio
 | `@/components/ui/button` | Actions |
 | `@/components/ui/input` | Search fields |
 | `@/store/userSlice` | `selectUserProfile`, `selectUserLoading` |
-| `firebase/firestore` | `onSnapshot`, `collection`, `query`, `orderBy`, `limit` |
+| `@/lib/supabase` | Supabase SQL client helper for analytics |
 | `lucide-react` | Icons |

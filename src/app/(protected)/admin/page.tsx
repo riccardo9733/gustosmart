@@ -177,6 +177,40 @@ const getAvatarGradient = (uid: string) => {
   return gradients[index];
 };
 
+interface SupabaseKpiData {
+  ingestion: {
+    initiated: number;
+    completed: number;
+    failed: number;
+    cache_hits: number;
+    success_rate: number;
+    scrapecreators_credits?: number | null;
+    platforms: { instagram: number; tiktok: number; youtube: number; facebook: number; web: number };
+  };
+  engagement: {
+    recipes_saved: number;
+    servings_changed: number;
+    translations: number;
+    cooking_checks: number;
+    shopping_toggles: number;
+    custom_items_added: number;
+    shopping_resets: number;
+    nutrition_views: number;
+    pwa_installs: number;
+    pwa_prompts_accepted: number;
+    pwa_prompts_shown: number;
+  };
+  ai_summary: {
+    total_cost: number;
+    total_calls: number;
+    total_prompt_tokens: number;
+    total_completion_tokens: number;
+  };
+  active_users_7d: number;
+  daily_chart: Array<{ date: string; key: string; success: number; failure: number; cost: number }>;
+  recent_events?: LocalEvent[];
+}
+
 export default function AdminDashboard() {
   const profile = useAppSelector(selectUserProfile);
   const loadingUser = useAppSelector(selectUserLoading);
@@ -186,6 +220,39 @@ export default function AdminDashboard() {
   const [events, setEvents] = useState<LocalEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [logSearchQuery, setLogSearchQuery] = useState("");
+
+  const [timeframe, setTimeframe] = useState<"24h" | "7d" | "30d" | "1y" | "all">("7d");
+  const [supabaseKpiData, setSupabaseKpiData] = useState<SupabaseKpiData | null>(null);
+
+  // Fetch Supabase Aggregated KPI Data & Recent Logs
+  useEffect(() => {
+    if (!profile || profile.role !== "admin") return;
+
+    const daysMap = { "24h": 1, "7d": 7, "30d": 30, "1y": 365, "all": 36500 };
+    const daysParam = daysMap[timeframe] || 7;
+
+    const fetchAnalytics = async () => {
+      try {
+        const res = await fetch(`/api/admin/analytics?days=${daysParam}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.success && json.data) {
+          setSupabaseKpiData(json.data);
+          if (json.data.recent_events) {
+            setEvents(json.data.recent_events);
+          }
+          setLoadingEvents(false);
+        }
+      } catch (err) {
+        console.error("Error fetching Supabase KPI analytics:", err);
+        setLoadingEvents(false);
+      }
+    };
+
+    fetchAnalytics();
+    const interval = setInterval(fetchAnalytics, 30000);
+    return () => clearInterval(interval);
+  }, [profile, timeframe]);
 
   // Users management states
   const [users, setUsers] = useState<LocalUser[]>([]);
@@ -224,52 +291,6 @@ export default function AdminDashboard() {
   const [generationDetail, setGenerationDetail] = useState<OpenRouterGeneration | null>(null);
   const [loadingGeneration, setLoadingGeneration] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-
-  // Role Protection Guard
-  useEffect(() => {
-    if (!loadingUser) {
-      if (!profile || profile.role !== "admin") {
-        router.replace("/");
-      }
-    }
-  }, [profile, loadingUser, router]);
-
-  // Real-time Firestore sync for events
-  useEffect(() => {
-    if (!profile || profile.role !== "admin") return;
-
-    const db = getFirebaseDb();
-    const q = query(
-      collection(db, "analytics_events"),
-      orderBy("timestamp", "desc"),
-      limit(500)
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const list: LocalEvent[] = snapshot.docs.map((docSnap) => {
-          const data = docSnap.data();
-          return {
-            id: docSnap.id,
-            eventName: data.eventName || "unknown",
-            params: data.params || {},
-            userId: data.userId || null,
-            userEmail: data.userEmail || null,
-            timestamp: data.timestamp ? (typeof data.timestamp.toDate === "function" ? data.timestamp.toDate().toISOString() : data.timestamp) : null,
-          };
-        });
-        setEvents(list);
-        setLoadingEvents(false);
-      },
-      (error) => {
-        console.error("Errore sincronizzazione eventi:", error);
-        setLoadingEvents(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [profile]);
 
   // Real-time Firestore sync for users
   useEffect(() => {
@@ -404,15 +425,6 @@ export default function AdminDashboard() {
     fetchGenerationDetail();
   }, [selectedGenerationId, profile]);
 
-  if (loadingUser || !profile || profile.role !== "admin") {
-    return (
-      <div className="flex h-[70vh] flex-col items-center justify-center gap-4">
-        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-        <p className="text-sm text-muted-foreground">Verifica permessi amministratore in corso...</p>
-      </div>
-    );
-  }
-
   // ---------------------------------------------------------------------------
   // KPI Calculations
   // ---------------------------------------------------------------------------
@@ -421,24 +433,28 @@ export default function AdminDashboard() {
   const initiatedImports = events.filter((e) => e.eventName === "recipe_import_initiated");
   const completedImports = events.filter((e) => e.eventName === "recipe_import_completed");
   const failedImports = events.filter((e) => e.eventName === "recipe_import_failed");
-  const cacheHits = completedImports.filter((e) => e.params.is_cached_hit === true).length;
+  const cacheHits = supabaseKpiData ? supabaseKpiData.ingestion.cache_hits : completedImports.filter((e) => e.params.is_cached_hit === true).length;
 
   // ScrapeCreators credits metric
   const latestScrapeCreditsEvent = events.find((e) => e.eventName === "scrapecreators_credits");
-  const scrapecreatorsCredits = latestScrapeCreditsEvent?.params?.credits_remaining as number | undefined;
+  const scrapecreatorsCredits = supabaseKpiData?.ingestion.scrapecreators_credits !== undefined 
+    ? (supabaseKpiData.ingestion.scrapecreators_credits ?? undefined)
+    : (latestScrapeCreditsEvent?.params?.credits_remaining as number | undefined);
   
-  const successRate = initiatedImports.length > 0 
-    ? Math.round((completedImports.length / initiatedImports.length) * 100)
-    : 0;
+  const successRate = supabaseKpiData 
+    ? supabaseKpiData.ingestion.success_rate 
+    : (initiatedImports.length > 0 ? Math.round((completedImports.length / initiatedImports.length) * 100) : 0);
 
   // Platform breakdown
-  const platforms = { instagram: 0, tiktok: 0, youtube: 0, facebook: 0, web: 0 };
-  initiatedImports.forEach((e) => {
-    const p = (e.params.source_platform as string | undefined)?.toLowerCase();
-    if (p && p in platforms) {
-      platforms[p as keyof typeof platforms]++;
-    }
-  });
+  const platforms = supabaseKpiData ? supabaseKpiData.ingestion.platforms : { instagram: 0, tiktok: 0, youtube: 0, facebook: 0, web: 0 };
+  if (!supabaseKpiData) {
+    initiatedImports.forEach((e) => {
+      const p = (e.params.source_platform as string | undefined)?.toLowerCase();
+      if (p && p in platforms) {
+        platforms[p as keyof typeof platforms]++;
+      }
+    });
+  }
 
   // Error breakdown
   const errors: Record<string, number> = {};
@@ -448,22 +464,26 @@ export default function AdminDashboard() {
   });
 
   // Other engagement events count
-  const recipesSaved = events.filter((e) => e.eventName === "recipe_saved").length;
-  const servingsChanged = events.filter((e) => e.eventName === "recipe_servings_changed").length;
-  const translations = events.filter((e) => e.eventName === "recipe_translated").length;
-  const cookingChecks = events.filter((e) => e.eventName === "cooking_check_item").length;
-  const shoppingToggles = events.filter((e) => e.eventName === "shopping_recipe_toggled").length;
-  const customItemsAdded = events.filter((e) => e.eventName === "shopping_custom_item_added").length;
-  const shoppingResets = events.filter((e) => e.eventName === "shopping_list_reset").length;
-  const nutritionViews = events.filter((e) => e.eventName === "recipe_nutrition_viewed").length;
-  const pwaInstalls = events.filter((e) => e.eventName === "pwa_install_prompt_action" && e.params.action === "app_installed").length;
-  const pwaPromptsAccepted = events.filter((e) => e.eventName === "pwa_install_prompt_action" && e.params.action === "accepted").length;
-  const pwaPromptsShown = events.filter((e) => e.eventName === "pwa_install_prompt_action" && e.params.action === "shown").length;
+  const recipesSaved = supabaseKpiData ? supabaseKpiData.engagement.recipes_saved : events.filter((e) => e.eventName === "recipe_saved").length;
+  const servingsChanged = supabaseKpiData ? supabaseKpiData.engagement.servings_changed : events.filter((e) => e.eventName === "recipe_servings_changed").length;
+  const translations = supabaseKpiData ? supabaseKpiData.engagement.translations : events.filter((e) => e.eventName === "recipe_translated").length;
+  const cookingChecks = supabaseKpiData ? supabaseKpiData.engagement.cooking_checks : events.filter((e) => e.eventName === "cooking_check_item").length;
+  const shoppingToggles = supabaseKpiData ? supabaseKpiData.engagement.shopping_toggles : events.filter((e) => e.eventName === "shopping_recipe_toggled").length;
+  const customItemsAdded = supabaseKpiData ? supabaseKpiData.engagement.custom_items_added : events.filter((e) => e.eventName === "shopping_custom_item_added").length;
+  const shoppingResets = supabaseKpiData ? supabaseKpiData.engagement.shopping_resets : events.filter((e) => e.eventName === "shopping_list_reset").length;
+  const nutritionViews = supabaseKpiData ? supabaseKpiData.engagement.nutrition_views : events.filter((e) => e.eventName === "recipe_nutrition_viewed").length;
+  const pwaInstalls = supabaseKpiData ? supabaseKpiData.engagement.pwa_installs : events.filter((e) => e.eventName === "pwa_install_prompt_action" && e.params.action === "app_installed").length;
+  const pwaPromptsAccepted = supabaseKpiData ? supabaseKpiData.engagement.pwa_prompts_accepted : events.filter((e) => e.eventName === "pwa_install_prompt_action" && e.params.action === "accepted").length;
+  const pwaPromptsShown = supabaseKpiData ? supabaseKpiData.engagement.pwa_prompts_shown : events.filter((e) => e.eventName === "pwa_install_prompt_action" && e.params.action === "shown").length;
 
   // ---------------------------------------------------------------------------
   // Chart Calculations
   // ---------------------------------------------------------------------------
   const chartData = useMemo(() => {
+    if (supabaseKpiData?.daily_chart && supabaseKpiData.daily_chart.length > 0) {
+      return supabaseKpiData.daily_chart;
+    }
+
     const data: Record<string, { date: string; success: number; failure: number; cost: number }> = {};
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
@@ -489,7 +509,7 @@ export default function AdminDashboard() {
     });
 
     return Object.values(data);
-  }, [events]);
+  }, [events, supabaseKpiData]);
 
   const platformChartData = useMemo(() => {
     return [
@@ -672,6 +692,15 @@ export default function AdminDashboard() {
     }
   };
 
+  if (loadingUser || !profile || profile.role !== "admin") {
+    return (
+      <div className="flex h-[70vh] flex-col items-center justify-center gap-4">
+        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
+        <p className="text-sm text-muted-foreground">Verifica permessi amministratore in corso...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8 pb-16 relative w-full animate-in fade-in duration-500">
       
@@ -686,7 +715,7 @@ export default function AdminDashboard() {
             Dashboard KPI & Analytics
           </h2>
           <p className="text-sm text-muted-foreground">
-            Analizza in tempo reale le performance di GustoSmart e il comportamento degli utenti (dati conservati per gli ultimi 7 giorni).
+            Analizza in tempo reale le performance di GustoSmart e il comportamento degli utenti.
           </p>
         </div>
 
@@ -698,60 +727,89 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      {/* Tabs Switcher */}
-      <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-white/5 w-full sm:w-auto self-start shadow-sm max-w-full">
-        <button
-          onClick={() => setActiveTab("overview")}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
-            activeTab === "overview"
-              ? "bg-primary text-white shadow-md shadow-primary/20"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Panoramica
-        </button>
-        <button
-          onClick={() => setActiveTab("ingest")}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
-            activeTab === "ingest"
-              ? "bg-primary text-white shadow-md shadow-primary/20"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Analisi Ingest
-        </button>
-        <button
-          onClick={() => setActiveTab("openrouter")}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 flex items-center gap-1 ${
-            activeTab === "openrouter"
-              ? "bg-primary text-white shadow-md shadow-primary/20"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <DollarSign className="h-3.5 w-3.5" />
-          Spese OpenRouter
-        </button>
-        <button
-          onClick={() => setActiveTab("users")}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 flex items-center gap-1 ${
-            activeTab === "users"
-              ? "bg-primary text-white shadow-md shadow-primary/20"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Users className="h-3.5 w-3.5" />
-          Utenti ({users.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("logs")}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
-            activeTab === "logs"
-              ? "bg-primary text-white shadow-md shadow-primary/20"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Registro Eventi ({events.length})
-        </button>
+      {/* Tabs & Timeframe Bar */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
+        {/* Tabs Switcher */}
+        <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-white/5 w-full lg:w-auto shrink-0 shadow-sm max-w-full">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
+              activeTab === "overview"
+                ? "bg-primary text-white shadow-md shadow-primary/20"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Panoramica
+          </button>
+          <button
+            onClick={() => setActiveTab("ingest")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
+              activeTab === "ingest"
+                ? "bg-primary text-white shadow-md shadow-primary/20"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Analisi Ingest
+          </button>
+          <button
+            onClick={() => setActiveTab("openrouter")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 flex items-center gap-1 ${
+              activeTab === "openrouter"
+                ? "bg-primary text-white shadow-md shadow-primary/20"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <DollarSign className="h-3.5 w-3.5" />
+            Spese OpenRouter
+          </button>
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 flex items-center gap-1 ${
+              activeTab === "users"
+                ? "bg-primary text-white shadow-md shadow-primary/20"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Users className="h-3.5 w-3.5" />
+            Utenti ({users.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("logs")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
+              activeTab === "logs"
+                ? "bg-primary text-white shadow-md shadow-primary/20"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Registro Eventi ({events.length})
+          </button>
+        </div>
+
+        {/* Timeframe Filter Tabs */}
+        <div className="flex items-center gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-white/5 shadow-sm shrink-0 self-stretch sm:self-auto overflow-x-auto scrollbar-none">
+          <span className="px-2 py-1 text-[11px] font-bold text-muted-foreground flex items-center gap-1 shrink-0">
+            <Calendar className="h-3.5 w-3.5" />
+          </span>
+          {[
+            { id: "24h", label: "24h" },
+            { id: "7d", label: "7g" },
+            { id: "30d", label: "30g" },
+            { id: "1y", label: "1y" },
+            { id: "all", label: "Tutto" },
+          ].map((tf) => (
+            <button
+              key={tf.id}
+              onClick={() => setTimeframe(tf.id as any)}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                timeframe === tf.id
+                  ? "bg-primary text-white shadow-md shadow-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tf.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loadingEvents ? (
@@ -838,7 +896,7 @@ export default function AdminDashboard() {
                 {/* Ingestion success trend (Daily) */}
                 <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5">
                   <CardHeader className="p-0 mb-5">
-                    <CardTitle className="text-base font-bold text-foreground">Trend Ingestione (Ultimi 7 Giorni)</CardTitle>
+                    <CardTitle className="text-base font-bold text-foreground">Trend Ingestione</CardTitle>
                     <CardDescription className="text-xs text-muted-foreground">Rapporto tra importazioni completate e fallite.</CardDescription>
                   </CardHeader>
                   <CardContent className="p-0 h-[240px] w-full">
@@ -895,7 +953,7 @@ export default function AdminDashboard() {
                 <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5">
                   <CardHeader className="p-0 mb-5">
                     <CardTitle className="text-base font-bold text-foreground">Costo OpenRouter Giornaliero</CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground">Spesa totale accumulata (in USD) degli ultimi 7 giorni.</CardDescription>
+                    <CardDescription className="text-xs text-muted-foreground">Spesa totale accumulata (in USD) per il periodo selezionato.</CardDescription>
                   </CardHeader>
                   <CardContent className="p-0 h-[240px] w-full">
                     <ChartContainer config={costChartConfig} className="h-full w-full">
@@ -1715,11 +1773,7 @@ export default function AdminDashboard() {
           {/* TAB 4: REGISTRO EVENTI */}
           {activeTab === "logs" && (
             <div className="space-y-4">
-              {/* Notice */}
-              <div className="flex items-center gap-2.5 px-4 py-3 bg-primary/5 border border-primary/10 rounded-2xl text-xs text-muted-foreground font-semibold">
-                <Info className="h-4 w-4 text-primary shrink-0" />
-                <span>Nota: I log degli eventi e le spese OpenRouter vengono conservati per un massimo di 7 giorni (Retention Policy TTL attiva).</span>
-              </div>
+
 
               {/* Search Log Bar */}
               <div className="relative w-full group">
