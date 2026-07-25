@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   Sparkles,
   Film,
@@ -14,6 +15,9 @@ import {
   AlertCircle,
   ArrowRight,
   MessageSquare,
+  ClipboardPaste,
+  Globe,
+  X,
 } from "lucide-react";
 
 const YouTubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -22,15 +26,10 @@ const YouTubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
     width="24"
     height="24"
     viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+    fill="currentColor"
     {...props}
   >
-    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
-    <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
   </svg>
 );
 
@@ -40,16 +39,26 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
     width="24"
     height="24"
     viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+    fill="currentColor"
     {...props}
   >
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
   </svg>
 );
+
+const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.2-1.74 2.89 2.89 0 0 1 2.31-2.42V8.02a6.34 6.34 0 0 0-5.4 6.33 6.34 6.34 0 1 0 11.43-3.66v-4.1a8.16 8.16 0 0 0 4.08 1.1V6.69z" />
+  </svg>
+);
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -91,6 +100,25 @@ export function ImportDrawer() {
     e.preventDefault();
     if (!videoUrl) return;
     await startIngest(videoUrl.trim());
+  };
+
+  const handlePaste = async () => {
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        toast.error("La lettura degli appunti non è supportata dal tuo browser.");
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim()) {
+        setVideoUrl(text.trim());
+        toast.success("Link incollato dagli appunti!");
+      } else {
+        toast.info("Nessun testo trovato negli appunti.");
+      }
+    } catch (err) {
+      console.error("Errore lettura appunti:", err);
+      toast.error("Impossibile accedere agli appunti. Incolla manualmente.");
+    }
   };
 
   const getStepMessage = () => {
@@ -149,69 +177,100 @@ export function ImportDrawer() {
 
               <form onSubmit={handleSubmit} className="relative group w-full mt-2">
                 <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full -z-10 transition-all duration-500 group-focus-within:bg-primary/20"></div>
-                <div className="flex items-center glass-panel rounded-full p-1.5 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all">
+                <div className="flex items-center glass-panel rounded-2xl sm:rounded-full p-2 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all gap-2">
+                  <div className="pl-3 text-primary/70 shrink-0">
+                    <LinkIcon className="h-5 w-5" />
+                  </div>
                   <Input
                     type="text"
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder={t("placeholder")}
-                    className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-5 h-11"
+                    placeholder={t("placeholder") || "Incolla il link qui..."}
+                    className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 h-11 text-sm md:text-base text-foreground placeholder:text-muted-foreground/60"
                   />
+
+                  {videoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setVideoUrl("")}
+                      className="p-1.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50 transition-colors shrink-0 cursor-pointer"
+                      title="Cancella"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handlePaste}
+                    className="glass-panel text-xs font-semibold px-3 h-10 rounded-xl sm:rounded-full flex items-center gap-1.5 text-primary hover:text-primary hover:bg-primary/15 active:scale-95 transition-all border border-primary/20 shrink-0 cursor-pointer"
+                    title="Incolla dagli appunti"
+                  >
+                    <ClipboardPaste className="h-4 w-4 text-primary" />
+                    <span className="hidden sm:inline">Incolla</span>
+                  </Button>
+
                   <Button
                     type="submit"
-                    size="icon"
                     disabled={!videoUrl.trim()}
-                    className="bg-primary hover:bg-primary/95 text-white rounded-full h-11 w-11 shadow-lg active:scale-95 transition-all cursor-pointer"
+                    className="bg-primary hover:bg-primary/95 text-white rounded-xl sm:rounded-full h-10 px-4 shadow-lg active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 font-semibold gap-1.5"
                   >
-                    <Sparkles className="fill-white" data-icon="inline-start" />
+                    <Sparkles className="h-4 w-4 fill-white" />
+                    <span className="hidden sm:inline">Importa</span>
                   </Button>
                 </div>
               </form>
 
-              <div className="flex flex-wrap justify-center gap-3">
-                <button
-                  onClick={() => setVideoUrl("https://www.instagram.com/reel/example")}
-                  type="button"
-                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
-                >
-                  <Film className="h-4 w-4 text-pink-500 fill-pink-500/10" />
-                  {t("instagram")}
-                </button>
-                <button
-                  onClick={() => setVideoUrl("https://www.tiktok.com/@example/video/12345")}
-                  type="button"
-                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
-                >
-                  <Video className="h-4 w-4 text-teal-400" />
-                  {t("tiktok")}
-                </button>
-                <button
-                  onClick={() => setVideoUrl("https://www.youtube.com/watch?v=example")}
-                  type="button"
-                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
-                >
-                  <YouTubeIcon className="h-4 w-4 text-red-500 fill-red-500/10" />
-                  {t("youtube")}
-                </button>
-                <button
-                  onClick={() => setVideoUrl("https://www.facebook.com/reel/example")}
-                  type="button"
-                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
-                >
-                  <FacebookIcon className="h-4 w-4 text-blue-500 fill-blue-500/10" />
-                  {t("facebook")}
-                </button>
-                <button
-                  onClick={() => setVideoUrl("https://giallozafferano.it/ricette/example")}
-                  type="button"
-                  className="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold text-foreground hover:bg-white/40 dark:hover:bg-white/10 active:scale-95 transition-all border border-white/10 cursor-pointer"
-                >
-                  <LinkIcon className="h-4 w-4 text-primary" />
-                  {t("web")}
-                </button>
+              {/* Badges delle Piattaforme Supportate (Informativi, non cliccabili) */}
+              <div className="flex flex-col items-center gap-3 mt-1">
+                <span className="text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
+                  Funziona con
+                </span>
+                <div className="flex flex-wrap justify-center items-center gap-2">
+                  {/* Instagram Reel */}
+                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shrink-0">
+                      <Film className="h-3 w-3" />
+                    </span>
+                    <span>Instagram Reel</span>
+                  </div>
+
+                  {/* YouTube Short */}
+                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-red-600 text-white shrink-0">
+                      <YouTubeIcon className="h-2.5 w-2.5 fill-current text-white" />
+                    </span>
+                    <span>YouTube Short</span>
+                  </div>
+
+                  {/* Facebook Reel */}
+                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-blue-600 text-white shrink-0">
+                      <FacebookIcon className="h-2.5 w-2.5 fill-current text-white" />
+                    </span>
+                    <span>Facebook Reel</span>
+                  </div>
+
+                  {/* TikTok */}
+                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-black dark:bg-zinc-800 text-teal-400 shrink-0">
+                      <TikTokIcon className="h-3 w-3" />
+                    </span>
+                    <span>TikTok</span>
+                  </div>
+
+                  {/* Pagine Web */}
+                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/20 text-primary shrink-0">
+                      <Globe className="h-3 w-3" />
+                    </span>
+                    <span>Pagine Web</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex gap-4 items-start bg-primary/5 p-4 rounded-2xl border border-primary/10 mt-2">
+              <div className="flex gap-4 items-start bg-primary/5 p-4 rounded-2xl border border-primary/10 mt-1">
                 <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-0.5">
                   <span className="text-xs font-bold text-foreground">Come funziona?</span>
