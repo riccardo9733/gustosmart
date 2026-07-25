@@ -254,6 +254,7 @@ Deno.serve(async (req: Request) => {
                 user_email: userEmail || null,
                 platform: cleanedPlatform,
                 credits_remaining: scrapedData.scrapecreatorsCreditsRemaining,
+                credits_used: scrapedData.scrapecreatorsCreditsUsed ?? (cleanedPlatform === "web" ? 0 : 1),
               });
             } catch (sbErr) {
               console.error("[Ingest Function] Errore nel salvataggio del log crediti ScrapeCreators su Supabase:", sbErr);
@@ -374,6 +375,7 @@ Deno.serve(async (req: Request) => {
               status: "completed",
               is_cached: false,
               credits_remaining: scrapedData.scrapecreatorsCreditsRemaining ?? null,
+              credits_used: scrapedData.scrapecreatorsCreditsUsed ?? (cleanedPlatform === "web" ? 0 : 1),
             });
           } catch (e) {
             console.error("[Ingest Function] Errore log import_completed:", e);
@@ -384,7 +386,9 @@ Deno.serve(async (req: Request) => {
             recipeId,
             generationId: geminiOutput.generationId,
             scrapecreatorsCreditsRemaining: scrapedData.scrapecreatorsCreditsRemaining ?? null,
-            scrapecreatorsCreditsUsed: scrapedData.scrapecreatorsCreditsUsed ?? 1,
+            scrapecreatorsCreditsUsed: scrapedData.scrapecreatorsCreditsUsed ?? (cleanedPlatform === "web" ? 0 : 1),
+            hasTranscript: scrapedData.hasTranscript ?? false,
+            endpointsCalled: scrapedData.endpointsCalled ?? [],
           });
           if (!isFinished) {
             isFinished = true;

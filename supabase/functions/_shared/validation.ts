@@ -3,18 +3,30 @@ import { z } from 'zod';
 export const IngredientSchema = z.object({
   name: z.string().min(1, "Il nome dell'ingrediente è obbligatorio"),
   quantity: z.number().nonnegative("La quantità deve essere positiva").nullable().optional().default(null),
-  unit: z.string().default("q.b.")
+  unit: z.string().default("q.b."),
+  isAiGenerated: z.boolean().optional().default(false)
+});
+
+export const InstructionStepSchema = z.object({
+  text: z.string().min(1),
+  isAiGenerated: z.boolean().optional().default(false)
 });
 
 export const RecipeSchema = z.object({
   title: z.string().min(1, "Il titolo è obbligatorio"),
-  sourceUrl: z.string().url("URL sorgente non valido"),
+  isTitleAiGenerated: z.boolean().optional().default(false),
+  sourceUrl: z.string().optional().default(""),
+  sourceType: z.enum(['url_ingest', 'image_upload', 'manual']).optional().default('url_ingest'),
+  sourceImageUrl: z.string().nullable().optional().default(null),
+  isPublic: z.boolean().optional().default(true),
   sourceLanguage: z.string().min(2).max(5).default("it"),
   servings: z.number().int().positive().default(2),
+  isServingsAiGenerated: z.boolean().optional().default(false),
   ingredients: z.array(IngredientSchema),
-  instructions: z.array(z.string().min(1)),
-  imageUrl: z.string().url().nullable().optional().default(null),
+  instructions: z.array(z.union([z.string(), InstructionStepSchema])),
+  imageUrl: z.string().nullable().optional().default(null),
   prepTimeMinutes: z.number().int().nonnegative().nullable().optional().default(null),
+  isPrepTimeAiGenerated: z.boolean().optional().default(false),
   category: z.enum(['first_courses', 'second_courses', 'desserts', 'appetizers', 'sides', 'single_dishes', 'other']).default('other'),
   kcal: z.number().int().nonnegative().nullable().optional().default(null),
   proteins: z.number().nonnegative().nullable().optional().default(null),
@@ -22,6 +34,7 @@ export const RecipeSchema = z.object({
   fats: z.number().nonnegative().nullable().optional().default(null),
   fiber: z.number().nonnegative().nullable().optional().default(null),
   sugar: z.number().nonnegative().nullable().optional().default(null),
+  isNutritionalAiGenerated: z.boolean().optional().default(false),
   nutritionalRating: z.enum(['A', 'B', 'C', 'D', 'E']).nullable().optional().default(null),
   nutritionalAssessment: z.string().nullable().optional().default(null),
   isGlutenFree: z.boolean().nullable().optional().default(null),

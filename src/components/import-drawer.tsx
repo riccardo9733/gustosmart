@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -18,6 +18,9 @@ import {
   ClipboardPaste,
   Globe,
   X,
+  Plus,
+  Trash2,
+  Image as ImageIcon,
 } from "lucide-react";
 
 const YouTubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -55,7 +58,7 @@ const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
     fill="currentColor"
     {...props}
   >
-    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.2-1.74 2.89 2.89 0 0 1 2.31-2.42V8.02a6.34 6.34 0 0 0-5.4 6.33 6.34 6.34 0 1 0 11.43-3.66v-4.1a8.16 8.16 0 0 0 4.08 1.1V6.69z" />
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.2-1.74 2.89 2.89 0 0 1 2.31-2.42V8.02a6.34 6.34 0 0 0-5.4 6.33 6.34 6.34 1 0 11.43-3.66v-4.1a8.16 8.16 0 0 0 4.08 1.1V6.69z" />
   </svg>
 );
 
@@ -73,6 +76,9 @@ import { useIngest } from "@/contexts/ingest-context";
 
 export function ImportDrawer() {
   const [videoUrl, setVideoUrl] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const {
     isIngesting,
     isDrawerOpen,
@@ -82,6 +88,7 @@ export function ImportDrawer() {
     error,
     recipeId,
     startIngest,
+    startImageIngest,
     startCommentSearch,
     resetIngest,
   } = useIngest();
@@ -89,17 +96,42 @@ export function ImportDrawer() {
   const router = useRouter();
   const t = useTranslations("Home");
 
-  // Reset input field when drawer is opened and is idle
+  // Reset input field and selected file when drawer is opened and is idle
   useEffect(() => {
     if (isDrawerOpen && step === "idle") {
       setVideoUrl("");
+      setSelectedFile(null);
     }
   }, [isDrawerOpen, step]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Seleziona un file immagine valido (PNG, JPG, WEBP).");
+        return;
+      }
+      setSelectedFile(file);
+      setVideoUrl(file.name);
+      toast.success("Immagine selezionata!");
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setVideoUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!videoUrl) return;
-    await startIngest(videoUrl.trim());
+    if (selectedFile) {
+      await startImageIngest(selectedFile);
+    } else if (videoUrl.trim()) {
+      await startIngest(videoUrl.trim());
+    }
   };
 
   const handlePaste = async () => {
@@ -110,6 +142,7 @@ export function ImportDrawer() {
       }
       const text = await navigator.clipboard.readText();
       if (text && text.trim()) {
+        setSelectedFile(null);
         setVideoUrl(text.trim());
         toast.success("Link incollato dagli appunti!");
       } else {
@@ -157,13 +190,13 @@ export function ImportDrawer() {
         <div className="sr-only">
           <DrawerTitle>{t("drawerTitle") || "Importa una Ricetta"}</DrawerTitle>
           <DrawerDescription>
-            {t("drawerDesc") || "Incolla il link di un Reel di Instagram, un video TikTok o una ricetta web per scansionarla e aggiungerla al catalogo."}
+            {t("drawerDesc") || "Incolla il link di un Reel di Instagram, un video TikTok o carica una foto della ricetta."}
           </DrawerDescription>
         </div>
 
         <div className="flex flex-col gap-6 max-w-lg mx-auto w-full pb-10">
           
-          {/* 1. STATE: IDLE (Input URL) */}
+          {/* 1. STATE: IDLE (Input URL o Immagine) */}
           {step === "idle" && (
             <>
               <DrawerHeader className="p-0 text-center flex flex-col gap-2">
@@ -171,25 +204,53 @@ export function ImportDrawer() {
                   {t("drawerTitle") || "Importa una Ricetta"}
                 </div>
                 <div className="text-sm text-muted-foreground leading-relaxed">
-                  {t("drawerDesc") || "Incolla il link di un Reel di Instagram, un video TikTok o una ricetta web per scansionarla e aggiungerla al catalogo."}
+                  Incolla un link o carica uno screenshot/foto della tua ricetta.
                 </div>
               </DrawerHeader>
 
+              {/* Hidden File Input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
               <form onSubmit={handleSubmit} className="relative group w-full mt-2">
                 <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full -z-10 transition-all duration-500 group-focus-within:bg-primary/20"></div>
-                <div className="flex items-center glass-panel rounded-2xl sm:rounded-full p-2 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all gap-2">
-                  <div className="pl-3 text-primary/70 shrink-0">
-                    <LinkIcon className="h-5 w-5" />
+                <div className="flex items-center glass-panel rounded-2xl sm:rounded-full p-2 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all gap-1.5">
+                  
+                  {/* Plus icon to upload image */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 text-primary hover:text-primary/80 hover:bg-primary/10 rounded-xl sm:rounded-full transition-colors shrink-0 cursor-pointer flex items-center justify-center"
+                    title="Carica foto o screenshot"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+
+                  <div className="text-primary/70 shrink-0">
+                    {selectedFile ? (
+                      <ImageIcon className="h-5 w-5 text-primary" />
+                    ) : (
+                      <LinkIcon className="h-5 w-5" />
+                    )}
                   </div>
+
                   <Input
                     type="text"
                     value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder={t("placeholder") || "Incolla il link qui..."}
+                    onChange={(e) => {
+                      if (!selectedFile) setVideoUrl(e.target.value);
+                    }}
+                    readOnly={!!selectedFile}
+                    placeholder={t("placeholder") || "Incolla il link o carica foto..."}
                     className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 h-11 text-sm md:text-base text-foreground placeholder:text-muted-foreground/60"
                   />
 
-                  {videoUrl && (
+                  {videoUrl && !selectedFile && (
                     <button
                       type="button"
                       onClick={() => setVideoUrl("")}
@@ -200,16 +261,29 @@ export function ImportDrawer() {
                     </button>
                   )}
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handlePaste}
-                    className="glass-panel text-xs font-semibold px-3 h-10 rounded-xl sm:rounded-full flex items-center gap-1.5 text-primary hover:text-primary hover:bg-primary/15 active:scale-95 transition-all border border-primary/20 shrink-0 cursor-pointer"
-                    title="Incolla dagli appunti"
-                  >
-                    <ClipboardPaste className="h-4 w-4 text-primary" />
-                    <span className="hidden sm:inline">Incolla</span>
-                  </Button>
+                  {selectedFile ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleRemoveFile}
+                      className="glass-panel text-xs font-semibold px-3 h-10 rounded-xl sm:rounded-full flex items-center gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/15 active:scale-95 transition-all border border-destructive/20 shrink-0 cursor-pointer"
+                      title="Rimuovi immagine"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <span className="hidden sm:inline">Rimuovi</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handlePaste}
+                      className="glass-panel text-xs font-semibold px-3 h-10 rounded-xl sm:rounded-full flex items-center gap-1.5 text-primary hover:text-primary hover:bg-primary/15 active:scale-95 transition-all border border-primary/20 shrink-0 cursor-pointer"
+                      title="Incolla dagli appunti"
+                    >
+                      <ClipboardPaste className="h-4 w-4 text-primary" />
+                      <span className="hidden sm:inline">Incolla</span>
+                    </Button>
+                  )}
 
                   <Button
                     type="submit"

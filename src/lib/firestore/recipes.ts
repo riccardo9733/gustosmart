@@ -20,6 +20,12 @@ export interface Ingredient {
   name: string;
   quantity: number | null;
   unit: string;
+  isAiGenerated?: boolean;
+}
+
+export interface InstructionStep {
+  text: string;
+  isAiGenerated?: boolean;
 }
 
 /** The globally shared, immutable recipe document in /recipes/{recipeId} */
@@ -27,13 +33,19 @@ export interface GlobalRecipe {
   id: string;
   sourceUrl: string;
   sourcePlatform: string;
+  sourceType?: 'url_ingest' | 'image_upload' | 'manual';
+  sourceImageUrl?: string | null;
+  isPublic?: boolean;
   title: string;
+  isTitleAiGenerated?: boolean;
   sourceLanguage: string;
   ingredients: Ingredient[];
-  instructions: string[];
+  instructions: (string | InstructionStep)[];
   imageUrl: string | null;
   prepTimeMinutes: number | null;
+  isPrepTimeAiGenerated?: boolean;
   servings: number;
+  isServingsAiGenerated?: boolean;
   category: string;
   kcal: number | null;
   proteins?: number | null;
@@ -41,6 +53,7 @@ export interface GlobalRecipe {
   fats?: number | null;
   fiber?: number | null;
   sugar?: number | null;
+  isNutritionalAiGenerated?: boolean;
   nutritionalRating?: string | null;
   nutritionalAssessment?: string | null;
   isGlutenFree?: boolean | null;
@@ -67,7 +80,7 @@ export interface UserRecipeOverride {
   addedAt: any;
   customTitle: string | null;
   customIngredients: Ingredient[] | null;
-  customInstructions: string[] | null;
+  customInstructions: (string | InstructionStep)[] | null;
   personalNotes: string | null;
   rating: number | null;
   isCustomized: boolean;
@@ -100,7 +113,7 @@ export interface MergedRecipe extends GlobalRecipe {
   // effective display fields (custom or global)
   title: string;
   ingredients: Ingredient[];
-  instructions: string[];
+  instructions: (string | InstructionStep)[];
 }
 
 // ---------------------------------------------------------------------------

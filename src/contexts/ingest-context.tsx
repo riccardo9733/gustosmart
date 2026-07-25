@@ -37,6 +37,7 @@ interface IngestContextType {
   recipeId: string | null;
   commentSearchData: CommentSearchData | null;
   startIngest: (targetUrl: string) => Promise<void>;
+  startImageIngest: (imageFile: File) => Promise<void>;
   startCommentSearch: () => Promise<void>;
   openImportDrawer: () => void;
   closeImportDrawer: () => void;
@@ -487,7 +488,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 currentStep = nextStep;
                 setProgress(data.progress);
               } else if (eventName === "success") {
-                const { recipe, recipeId: newRecipeId, generationId, scrapecreatorsCreditsRemaining } = data;
+                const { recipe, recipeId: newRecipeId, generationId, scrapecreatorsCreditsRemaining, scrapecreatorsCreditsUsed } = data;
                 setStep("saving");
                 currentStep = "saving";
                 setProgress(95);
@@ -518,9 +519,9 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                   isLactoseFree: recipe.isLactoseFree !== undefined && recipe.isLactoseFree !== null ? recipe.isLactoseFree : null,
                   createdAt: serverTimestamp(),
                   createdBy: user.uid,
-                  creatorUsername: recipe.creatorUsername || null,
-                  creatorFullName: recipe.creatorFullName || null,
-                  creatorId: recipe.creatorId || null,
+                  creatorUsername: recipe.creatorUsername || commentSearchData.creatorUsername || null,
+                  creatorFullName: recipe.creatorFullName || commentSearchData.creatorFullName || null,
+                  creatorId: recipe.creatorId || commentSearchData.creatorId || null,
                 };
 
                 await setDoc(doc(db, "recipes", newRecipeId), recipeDoc);
@@ -557,6 +558,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                   duration_seconds: durationSeconds,
                   generation_id: generationId || null,
                   scrapecreators_credits_remaining: scrapecreatorsCreditsRemaining !== undefined ? scrapecreatorsCreditsRemaining : null,
+                  scrapecreators_credits_used: scrapecreatorsCreditsUsed !== undefined ? scrapecreatorsCreditsUsed : 1,
                   userId: user.uid,
                   userEmail: user.email || undefined,
                 });
@@ -638,6 +640,239 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const compressImageFile = (file: File, maxWidth = 1560, maxHeight = 1560, quality = 0.85): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth || height > maxHeight) {
+            if (width > height) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(e.target?.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL("image/jpeg", quality);
+          resolve(compressedBase64);
+        };
+        img.onerror = (err) => reject(err);
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const startImageIngest = async (imageFile: File) => {
+    if (!user) {
+      toast.error("Utente non autenticato.");
+      return;
+    }
+
+    resetIngest();
+    setUrl(imageFile.name);
+    setIsIngesting(true);
+    setStep("scraping");
+    setProgress(10);
+    setIsDrawerOpen(true);
+
+    await trackEvent("recipe_import_initiated", {
+      source_platform: "image",
+      is_cached_hit: false,
+      userId: user.uid,
+      userEmail: user.email || undefined,
+    });
+
+    try {
+      // Compressione client-side per evitare di superare il limite di payload dell'API Gateway
+      const base64DataUrl = await compressImageFile(imageFile);
+
+      setStep("extracting");
+      setProgress(40);
+
+      const supabaseFunctionsUrl = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL || "http://127.0.0.1:54321/functions/v1";
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (supabaseAnonKey) {
+        headers["apikey"] = supabaseAnonKey;
+        headers["Authorization"] = `Bearer ${supabaseAnonKey}`;
+      }
+
+      const response = await fetch(`${supabaseFunctionsUrl}/ingest-image`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          imageBase64: base64DataUrl,
+          userId: user.uid,
+          userEmail: user.email || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        const errType = errJson.error || "Impossibile elaborare l'immagine della ricetta.";
+        setError(errType);
+        setStep("failed");
+        setIsIngesting(false);
+        setIsDrawerOpen(true);
+        toast.error("Importazione immagine fallita.");
+
+        await trackEvent("recipe_import_failed", {
+          source_platform: "image",
+          error_type: errType,
+          userId: user.uid,
+          userEmail: user.email || undefined,
+        });
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      if (!reader) {
+        setError("Impossibile leggere lo stream di risposta.");
+        setStep("failed");
+        setIsIngesting(false);
+        setIsDrawerOpen(true);
+        toast.error("Importazione fallita.");
+
+        await trackEvent("recipe_import_failed", {
+          source_platform: "image",
+          error_type: "READ_STREAM_ERROR",
+          userId: user.uid,
+          userEmail: user.email || undefined,
+        });
+        return;
+      }
+
+      let currentStep: string = "extracting";
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() || "";
+
+          for (const part of parts) {
+            const lines = part.split("\n");
+            let eventName = "";
+            let dataStr = "";
+
+            for (const line of lines) {
+              if (line.startsWith("event:")) {
+                eventName = line.replace("event:", "").trim();
+              } else if (line.startsWith("data:")) {
+                dataStr = line.replace("data:", "").trim();
+              }
+            }
+
+            if (eventName && dataStr) {
+              const data = JSON.parse(dataStr);
+
+              if (eventName === "status") {
+                const nextStep = data.step as IngestStep;
+                setStep(nextStep);
+                currentStep = nextStep;
+                setProgress(data.progress);
+              } else if (eventName === "success") {
+                const { recipe, recipeId: newRecipeId } = data;
+                setStep("saving");
+                currentStep = "saving";
+                setProgress(95);
+
+                // Salva la ricetta su Firestore dal client browser
+                const db = getFirebaseDb();
+                const recipeDoc = {
+                  ...recipe,
+                  createdAt: serverTimestamp(),
+                  createdBy: user.uid,
+                };
+                await setDoc(doc(db, "recipes", newRecipeId), recipeDoc);
+
+                // Aggiunge la ricetta al ricettario personale dell'utente
+                await addToUserRecipes(newRecipeId);
+
+                await trackEvent("recipe_import_completed", {
+                  source_platform: "image",
+                  is_cached_hit: false,
+                  userId: user.uid,
+                  userEmail: user.email || undefined,
+                });
+
+                const { queryClient } = await import("@/lib/query-client");
+                const { recipeKeys } = await import("@/hooks/useRecipes");
+                queryClient.invalidateQueries({ queryKey: recipeKeys.all(user.uid) });
+
+                setRecipeResult(recipe);
+                setRecipeId(newRecipeId);
+                setStep("completed");
+                currentStep = "completed";
+                setProgress(100);
+                setIsIngesting(false);
+
+                toast.success("Ricetta privata importata con successo!");
+                return;
+              } else if (eventName === "error") {
+                const errMsg = data.error || "Errore durante l'elaborazione dell'immagine";
+                setError(errMsg);
+                setStep("failed");
+                currentStep = "failed";
+                setIsIngesting(false);
+                toast.error(errMsg);
+
+                await trackEvent("recipe_import_failed", {
+                  source_platform: "image",
+                  error_type: errMsg,
+                  userId: user.uid,
+                  userEmail: user.email || undefined,
+                });
+                return;
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    } catch (err: any) {
+      console.error("Errore ingest-image:", err);
+      const errMsg = err.message || "Errore imprevisto durante l'analisi dell'immagine.";
+      setError(errMsg);
+      setStep("failed");
+      setIsIngesting(false);
+      toast.error(errMsg);
+
+      await trackEvent("recipe_import_failed", {
+        source_platform: "image",
+        error_type: errMsg,
+        userId: user.uid,
+        userEmail: user.email || undefined,
+      });
+    }
+  };
+
   return (
     <IngestContext.Provider
       value={{
@@ -651,6 +886,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
         recipeId,
         commentSearchData,
         startIngest,
+        startImageIngest,
         startCommentSearch,
         openImportDrawer,
         closeImportDrawer,

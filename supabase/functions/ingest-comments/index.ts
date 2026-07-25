@@ -85,7 +85,7 @@ Deno.serve(async (req: Request) => {
           console.log(`[Ingest Comments] STEP 1: Scraping commenti per URL: ${url}`);
           sendEvent("status", { step: "scraping", progress: 15 });
 
-          const { comments, creditsRemaining } = await scrapeInstagramComments(url, creatorUsername);
+          const { comments, creditsRemaining, creditsUsed, endpointsCalled } = await scrapeInstagramComments(url, creatorUsername);
 
           // Log crediti ScrapeCreators
           if (creditsRemaining !== null && creditsRemaining !== undefined) {
@@ -97,6 +97,7 @@ Deno.serve(async (req: Request) => {
                 user_email: userEmail || null,
                 platform: "instagram",
                 credits_remaining: creditsRemaining,
+                credits_used: creditsUsed,
               });
             } catch (sbErr) {
               console.error("[Ingest Comments] Errore log crediti SC su Supabase:", sbErr);
@@ -192,6 +193,8 @@ Deno.serve(async (req: Request) => {
             recipeId,
             generationId: geminiOutput.generationId,
             scrapecreatorsCreditsRemaining: creditsRemaining ?? null,
+            scrapecreatorsCreditsUsed: creditsUsed,
+            endpointsCalled: endpointsCalled || ["instagram_comments"],
           });
           if (!isFinished) {
             isFinished = true;

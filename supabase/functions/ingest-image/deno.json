@@ -1,0 +1,12 @@
+{
+  "imports": {
+    "@supabase/functions-js": "jsr:@supabase/functions-js@^2",
+    "@supabase/server": "npm:@supabase/server@^1",
+    "firebase/app": "npm:firebase@^12.14.0/app",
+    "firebase/auth": "npm:firebase@^12.14.0/auth",
+    "firebase/firestore": "npm:firebase@^12.14.0/firestore",
+    "firebase/storage": "npm:firebase@^12.14.0/storage",
+    "zod": "npm:zod@^3",
+    "@aws-sdk/client-s3": "npm:@aws-sdk/client-s3@^3.1062.0"
+  }
+}

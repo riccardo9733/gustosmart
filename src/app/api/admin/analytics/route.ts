@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         is_cached_hit: e.is_cached,
         error_type: e.error_type,
         credits_remaining: e.credits_remaining,
-        credits_used: e.credits_used ?? (e.platform && e.platform !== "web" ? 1 : e.event_name === "scrapecreators_credits" ? 1 : 0),
+        credits_used: e.credits_used ?? (e.platform && e.platform !== "web" && e.platform !== "image" ? 1 : e.event_name === "scrapecreators_credits" ? 1 : 0),
       },
       userId: e.user_id || null,
       userEmail: e.user_email || null,
@@ -60,12 +60,32 @@ export async function GET(request: Request) {
       .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
       .slice(0, 500);
 
+    // Calculate raw image ingestion count from logs for RPC & fallback sync
+    const rawIngestionLogs = ingestionLogsRes.data || [];
+    const imageInitCount = rawIngestionLogs.filter((e) => e.event_name === "recipe_import_initiated" && e.platform === "image").length;
+    const imageCompCount = rawIngestionLogs.filter((e) => e.event_name === "recipe_import_completed" && e.platform === "image").length;
+    const imageTotalScans = Math.max(imageInitCount, imageCompCount);
+
     // 2. Try invoking the RPC function get_admin_kpis
     const { data: rpcData, error: rpcError } = await supabase.rpc("get_admin_kpis", {
       p_days_back: daysBack,
     });
 
     if (!rpcError && rpcData) {
+      if (rpcData.ingestion) {
+        if (!rpcData.ingestion.platforms) {
+          rpcData.ingestion.platforms = { instagram: 0, tiktok: 0, youtube: 0, facebook: 0, web: 0, image: 0 };
+        }
+        rpcData.ingestion.platforms.image = imageTotalScans;
+
+        const compCount = rpcData.ingestion.completed || 0;
+        const failCount = rpcData.ingestion.failed || 0;
+        const rawInitCount = rpcData.ingestion.initiated || 0;
+
+        const correctInitiated = Math.max(rawInitCount, compCount + failCount, imageTotalScans);
+        rpcData.ingestion.initiated = correctInitiated;
+        rpcData.ingestion.success_rate = correctInitiated > 0 ? Math.min(100, Math.round((compCount / correctInitiated) * 100)) : 0;
+      }
       return NextResponse.json({
         success: true,
         data: {
@@ -90,22 +110,23 @@ export async function GET(request: Request) {
     const aiEvents = aiRes.data || [];
     const engagementEvents = engagementRes.data || [];
 
-    const initiated = ingestionEvents.filter((e) => e.event_name === "recipe_import_initiated").length;
     const completed = ingestionEvents.filter((e) => e.event_name === "recipe_import_completed").length;
     const failed = ingestionEvents.filter((e) => e.event_name === "recipe_import_failed").length;
+    const initiatedRaw = ingestionEvents.filter((e) => e.event_name === "recipe_import_initiated").length;
+    const initiated = Math.max(initiatedRaw, completed + failed);
     const cacheHits = ingestionEvents.filter((e) => e.event_name === "recipe_import_completed" && e.is_cached).length;
+    const successRate = initiated > 0 ? Math.min(100, Math.round((completed / initiated) * 100)) : 0;
 
     const scrapeCreditsEvent = ingestionEvents
       .filter((e) => e.credits_remaining !== null && e.credits_remaining !== undefined)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
 
-    const platforms = { instagram: 0, tiktok: 0, youtube: 0, facebook: 0, web: 0 };
-    ingestionEvents
-      .filter((e) => e.event_name === "recipe_import_initiated" && e.platform)
-      .forEach((e) => {
-        const p = e.platform.toLowerCase();
-        if (p in platforms) platforms[p as keyof typeof platforms]++;
-      });
+    const platforms = { instagram: 0, tiktok: 0, youtube: 0, facebook: 0, web: 0, image: 0 };
+    Object.keys(platforms).forEach((key) => {
+      const initC = ingestionEvents.filter((e) => e.event_name === "recipe_import_initiated" && e.platform?.toLowerCase() === key).length;
+      const compC = ingestionEvents.filter((e) => e.event_name === "recipe_import_completed" && e.platform?.toLowerCase() === key).length;
+      platforms[key as keyof typeof platforms] = Math.max(initC, compC);
+    });
 
     const engagement = {
       recipes_saved: engagementEvents.filter((e) => e.event_name === "recipe_saved").length,

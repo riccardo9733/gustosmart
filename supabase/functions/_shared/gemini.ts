@@ -131,7 +131,7 @@ Istruzioni per l'estrazione:
   }
 
   try {
-    return { recipe: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null };
+    return { recipe: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null, model: resJson.model || modelId };
   } catch {
     console.error("Errore di parsing del JSON di OpenRouter. Output grezzo:", responseText);
     throw new Error("Il testo generato dall'IA tramite OpenRouter non è un JSON valido");
@@ -271,7 +271,7 @@ REGOLE RIGIDE DI FEDELTÀ (CRITICAL):
   }
 
   try {
-    return { recipe: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null };
+    return { recipe: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null, model: resJson.model || modelId };
   } catch {
     console.error("Errore di parsing del JSON di OpenRouter (Web). Output grezzo:", responseText);
     throw new Error("Il testo generato dall'IA per la ricetta Web non è un JSON valido");
@@ -383,7 +383,7 @@ Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includ
   }
 
   try {
-    return { translation: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null };
+    return { translation: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null, model: resJson.model || modelId };
   } catch {
     console.error("Errore di parsing del JSON di traduzione di OpenRouter. Output grezzo:", responseText);
     throw new Error("Il testo generato dall'IA non è un JSON valido");
@@ -505,7 +505,7 @@ Assicurati che l'output sia solo ed esclusivamente il JSON richiesto. Non includ
   }
 
   try {
-    return { transformation: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null };
+    return { transformation: JSON.parse(cleanText), generationId: resJson.id || "", usage: resJson.usage || null, model: resJson.model || modelId };
   } catch {
     console.error("Errore di parsing del JSON di trasformazione di OpenRouter. Output grezzo:", responseText);
     throw new Error("Il testo generato dall'IA per la trasformazione non è un JSON valido");
@@ -522,6 +522,7 @@ export async function analyzeDietaryFlags(recipe: any): Promise<{
   isGlutenFree: boolean;
   generationId?: string;
   usage?: any;
+  model?: string;
 }> {
   const apiKey = Deno.env.get("OPENROUTER_API_KEY");
   if (!apiKey) {
@@ -605,7 +606,8 @@ Non includere blocchi di markdown o testo al di fuori dell'oggetto JSON.
       isLactoseFree: !!analysis.isLactoseFree,
       isGlutenFree: !!analysis.isGlutenFree,
       generationId: resJson.id || "",
-      usage: resJson.usage || null
+      usage: resJson.usage || null,
+      model: resJson.model || modelId,
     };
   } catch {
     console.error("Errore di parsing del JSON di analisi dietetica di OpenRouter. Output grezzo:", responseText);

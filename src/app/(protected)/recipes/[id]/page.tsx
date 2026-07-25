@@ -185,7 +185,7 @@ export default function RecipeDetailPage() {
   const [displayData, setDisplayData] = useState<{
     title: string;
     ingredients: any[];
-    instructions: string[];
+    instructions: any[];
     nutritionalAssessment?: string | null;
     isTranslated: boolean;
   } | null>(null);
@@ -1000,6 +1000,11 @@ export default function RecipeDetailPage() {
             <div className="flex flex-col md:flex-row justify-between items-start gap-6">
               <div className="flex-1">
                 <div className="flex flex-wrap gap-2 items-center mb-3">
+                  {recipe.isPublic === false && (
+                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-purple-500/30 text-purple-600 bg-purple-500/10 dark:text-purple-400 flex items-center gap-1">
+                      <span>🔒 Ricetta Privata</span>
+                    </Badge>
+                  )}
                   {activeRecipe.category && (
                     <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold border-primary/20 text-primary">
                       {getCategoryLabel(activeRecipe.category)}
@@ -1662,6 +1667,11 @@ export default function RecipeDetailPage() {
                             <span className="text-muted-foreground mr-1">{displayedUnit}</span>
                           )}
                           <span>{ing.name}</span>
+                          {ing.isAiGenerated && (
+                            <span title="Dose o ingrediente generato/completato dall'IA" className="inline-flex items-center text-amber-500 ml-1.5 shrink-0">
+                              <Sparkles className="w-3.5 h-3.5 fill-amber-500/20" />
+                            </span>
+                          )}
                         </span>
                       </label>
                     );
@@ -1690,8 +1700,10 @@ export default function RecipeDetailPage() {
 
             <div className="flex flex-col gap-6">
               {displayedInstructions && displayedInstructions.length > 0 ? (
-                displayedInstructions.map((step: string, idx: number) => {
+                displayedInstructions.map((step: any, idx: number) => {
                   const isChecked = !!completedSteps[idx];
+                  const stepText = typeof step === "object" && step !== null ? step.text : String(step);
+                  const isStepAiGenerated = typeof step === "object" && step !== null ? Boolean(step.isAiGenerated) : false;
 
                   return (
                     <div key={idx} className="group flex gap-4 items-start">
@@ -1729,8 +1741,13 @@ export default function RecipeDetailPage() {
                       <div className={`glass-panel rounded-[24px] p-6 flex-1 transition-all duration-300 hover:shadow-lg ${
                         isChecked ? "opacity-60 line-through text-muted-foreground bg-secondary/5" : ""
                       }`}>
-                        <p className="text-sm text-on-surface leading-relaxed">
-                          {step}
+                        <p className="text-sm text-on-surface leading-relaxed flex items-start gap-2">
+                          <span className="flex-1">{stepText}</span>
+                          {isStepAiGenerated && (
+                            <span title="Passaggio generato/completato dall'IA" className="inline-flex items-center text-amber-500 shrink-0 mt-0.5">
+                              <Sparkles className="w-4 h-4 fill-amber-500/20" />
+                            </span>
+                          )}
                         </p>
                         <label className="flex items-center gap-2 mt-4 text-xs font-bold text-secondary cursor-pointer select-none">
                           <Checkbox

@@ -685,23 +685,26 @@ export default function SharedRecipePage() {
               </h3>
               <div className="flex flex-col gap-6">
                 {recipe.instructions && recipe.instructions.length > 0 ? (
-                  recipe.instructions.map((step: string, idx: number) => (
-                    <div key={idx} className="group flex gap-4 items-start">
-                      <div className="flex flex-col items-center shrink-0">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-md bg-primary text-white shadow-primary/20">
-                          {idx + 1}
+                  recipe.instructions.map((step: any, idx: number) => {
+                    const stepText = typeof step === "object" && step !== null ? step.text : String(step);
+                    return (
+                      <div key={idx} className="group flex gap-4 items-start">
+                        <div className="flex flex-col items-center shrink-0">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-md bg-primary text-white shadow-primary/20">
+                            {idx + 1}
+                          </div>
+                          {idx < recipe.instructions.length - 1 && (
+                            <div className="w-0.5 h-16 bg-border/40 mt-2" />
+                          )}
                         </div>
-                        {idx < recipe.instructions.length - 1 && (
-                          <div className="w-0.5 h-16 bg-border/40 mt-2" />
-                        )}
+                        <div className="glass-panel rounded-[24px] p-6 flex-1 bg-card/25 border border-border/5">
+                          <p className="text-sm text-on-surface leading-relaxed">
+                            {stepText}
+                          </p>
+                        </div>
                       </div>
-                      <div className="glass-panel rounded-[24px] p-6 flex-1 bg-card/25 border border-border/5">
-                        <p className="text-sm text-on-surface leading-relaxed">
-                          {step}
-                        </p>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <span className="text-sm text-muted-foreground">{t("noInstructions")}</span>
                 )}

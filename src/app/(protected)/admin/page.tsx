@@ -28,6 +28,7 @@ import {
   Info,
   Flame,
   Users,
+  Camera,
   Calendar,
   Award,
   Coins
@@ -272,7 +273,7 @@ export default function AdminDashboard() {
   const itemsPerPage = 20;
 
   // OpenRouter Log Table State
-  const [openRouterFilter, setOpenRouterFilter] = useState<"all" | "ingest" | "translate">("all");
+  const [openRouterFilter, setOpenRouterFilter] = useState<"all" | "ingest" | "ingest_image" | "translate">("all");
   const [openRouterPage, setOpenRouterPage] = useState(1);
 
   // Reset pagination on search query change
@@ -441,12 +442,16 @@ export default function AdminDashboard() {
     ? (supabaseKpiData.ingestion.scrapecreators_credits ?? undefined)
     : (latestScrapeCreditsEvent?.params?.credits_remaining as number | undefined);
   
+  const totalInitiatedCount = supabaseKpiData
+    ? supabaseKpiData.ingestion.initiated
+    : Math.max(initiatedImports.length, completedImports.length + failedImports.length);
+
   const successRate = supabaseKpiData 
-    ? supabaseKpiData.ingestion.success_rate 
-    : (initiatedImports.length > 0 ? Math.round((completedImports.length / initiatedImports.length) * 100) : 0);
+    ? Math.min(100, supabaseKpiData.ingestion.success_rate)
+    : (totalInitiatedCount > 0 ? Math.min(100, Math.round((completedImports.length / totalInitiatedCount) * 100)) : 0);
 
   // Platform breakdown
-  const platforms = supabaseKpiData ? supabaseKpiData.ingestion.platforms : { instagram: 0, tiktok: 0, youtube: 0, facebook: 0, web: 0 };
+  const platforms = supabaseKpiData ? supabaseKpiData.ingestion.platforms : { instagram: 0, tiktok: 0, youtube: 0, facebook: 0, web: 0, image: 0 };
   if (!supabaseKpiData) {
     initiatedImports.forEach((e) => {
       const p = (e.params.source_platform as string | undefined)?.toLowerCase();
@@ -513,11 +518,12 @@ export default function AdminDashboard() {
 
   const platformChartData = useMemo(() => {
     return [
-      { platform: "Instagram", scans: platforms.instagram, fill: "#ec4899" },
-      { platform: "TikTok", scans: platforms.tiktok, fill: "#2dd4bf" },
-      { platform: "YouTube", scans: platforms.youtube, fill: "#ef4444" },
-      { platform: "Facebook", scans: platforms.facebook, fill: "#3b82f6" },
-      { platform: "Web", scans: platforms.web, fill: "hsl(var(--primary))" },
+      { platform: "Instagram", scans: platforms.instagram || 0, fill: "#ec4899" },
+      { platform: "TikTok", scans: platforms.tiktok || 0, fill: "#2dd4bf" },
+      { platform: "YouTube", scans: platforms.youtube || 0, fill: "#ef4444" },
+      { platform: "Facebook", scans: platforms.facebook || 0, fill: "#3b82f6" },
+      { platform: "Siti Web", scans: platforms.web || 0, fill: "hsl(var(--primary))" },
+      { platform: "Foto & Screenshot", scans: (platforms as any).image || 0, fill: "#f59e0b" },
     ].filter(p => p.scans > 0); // Only show platforms with data to keep Pie clean
   }, [platforms]);
 
@@ -547,6 +553,7 @@ export default function AdminDashboard() {
     youtube: { label: "YouTube", color: "#ef4444" },
     facebook: { label: "Facebook", color: "#3b82f6" },
     web: { label: "Siti Web", color: "hsl(var(--primary))" },
+    image: { label: "Foto & Screenshot", color: "#f59e0b" },
   } satisfies ChartConfig;
 
   const engagementChartConfig = {
@@ -689,6 +696,7 @@ export default function AdminDashboard() {
       case "tiktok": return <Video className="h-4 w-4 text-teal-400" />;
       case "youtube": return <YouTubeIcon className="h-4 w-4 text-red-500" />;
       case "facebook": return <FacebookIcon className="h-4 w-4 text-blue-500" />;
+      case "image": return <Camera className="h-4 w-4 text-amber-500" />;
       default: return <Globe className="h-4 w-4 text-primary" />;
     }
   };
@@ -944,7 +952,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <h3 className="text-3xl font-extrabold text-foreground leading-none">{initiatedImports.length}</h3>
+                    <h3 className="text-3xl font-extrabold text-foreground leading-none">{totalInitiatedCount}</h3>
                     <p className="text-[10px] text-muted-foreground font-semibold mt-1">Richieste totali di scansione</p>
                   </div>
                 </Card>
@@ -1186,21 +1194,24 @@ export default function AdminDashboard() {
 
                   <div className="space-y-5">
                     {Object.entries(platforms).map(([platform, count]) => {
-                      const total = initiatedImports.length || 1;
-                      const pct = Math.round((count / total) * 100);
+                      const total = totalInitiatedCount || 1;
+                      const pct = Math.min(100, Math.round((count / total) * 100));
                       const barColors: Record<string, string> = {
                         instagram: "bg-pink-500",
                         tiktok: "bg-teal-400",
                         youtube: "bg-red-500",
                         facebook: "bg-blue-500",
-                        web: "bg-primary"
+                        web: "bg-primary",
+                        image: "bg-amber-500",
                       };
+
+                      const platformLabel = platform === "image" ? "Foto & Screenshot" : platform === "web" ? "Siti Web" : platform;
 
                       return (
                         <div key={platform} className="flex items-center gap-4">
-                          <div className="flex items-center gap-2 w-28 shrink-0">
+                          <div className="flex items-center gap-2 w-32 shrink-0">
                             {getPlatformIcon(platform)}
-                            <span className="text-xs font-semibold capitalize text-foreground">{platform}</span>
+                            <span className="text-xs font-semibold capitalize text-foreground truncate">{platformLabel}</span>
                           </div>
                           
                           <div className="flex-1 bg-muted/50 h-3.5 rounded-full overflow-hidden border border-white/5 relative">
@@ -1452,7 +1463,17 @@ export default function AdminDashboard() {
                               : "text-muted-foreground hover:text-foreground"
                           }`}
                         >
-                          Ingest
+                          Ingest URL
+                        </button>
+                        <button
+                          onClick={() => { setOpenRouterFilter("ingest_image"); setOpenRouterPage(1); }}
+                          className={`px-3.5 py-1.5 rounded-lg transition-all ${
+                            openRouterFilter === "ingest_image"
+                              ? "bg-primary text-white shadow"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Ingest Foto
                         </button>
                         <button
                           onClick={() => { setOpenRouterFilter("translate"); setOpenRouterPage(1); }}
@@ -1471,6 +1492,7 @@ export default function AdminDashboard() {
                     <div className="block md:hidden divide-y divide-border/10">
                       {paginatedOpenRouterCalls.map((log) => {
                         const type = (log.params.type as string) || "unknown";
+                        const modelName = (log.params.model as string) || "google/gemini-3.1-flash-lite";
                         const promptTokens = (log.params.prompt_tokens as number) ?? 0;
                         const completionTokens = (log.params.completion_tokens as number) ?? 0;
                         const cost = (log.params.cost as number) ?? 0;
@@ -1485,11 +1507,27 @@ export default function AdminDashboard() {
                               <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase border ${
                                 type === "ingest"
                                   ? "bg-teal-500/10 text-teal-400 border-teal-500/20"
+                                  : type === "ingest_image"
+                                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
                                   : type === "translate"
                                   ? "bg-violet-500/10 text-violet-400 border-violet-500/20"
+                                  : type.startsWith("transform")
+                                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                  : type === "dietary_analysis"
+                                  ? "bg-sky-500/10 text-sky-400 border-sky-500/20"
                                   : "bg-muted text-muted-foreground border-border"
                               }`}>
-                                {type === "ingest" ? "Ingest" : type === "translate" ? "Traduzione" : type}
+                                {type === "ingest"
+                                  ? "Ingest URL"
+                                  : type === "ingest_image"
+                                  ? "Ingest Foto"
+                                  : type === "translate"
+                                  ? "Traduzione"
+                                  : type.startsWith("transform")
+                                  ? "Adattamento"
+                                  : type === "dietary_analysis"
+                                  ? "Analisi Dietetica"
+                                  : type}
                               </span>
                             </div>
                             
@@ -1497,6 +1535,7 @@ export default function AdminDashboard() {
                               <div className="flex flex-col">
                                 <span className="font-semibold text-xs text-foreground truncate max-w-[180px]">{log.userEmail || "Anonimo"}</span>
                                 <span className="text-[9px] text-muted-foreground font-mono truncate max-w-[150px]">{log.userId || "—"}</span>
+                                <span className="text-[10px] text-primary/80 font-mono mt-0.5">{modelName}</span>
                               </div>
                               <span className="font-mono font-bold text-xs text-primary">${cost.toFixed(6)}</span>
                             </div>
@@ -1530,7 +1569,8 @@ export default function AdminDashboard() {
                           <tr className="bg-muted/30 border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                             <th className="p-4 pl-6">Timestamp</th>
                             <th className="p-4">Utente</th>
-                            <th className="p-4">Tipo</th>
+                            <th className="p-4">Modello AI</th>
+                            <th className="p-4">Tipo Azione</th>
                             <th className="p-4">Token (Input/Output)</th>
                             <th className="p-4">Costo</th>
                             <th className="p-4 text-center">Dettagli</th>
@@ -1539,6 +1579,7 @@ export default function AdminDashboard() {
                         <tbody className="divide-y divide-border/20 text-xs">
                           {paginatedOpenRouterCalls.map((log) => {
                             const type = (log.params.type as string) || "unknown";
+                            const modelName = (log.params.model as string) || "google/gemini-3.1-flash-lite";
                             const promptTokens = (log.params.prompt_tokens as number) ?? 0;
                             const completionTokens = (log.params.completion_tokens as number) ?? 0;
                             const cost = (log.params.cost as number) ?? 0;
@@ -1555,15 +1596,34 @@ export default function AdminDashboard() {
                                     <span className="text-[10px] text-muted-foreground font-mono">{log.userId || "—"}</span>
                                   </div>
                                 </td>
+                                <td className="p-4 whitespace-nowrap font-mono text-[10px] text-muted-foreground">
+                                  {modelName}
+                                </td>
                                 <td className="p-4 whitespace-nowrap">
                                   <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] uppercase border ${
                                     type === "ingest"
                                       ? "bg-teal-500/10 text-teal-400 border-teal-500/20"
+                                      : type === "ingest_image"
+                                      ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
                                       : type === "translate"
                                       ? "bg-violet-500/10 text-violet-400 border-violet-500/20"
+                                      : type.startsWith("transform")
+                                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                      : type === "dietary_analysis"
+                                      ? "bg-sky-500/10 text-sky-400 border-sky-500/20"
                                       : "bg-muted text-muted-foreground border-border"
                                   }`}>
-                                    {type === "ingest" ? "Ingest" : type === "translate" ? "Traduzione" : type}
+                                    {type === "ingest"
+                                      ? "Ingest URL"
+                                      : type === "ingest_image"
+                                      ? "Ingest Foto"
+                                      : type === "translate"
+                                      ? "Traduzione"
+                                      : type.startsWith("transform")
+                                      ? "Adattamento"
+                                      : type === "dietary_analysis"
+                                      ? "Analisi Dietetica"
+                                      : type}
                                   </span>
                                 </td>
                                 <td className="p-4 whitespace-nowrap">

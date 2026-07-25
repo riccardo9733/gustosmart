@@ -19,6 +19,9 @@ export interface ScrapedData {
     imageUrl?: string;
   } | null;
   scrapecreatorsCreditsRemaining?: number | null;
+  scrapecreatorsCreditsUsed?: number;
+  hasTranscript?: boolean;
+  endpointsCalled?: string[];
 }
 
 /**
@@ -30,7 +33,9 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
     throw new Error("Manca la chiave d'ambiente SCRAPECREATORS_API_KEY");
   }
 
-  let creditsRemaining: number | null = null;
+  let postCreditsRemaining: number | null = null;
+  let transcriptCreditsRemaining: number | null = null;
+  let transcriptAttempted = false;
 
   // Eseguiamo la chiamata ai dettagli del post e alla trascrizione in parallelo.
   // La trascrizione ha un timeout di 60 secondi per evitare di bloccare o far fallire l'intera importazione.
@@ -44,6 +49,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
   );
 
   const fetchTranscriptWithTimeout = async (): Promise<string> => {
+    transcriptAttempted = true;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
     try {
@@ -63,7 +69,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
       }
       const data = await res.json();
       if (data.credits_remaining !== undefined) {
-        creditsRemaining = data.credits_remaining;
+        transcriptCreditsRemaining = data.credits_remaining;
       }
       return data.transcripts?.[0]?.text || "";
     } catch {
@@ -90,8 +96,21 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
   console.log(JSON.stringify(postData, null, 2));
   console.log("=========================================");
   if (postData.credits_remaining !== undefined) {
-    creditsRemaining = postData.credits_remaining;
+    postCreditsRemaining = postData.credits_remaining;
   }
+
+  const remainingValues = [postCreditsRemaining, transcriptCreditsRemaining].filter(
+    (v): v is number => v !== null && v !== undefined
+  );
+  const creditsRemaining = remainingValues.length > 0 ? Math.min(...remainingValues) : null;
+
+  const endpointsCalled: string[] = ["instagram_post"];
+  let creditsUsed = 1;
+  if (transcriptAttempted) {
+    endpointsCalled.push("instagram_transcript");
+    creditsUsed += 1;
+  }
+
   const media = postData.data?.xdt_shortcode_media;
 
   if (!media) {
@@ -187,6 +206,9 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
     creatorId,
     comments: commentsList,
     scrapecreatorsCreditsRemaining: creditsRemaining,
+    scrapecreatorsCreditsUsed: creditsUsed,
+    hasTranscript: Boolean(transcriptText && transcriptText.trim().length > 0),
+    endpointsCalled,
   };
 }
 
@@ -200,7 +222,12 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
 export async function scrapeInstagramComments(
   url: string,
   creatorUsername: string | null
-): Promise<{ comments: string[]; creditsRemaining: number | null }> {
+): Promise<{
+  comments: string[];
+  creditsRemaining: number | null;
+  creditsUsed: number;
+  endpointsCalled: string[];
+}> {
   const apiKey = process.env.SCRAPECREATORS_API_KEY;
   if (!apiKey) {
     throw new Error("Manca la chiave d'ambiente SCRAPECREATORS_API_KEY");
@@ -210,6 +237,7 @@ export async function scrapeInstagramComments(
   let creditsRemaining: number | null = null;
   let cursor = "";
   let page = 1;
+  let pagesFetched = 0;
   const maxPages = 6;
   const seenTexts = new Set<string>();
 
@@ -273,6 +301,8 @@ export async function scrapeInstagramComments(
       console.error(`[scrapeInstagramComments] Failed to fetch comments page ${page} after ${maxAttempts} attempts`);
       break;
     }
+
+    pagesFetched++;
 
     let data: any = null;
     try {
@@ -357,7 +387,12 @@ export async function scrapeInstagramComments(
     console.log(`[scrapeInstagramComments] First comment preview: "${commentsList[0].slice(0, 100)}..."`);
   }
 
-  return { comments: commentsList, creditsRemaining };
+  return {
+    comments: commentsList,
+    creditsRemaining,
+    creditsUsed: pagesFetched || 1,
+    endpointsCalled: ["instagram_comments"],
+  };
 }
 
 /**
@@ -433,6 +468,9 @@ export async function scrapeTikTok(url: string): Promise<ScrapedData> {
     creatorFullName,
     creatorId,
     scrapecreatorsCreditsRemaining: creditsRemaining,
+    scrapecreatorsCreditsUsed: 1,
+    hasTranscript: Boolean(transcript && transcript.trim().length > 0),
+    endpointsCalled: ["tiktok_video"],
   };
 }
 
@@ -445,7 +483,9 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
     throw new Error("Manca la chiave d'ambiente SCRAPECREATORS_API_KEY");
   }
 
-  let creditsRemaining: number | null = null;
+  let postCreditsRemaining: number | null = null;
+  let transcriptCreditsRemaining: number | null = null;
+  let transcriptAttempted = false;
 
   // Eseguiamo la chiamata ai dettagli del post e alla trascrizione in parallelo.
   const fetchPost = fetch(
@@ -458,6 +498,7 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
   );
 
   const fetchTranscriptWithTimeout = async (): Promise<string> => {
+    transcriptAttempted = true;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
     try {
@@ -477,7 +518,7 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
       }
       const data = await res.json();
       if (data.credits_remaining !== undefined) {
-        creditsRemaining = data.credits_remaining;
+        transcriptCreditsRemaining = data.credits_remaining;
       }
       return data.transcript || "";
     } catch {
@@ -500,11 +541,23 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
 
   const postData = await postResponse.json();
   if (postData.credits_remaining !== undefined) {
-    creditsRemaining = postData.credits_remaining;
+    postCreditsRemaining = postData.credits_remaining;
   }
   if (!postData.success) {
     console.error("Risposta ScrapeCreators Facebook fallita:", postData);
     throw new Error("Lo scraping di Facebook ha restituito esito negativo.");
+  }
+
+  const remainingValues = [postCreditsRemaining, transcriptCreditsRemaining].filter(
+    (v): v is number => v !== null && v !== undefined
+  );
+  const creditsRemaining = remainingValues.length > 0 ? Math.min(...remainingValues) : null;
+
+  const endpointsCalled: string[] = ["facebook_post"];
+  let creditsUsed = 1;
+  if (transcriptAttempted) {
+    endpointsCalled.push("facebook_transcript");
+    creditsUsed += 1;
   }
 
   const caption = postData.description || "";
@@ -534,6 +587,9 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
     creatorFullName,
     creatorId,
     scrapecreatorsCreditsRemaining: creditsRemaining,
+    scrapecreatorsCreditsUsed: creditsUsed,
+    hasTranscript: Boolean(transcriptText && transcriptText.trim().length > 0),
+    endpointsCalled,
   };
 }
 
@@ -546,7 +602,8 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
     throw new Error("Manca la chiave d'ambiente SCRAPECREATORS_API_KEY");
   }
 
-  let creditsRemaining: number | null = null;
+  let postCreditsRemaining: number | null = null;
+  let transcriptCreditsRemaining: number | null = null;
 
   const fetchPost = fetch(
     `https://api.scrapecreators.com/v1/youtube/video?url=${encodeURIComponent(url)}`,
@@ -567,7 +624,7 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
 
   const postData = await postResponse.json();
   if (postData.credits_remaining !== undefined) {
-    creditsRemaining = postData.credits_remaining;
+    postCreditsRemaining = postData.credits_remaining;
   }
   if (!postData.success) {
     console.error("Risposta ScrapeCreators YouTube fallita:", postData);
@@ -587,7 +644,11 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
   const isShort = url.toLowerCase().includes("/shorts/") || (postData.durationMs && postData.durationMs <= 120000);
   let transcriptText = "";
 
+  const endpointsCalled: string[] = ["youtube_video"];
+  let creditsUsed = 1;
+
   if (isShort) {
+    endpointsCalled.push("youtube_transcript");
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
     try {
@@ -602,9 +663,10 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
       );
       clearTimeout(timeoutId);
       if (res.ok) {
+        creditsUsed += 1;
         const transData = await res.json();
         if (transData.credits_remaining !== undefined) {
-          creditsRemaining = transData.credits_remaining;
+          transcriptCreditsRemaining = transData.credits_remaining;
         }
         transcriptText = transData.transcript_only_text || "";
       } else {
@@ -616,6 +678,11 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
     }
   }
 
+  const remainingValues = [postCreditsRemaining, transcriptCreditsRemaining].filter(
+    (v): v is number => v !== null && v !== undefined
+  );
+  const creditsRemaining = remainingValues.length > 0 ? Math.min(...remainingValues) : null;
+
   return {
     caption,
     transcript: transcriptText,
@@ -624,5 +691,8 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
     creatorFullName,
     creatorId,
     scrapecreatorsCreditsRemaining: creditsRemaining,
+    scrapecreatorsCreditsUsed: creditsUsed,
+    hasTranscript: Boolean(transcriptText && transcriptText.trim().length > 0),
+    endpointsCalled,
   };
 }

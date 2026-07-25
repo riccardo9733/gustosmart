@@ -455,3 +455,9 @@ export function ImportRecipeForm({ userId }: { userId: string }) {
 }
 ```
 
+---
+
+## 9. Estensione Ingestione da Immagine (OCR & Vision AI)
+
+Per le specifiche dettagliate relative all'importazione di ricette da **screenshot** o **foto di ricettari** (Edge Function `ingest-image`, gestione della privacy `isPublic: false` ed evidenziazione dei campi generati con icona `✨`), consultare la documentazione dedicata in [ingestioneDaImmagine.md](file:///Users/riccardo-z/Documents/dev/context/ingestioneDaImmagine.md).
+
