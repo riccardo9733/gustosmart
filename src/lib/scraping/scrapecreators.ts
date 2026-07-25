@@ -18,6 +18,7 @@ export interface ScrapedData {
     imageUrl?: string;
   } | null;
   scrapecreatorsCreditsRemaining?: number | null;
+  scrapecreatorsCreditsUsed?: number;
 }
 
 /**
@@ -186,6 +187,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
     creatorId,
     comments: commentsList,
     scrapecreatorsCreditsRemaining: creditsRemaining,
+    scrapecreatorsCreditsUsed: 2,
   };
 }
 
@@ -199,7 +201,7 @@ export async function scrapeInstagram(url: string): Promise<ScrapedData> {
 export async function scrapeInstagramComments(
   url: string,
   creatorUsername: string | null
-): Promise<{ comments: string[]; creditsRemaining: number | null }> {
+): Promise<{ comments: string[]; creditsRemaining: number | null; creditsUsed: number }> {
   const apiKey = process.env.SCRAPECREATORS_API_KEY;
   if (!apiKey) {
     throw new Error("Manca la chiave d'ambiente SCRAPECREATORS_API_KEY");
@@ -356,7 +358,7 @@ export async function scrapeInstagramComments(
     console.log(`[scrapeInstagramComments] First comment preview: "${commentsList[0].slice(0, 100)}..."`);
   }
 
-  return { comments: commentsList, creditsRemaining };
+  return { comments: commentsList, creditsRemaining, creditsUsed: Math.max(1, page - 1) };
 }
 
 /**
@@ -432,6 +434,7 @@ export async function scrapeTikTok(url: string): Promise<ScrapedData> {
     creatorFullName,
     creatorId,
     scrapecreatorsCreditsRemaining: creditsRemaining,
+    scrapecreatorsCreditsUsed: 1,
   };
 }
 
@@ -533,6 +536,7 @@ export async function scrapeFacebook(url: string): Promise<ScrapedData> {
     creatorFullName,
     creatorId,
     scrapecreatorsCreditsRemaining: creditsRemaining,
+    scrapecreatorsCreditsUsed: 2,
   };
 }
 
@@ -623,5 +627,6 @@ export async function scrapeYouTube(url: string): Promise<ScrapedData> {
     creatorFullName,
     creatorId,
     scrapecreatorsCreditsRemaining: creditsRemaining,
+    scrapecreatorsCreditsUsed: isShort ? 2 : 1,
   };
 }

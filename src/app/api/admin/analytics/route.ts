@@ -24,6 +24,7 @@ export async function GET(request: Request) {
         is_cached_hit: e.is_cached,
         error_type: e.error_type,
         credits_remaining: e.credits_remaining,
+        credits_used: e.credits_used ?? (e.platform && e.platform !== "web" ? 1 : e.event_name === "scrapecreators_credits" ? 1 : 0),
       },
       userId: e.user_id || null,
       userEmail: e.user_email || null,
@@ -95,7 +96,7 @@ export async function GET(request: Request) {
     const cacheHits = ingestionEvents.filter((e) => e.event_name === "recipe_import_completed" && e.is_cached).length;
 
     const scrapeCreditsEvent = ingestionEvents
-      .filter((e) => e.event_name === "scrapecreators_credits" && e.credits_remaining !== null)
+      .filter((e) => e.credits_remaining !== null && e.credits_remaining !== undefined)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
 
     const platforms = { instagram: 0, tiktok: 0, youtube: 0, facebook: 0, web: 0 };

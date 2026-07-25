@@ -222,7 +222,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      let currentStep: IngestStep = "scraping";
+      let currentStep: string = "scraping";
 
       try {
         while (true) {
@@ -254,8 +254,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                 setStep(nextStep);
                 currentStep = nextStep;
                 setProgress(data.progress);
-              } else if (eventName === "success") {
-                const { recipe, recipeId: newRecipeId, generationId, scrapecreatorsCreditsRemaining } = data;
+                const { recipe, recipeId: newRecipeId, generationId, scrapecreatorsCreditsRemaining, scrapecreatorsCreditsUsed } = data;
                 setStep("saving");
                 currentStep = "saving";
                 setProgress(95);
@@ -330,6 +329,7 @@ export function IngestProvider({ children }: { children: React.ReactNode }) {
                   duration_seconds: durationSeconds,
                   generation_id: generationId || null,
                   scrapecreators_credits_remaining: scrapecreatorsCreditsRemaining !== undefined ? scrapecreatorsCreditsRemaining : null,
+                  scrapecreators_credits_used: scrapecreatorsCreditsUsed !== undefined ? scrapecreatorsCreditsUsed : (detectedPlatform === "web" ? 0 : 1),
                   userId: user.uid,
                   userEmail: user.email || undefined,
                 });

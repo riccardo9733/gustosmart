@@ -373,6 +373,7 @@ Deno.serve(async (req: Request) => {
               platform: cleanedPlatform,
               status: "completed",
               is_cached: false,
+              credits_remaining: scrapedData.scrapecreatorsCreditsRemaining ?? null,
             });
           } catch (e) {
             console.error("[Ingest Function] Errore log import_completed:", e);
@@ -382,7 +383,8 @@ Deno.serve(async (req: Request) => {
             recipe: validatedRecipe,
             recipeId,
             generationId: geminiOutput.generationId,
-            scrapecreatorsCreditsRemaining: scrapedData.scrapecreatorsCreditsRemaining ?? null
+            scrapecreatorsCreditsRemaining: scrapedData.scrapecreatorsCreditsRemaining ?? null,
+            scrapecreatorsCreditsUsed: scrapedData.scrapecreatorsCreditsUsed ?? 1,
           });
           if (!isFinished) {
             isFinished = true;

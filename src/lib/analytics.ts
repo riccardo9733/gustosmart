@@ -75,7 +75,11 @@ export async function trackEvent(eventName: string, params: TrackEventParams = {
         status,
         is_cached: eventParams.is_cached_hit === true,
         error_type: (eventParams.error_type as string) || null,
-        credits_remaining: typeof eventParams.credits_remaining === "number" ? eventParams.credits_remaining : null,
+        credits_remaining: typeof eventParams.credits_remaining === "number"
+          ? eventParams.credits_remaining
+          : typeof eventParams.scrapecreators_credits_remaining === "number"
+          ? eventParams.scrapecreators_credits_remaining
+          : null,
       });
     } else if (["openrouter_call", "recipe_translated", "recipe_transformed", "dietary_analyzed"].includes(eventName)) {
       await supabase.from("ai_usage_events").insert({

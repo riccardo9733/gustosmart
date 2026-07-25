@@ -559,7 +559,8 @@ export default function AdminDashboard() {
     return (
       e.eventName.toLowerCase().includes(q) ||
       (e.userEmail && e.userEmail.toLowerCase().includes(q)) ||
-      (e.userId && e.userId.toLowerCase().includes(q))
+      (e.userId && e.userId.toLowerCase().includes(q)) ||
+      JSON.stringify(e.params || {}).toLowerCase().includes(q)
     );
   });
 
@@ -690,6 +691,113 @@ export default function AdminDashboard() {
       case "facebook": return <FacebookIcon className="h-4 w-4 text-blue-500" />;
       default: return <Globe className="h-4 w-4 text-primary" />;
     }
+  };
+
+  const renderLogDetails = (log: { eventName: string; params: Record<string, unknown> }) => {
+    const p = log.params || {};
+
+    // 1. Eventi AI (OpenRouter calls / AI analysis)
+    if (log.eventName === "openrouter_call" || p.cost !== undefined) {
+      const cost = typeof p.cost === "number" ? p.cost : Number(p.cost) || 0;
+      const promptTokens = typeof p.prompt_tokens === "number" ? p.prompt_tokens : Number(p.prompt_tokens) || 0;
+      const completionTokens = typeof p.completion_tokens === "number" ? p.completion_tokens : Number(p.completion_tokens) || 0;
+      const totalTokens = promptTokens + completionTokens;
+      const type = (p.type as string) || (p.action_type as string) || null;
+      const model = (p.model as string) || null;
+
+      return (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
+            <DollarSign className="h-3.5 w-3.5" />
+            Costo Chiamata AI: ${cost.toFixed(6)}
+          </span>
+
+          {(totalTokens > 0 || promptTokens > 0 || completionTokens > 0) && (
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-muted/30 text-foreground px-2.5 py-1 rounded-lg border border-border/20">
+              <span className="font-semibold">{totalTokens} token LLM</span>
+              <span className="text-[10px] text-muted-foreground">({promptTokens} in / {completionTokens} out)</span>
+            </span>
+          )}
+
+          {model && (
+            <span className="inline-flex items-center font-mono text-[10px] bg-muted/40 text-muted-foreground px-2 py-0.5 rounded-md border border-border/10">
+              {model}
+            </span>
+          )}
+
+          {type && (
+            <span className="inline-flex items-center font-semibold text-[10px] uppercase text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-md border border-violet-500/20">
+              {type}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    // 2. Eventi ScrapeCreators crediti o Ingestione Ricette
+    const isScrapeEvent = log.eventName === "scrapecreators_credits";
+    const isImportEvent = log.eventName.startsWith("recipe_import_");
+
+    if (isScrapeEvent || isImportEvent || p.credits_remaining !== undefined || p.scrapecreators_credits_remaining !== undefined) {
+      const creditsRemaining = (p.credits_remaining as number | undefined) ?? (p.scrapecreators_credits_remaining as number | undefined);
+      const creditsUsed = (p.credits_used as number | undefined) ?? (p.scrapecreators_credits_used as number | undefined);
+      const platform = (p.source_platform as string | undefined) || (p.platform as string | undefined);
+      const durationSeconds = p.duration_seconds as number | undefined;
+      const isCached = p.is_cached_hit === true;
+
+      return (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {/* Costo Ingestione in Crediti */}
+          {creditsUsed !== undefined && creditsUsed !== null && (
+            <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 shadow-xs">
+              <Coins className="h-3.5 w-3.5 text-amber-400" />
+              Costo Ingestione: {creditsUsed} {creditsUsed === 1 ? "credito SC" : "crediti SC"}
+            </span>
+          )}
+
+          {/* Crediti Rimanenti */}
+          {creditsRemaining !== undefined && creditsRemaining !== null && (
+            <span className="inline-flex items-center gap-1 font-mono font-semibold text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20">
+              <Database className="h-3.5 w-3.5 text-cyan-400" />
+              Saldo Rimanente: {creditsRemaining.toLocaleString("it-IT")} crediti
+            </span>
+          )}
+
+          {/* Piattaforma */}
+          {platform && (
+            <span className="inline-flex items-center gap-1 text-[11px] capitalize font-semibold text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-md border border-border/10">
+              {getPlatformIcon(platform)}
+              {platform}
+            </span>
+          )}
+
+          {/* Extra import details */}
+          {durationSeconds !== undefined && (
+            <span className="text-[10px] text-muted-foreground font-mono">
+              ⏱️ {durationSeconds}s
+            </span>
+          )}
+
+          {isCached && (
+            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+              ⚡ Cache Hit
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    // Fallback per altri eventi
+    const keys = Object.keys(p);
+    if (keys.length === 0) {
+      return <span className="text-muted-foreground italic text-[10px]">Nessun parametro</span>;
+    }
+
+    return (
+      <div className="font-mono text-[10px] bg-muted/20 p-2 rounded-lg max-w-[350px] overflow-x-auto scrollbar-none text-muted-foreground border border-border/20 flex-1">
+        {JSON.stringify(p)}
+      </div>
+    );
   };
 
   if (loadingUser || !profile || profile.role !== "admin") {
@@ -1810,8 +1918,8 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-center gap-2 border-t border-border/10 pt-2">
-                          <div className="font-mono text-[9px] bg-muted/20 p-2 rounded-lg max-w-[280px] overflow-x-auto scrollbar-none text-muted-foreground border border-border/20 flex-1">
-                            {JSON.stringify(log.params)}
+                          <div className="flex-1 overflow-x-auto">
+                            {renderLogDetails(log)}
                           </div>
                           {hasGenId && (
                             <Button
@@ -1865,8 +1973,8 @@ export default function AdminDashboard() {
                             </td>
                             <td className="p-4">
                               <div className="flex items-center gap-2">
-                                <div className="font-mono text-[10px] bg-muted/20 p-2 rounded-lg max-w-[350px] overflow-x-auto scrollbar-none text-muted-foreground border border-border/20 flex-1">
-                                  {JSON.stringify(log.params)}
+                                <div className="flex-1 overflow-x-auto">
+                                  {renderLogDetails(log)}
                                 </div>
                                 {hasGenId && (
                                   <Button
