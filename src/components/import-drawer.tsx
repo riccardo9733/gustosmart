@@ -185,7 +185,7 @@ export function ImportDrawer() {
 
   return (
     <Drawer open={isDrawerOpen} onOpenChange={(open) => !open && closeImportDrawer()} repositionInputs={false}>
-      <DrawerContent className="max-h-[85vh] p-6 rounded-t-[32px] border-t border-white/20 bg-background dark:bg-surface-container/95 backdrop-blur-xl">
+      <DrawerContent className="max-h-[85vh] p-6 rounded-t-[32px] border-t border-border bg-background dark:bg-surface-container">
         {/* Elementi di accessibilità invisibili richiesti da Radix UI in tutti gli stati */}
         <div className="sr-only">
           <DrawerTitle>{t("drawerTitle") || "Importa una Ricetta"}</DrawerTitle>
@@ -219,7 +219,7 @@ export function ImportDrawer() {
 
               <form onSubmit={handleSubmit} className="relative group w-full mt-2">
                 <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full -z-10 transition-all duration-500 group-focus-within:bg-primary/20"></div>
-                <div className="flex items-center glass-panel rounded-2xl sm:rounded-full p-2 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all gap-1.5">
+                <div className="flex items-center surface-panel rounded-2xl sm:rounded-full p-2 shadow-xl shadow-primary/5 border border-primary/20 focus-within:border-primary transition-all gap-1.5">
                   
                   {/* Plus icon to upload image */}
                   <button
@@ -254,7 +254,7 @@ export function ImportDrawer() {
                     <button
                       type="button"
                       onClick={() => setVideoUrl("")}
-                      className="p-1.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50 transition-colors shrink-0 cursor-pointer"
+                      className="p-1.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted0 transition-colors shrink-0 cursor-pointer"
                       title="Cancella"
                     >
                       <X className="h-4 w-4" />
@@ -266,7 +266,7 @@ export function ImportDrawer() {
                       type="button"
                       variant="ghost"
                       onClick={handleRemoveFile}
-                      className="glass-panel text-xs font-semibold px-3 h-10 rounded-xl sm:rounded-full flex items-center gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/15 active:scale-95 transition-all border border-destructive/20 shrink-0 cursor-pointer"
+                      className="surface-panel text-xs font-semibold px-3 h-10 rounded-xl sm:rounded-full flex items-center gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/15 active:scale-95 transition-all border border-destructive/20 shrink-0 cursor-pointer"
                       title="Rimuovi immagine"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -277,7 +277,7 @@ export function ImportDrawer() {
                       type="button"
                       variant="ghost"
                       onClick={handlePaste}
-                      className="glass-panel text-xs font-semibold px-3 h-10 rounded-xl sm:rounded-full flex items-center gap-1.5 text-primary hover:text-primary hover:bg-primary/15 active:scale-95 transition-all border border-primary/20 shrink-0 cursor-pointer"
+                      className="surface-panel text-xs font-semibold px-3 h-10 rounded-xl sm:rounded-full flex items-center gap-1.5 text-primary hover:text-primary hover:bg-primary/15 active:scale-95 transition-all border border-primary/20 shrink-0 cursor-pointer"
                       title="Incolla dagli appunti"
                     >
                       <ClipboardPaste className="h-4 w-4 text-primary" />
@@ -303,7 +303,7 @@ export function ImportDrawer() {
                 </span>
                 <div className="flex flex-wrap justify-center items-center gap-2">
                   {/* Instagram Reel */}
-                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                  <div className="surface-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-border bg-muted shadow-xs">
                     <span className="flex items-center justify-center h-5 w-5 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shrink-0">
                       <Film className="h-3 w-3" />
                     </span>
@@ -311,7 +311,7 @@ export function ImportDrawer() {
                   </div>
 
                   {/* YouTube Short */}
-                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                  <div className="surface-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-border bg-muted shadow-xs">
                     <span className="flex items-center justify-center h-5 w-5 rounded-full bg-red-600 text-white shrink-0">
                       <YouTubeIcon className="h-2.5 w-2.5 fill-current text-white" />
                     </span>
@@ -319,7 +319,7 @@ export function ImportDrawer() {
                   </div>
 
                   {/* Facebook Reel */}
-                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                  <div className="surface-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-border bg-muted shadow-xs">
                     <span className="flex items-center justify-center h-5 w-5 rounded-full bg-blue-600 text-white shrink-0">
                       <FacebookIcon className="h-2.5 w-2.5 fill-current text-white" />
                     </span>
@@ -327,7 +327,7 @@ export function ImportDrawer() {
                   </div>
 
                   {/* TikTok */}
-                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                  <div className="surface-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-border bg-muted shadow-xs">
                     <span className="flex items-center justify-center h-5 w-5 rounded-full bg-black dark:bg-zinc-800 text-teal-400 shrink-0">
                       <TikTokIcon className="h-3 w-3" />
                     </span>
@@ -335,7 +335,7 @@ export function ImportDrawer() {
                   </div>
 
                   {/* Pagine Web */}
-                  <div className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-white/10 dark:border-white/5 bg-background/50 dark:bg-white/5 shadow-xs">
+                  <div className="surface-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-foreground border border-border bg-muted shadow-xs">
                     <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/20 text-primary shrink-0">
                       <Globe className="h-3 w-3" />
                     </span>

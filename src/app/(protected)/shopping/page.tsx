@@ -358,10 +358,10 @@ export default function ShoppingPage() {
       </section>
 
       {/* Accordion / Collapsible: Cookbook Recipes Selection */}
-      <div className="glass-panel rounded-2xl mb-6 border border-white/10 shadow-lg shadow-primary/5 overflow-hidden">
+      <div className="surface-panel rounded-2xl mb-6 border border-border shadow-lg shadow-primary/5 overflow-hidden">
         <button
           onClick={() => setIsRecipesExpanded(!isRecipesExpanded)}
-          className="w-full flex justify-between items-center p-5 font-semibold text-foreground hover:bg-muted/10 transition-colors"
+          className="w-full flex justify-between items-center p-5 font-semibold text-foreground hover:bg-muted transition-colors"
         >
           <div className="flex items-center gap-3">
             <UtensilsCrossed className="w-5 h-5 text-primary" />
@@ -452,7 +452,7 @@ export default function ShoppingPage() {
                       </label>
 
                       {isSelected && selection && (
-                        <div className="bg-surface-container rounded-full p-1 flex items-center gap-2 border border-white/5 shrink-0 scale-90">
+                        <div className="bg-surface-container rounded-full p-1 flex items-center gap-2 border border-border shrink-0 scale-90">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -533,7 +533,7 @@ export default function ShoppingPage() {
               return (
                 <div
                   key={`${key}-${index}`}
-                  className="glass-panel p-4 rounded-xl flex items-center justify-between border border-white/10 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/10 group cursor-pointer"
+                  className="surface-panel p-4 rounded-xl flex items-center justify-between border border-border shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/10 group cursor-pointer"
                   onClick={() => handleToggleItem(item)}
                 >
                   <div className="flex items-center gap-4 flex-1">
@@ -621,7 +621,7 @@ export default function ShoppingPage() {
                 return (
                   <div
                     key={`completed-${key}-${index}`}
-                    className="glass-panel p-3.5 rounded-xl flex items-center justify-between border border-white/5 opacity-55 line-through hover:opacity-80 transition-opacity cursor-pointer"
+                    className="surface-panel p-3.5 rounded-xl flex items-center justify-between border border-border opacity-55 line-through hover:opacity-80 transition-opacity cursor-pointer"
                     onClick={() => handleToggleItem(item)}
                   >
                     <div className="flex items-center gap-4 flex-1">

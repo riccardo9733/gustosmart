@@ -224,7 +224,7 @@ export default function ProfilePage() {
           <h3 className="text-xs font-bold px-1 text-primary uppercase tracking-wider opacity-80">
             {t("usage")}
           </h3>
-          <div className="glass-panel rounded-[24px] p-6 border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5 flex flex-col gap-4">
+          <div className="surface-panel rounded-[24px] p-6 border border-border shadow-lg shadow-primary/5 flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="bg-primary/10 dark:bg-primary/20 p-2.5 rounded-2xl">
@@ -246,7 +246,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Custom progress bar */}
-            <div className="w-full bg-surface-container-low dark:bg-surface-container h-3 rounded-full overflow-hidden border border-white/5 relative">
+            <div className="w-full bg-surface-container-low dark:bg-surface-container h-3 rounded-full overflow-hidden border border-border relative">
               <div 
                 className="terracotta-gradient h-full rounded-full transition-all duration-500 shadow-sm"
                 style={{ width: `${Math.min(100, Math.max(0, ((profile?.tokens ?? 100) / 100) * 100))}%` }}
@@ -265,17 +265,17 @@ export default function ProfilePage() {
           <h3 className="text-xs font-bold px-1 text-primary uppercase tracking-wider opacity-80">
             {t("kitchenPreferences")}
           </h3>
-          <div className="glass-panel rounded-[20px] overflow-hidden border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5">
+          <div className="surface-panel rounded-[20px] overflow-hidden border border-border shadow-lg shadow-primary/5">
             {/* Language Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger nativeButton={false} render={
-                <div className="flex items-center justify-between p-5 border-b border-white/10 hover:bg-white/40 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+                <div className="flex items-center justify-between p-5 border-b border-border hover:bg-muted transition-colors cursor-pointer group">
                   <div className="flex items-center gap-4">
                     <Globe className="h-5 w-5 text-muted-foreground" />
                     <span className="font-medium text-foreground">{t("appLanguage")}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 dark:bg-white/5 rounded-full border border-white/25">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-muted rounded-full border border-border">
                       <span className="text-sm">
                         {currentLangObj.flag}
                       </span>
@@ -287,7 +287,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
               } />
-              <DropdownMenuContent align="end" className="w-48 rounded-[16px] p-1.5 shadow-xl bg-popover text-popover-foreground border border-white/10">
+              <DropdownMenuContent align="end" className="w-48 rounded-[16px] p-1.5 shadow-xl bg-popover text-popover-foreground border border-border">
                 {languages.map((lang) => (
                   <DropdownMenuItem
                     key={lang.code}
@@ -306,13 +306,13 @@ export default function ProfilePage() {
               </DropdownMenuContent>
             </DropdownMenu>
             {/* Theme Selector */}
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
+            <div className="flex items-center justify-between p-5 border-b border-border">
               <div className="flex items-center gap-4">
                 <SunMoon className="h-5 w-5 text-muted-foreground" />
                 <span className="font-medium text-foreground">{t("theme")}</span>
               </div>
               {mounted && (
-                <div className="flex bg-surface-container-low dark:bg-surface-container p-1 rounded-full border border-white/10">
+                <div className="flex bg-surface-container-low dark:bg-surface-container p-1 rounded-full border border-border">
                   <button
                     onClick={() => setTheme("light")}
                     className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
@@ -352,7 +352,7 @@ export default function ProfilePage() {
                 <Ruler className="h-5 w-5 text-muted-foreground" />
                 <span className="font-medium text-foreground">{t("measurementUnits")}</span>
               </div>
-              <div className="flex bg-surface-container-low dark:bg-surface-container p-1 rounded-full border border-white/10">
+              <div className="flex bg-surface-container-low dark:bg-surface-container p-1 rounded-full border border-border">
                 <button 
                   onClick={() => handleUnitChange(true)}
                   className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
@@ -384,7 +384,7 @@ export default function ProfilePage() {
             <h3 className="text-xs font-bold px-1 text-primary uppercase tracking-wider opacity-80">
               {t("pwaSectionTitle")}
             </h3>
-            <div className="glass-panel rounded-[20px] overflow-hidden border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="surface-panel rounded-[20px] overflow-hidden border border-border shadow-lg shadow-primary/5 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex gap-4">
                 <div className="bg-primary/10 dark:bg-primary/20 p-2.5 rounded-2xl shrink-0 h-10 w-10 flex items-center justify-center">
                   <Smartphone className="h-5 w-5 text-primary" />
@@ -410,7 +410,7 @@ export default function ProfilePage() {
 
         {/* Account Actions */}
         <div className="space-y-2 pt-2">
-          <div className="glass-panel rounded-[20px] overflow-hidden border border-white/20 dark:border-white/10 shadow-lg shadow-primary/5">
+          <div className="surface-panel rounded-[20px] overflow-hidden border border-border shadow-lg shadow-primary/5">
             {/* Logout Button */}
             <button 
               onClick={handleLogout}
@@ -422,7 +422,7 @@ export default function ProfilePage() {
                 {isLoggingOut ? t("loggingOut") : t("logOut")}
               </span>
             </button>
-            <div className="h-[1px] bg-white/10 mx-5"></div>
+            <div className="h-[1px] bg-border mx-5"></div>
             {/* Delete Account */}
             <button className="w-full flex items-center gap-4 p-5 hover:bg-destructive/15 dark:hover:bg-destructive/15 text-destructive transition-all active:scale-[0.99] text-left">
               <Trash2 className="h-5 w-5" />

@@ -376,7 +376,7 @@ function LoginForm() {
         </header>
 
         {/* -- Login/Signup Card -- */}
-        <Card className="glass-panel border-0 rounded-[32px] shadow-2xl shadow-primary/5">
+        <Card className="surface-panel rounded-[32px] shadow-2xl shadow-primary/5">
           <CardContent className="p-8">
             {verificationSent ? (
               <div className="text-center space-y-6 py-4 animate-in fade-in duration-500">
@@ -652,7 +652,7 @@ function LoginForm() {
 
       {/* Floating PWA Install Banner */}
       {canInstall && !isDismissed && (
-        <div className="fixed bottom-6 left-6 right-6 md:left-auto md:right-6 md:w-[380px] z-40 bg-background/80 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl rounded-[24px] p-5 flex gap-4 items-center animate-in slide-in-from-bottom-8 duration-500">
+        <div className="fixed bottom-6 left-6 right-6 md:left-auto md:right-6 md:w-[380px] z-40 bg-card border border-border shadow-2xl rounded-[24px] p-5 flex gap-4 items-center animate-in slide-in-from-bottom-8 duration-500">
           {/* Brand Icon */}
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl terracotta-gradient shadow-md shadow-primary/10 shrink-0">
             <Leaf className="h-6 w-6 text-white" />

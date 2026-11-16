@@ -161,8 +161,8 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       
       {/* iOS Installation Instructions Modal */}
       {showIosInstructions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="relative w-full max-w-sm rounded-[32px] bg-background p-6 shadow-2xl border border-white/20 dark:border-white/10 animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-300">
+          <div className="relative w-full max-w-sm rounded-[32px] bg-background p-6 shadow-2xl border border-border animate-in zoom-in-95 duration-300">
             {/* Close Button */}
             <button
               onClick={() => setShowIosInstructions(false)}

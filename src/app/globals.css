@@ -173,22 +173,19 @@
    GustoSmart custom utilities
    ============================================= */
 @layer utilities {
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+  .surface-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
   }
-  .dark .glass-panel {
-    background: rgba(30, 41, 70, 0.55);
-    border-color: rgba(255, 255, 255, 0.08);
+  .dark .surface-panel {
+    background: var(--card);
+    border-color: var(--border);
   }
   .terracotta-gradient {
     background: linear-gradient(135deg, hsl(12 85% 34%) 0%, hsl(12 90% 58%) 100%);
   }
   .background-blob {
-    filter: blur(80px);
-    opacity: 0.15;
+    opacity: 0.08;
     z-index: -1;
     transition: transform 0.3s ease-out;
   }

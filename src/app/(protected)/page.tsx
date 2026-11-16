@@ -93,7 +93,7 @@ function ScannerHeader({ userId }: { userId: string }) {
         <img
           src={photo.includes("backblazeb2.com") ? `/api/proxy-image?url=${encodeURIComponent(photo)}` : photo}
           alt={name}
-          className="size-6 rounded-full object-cover border border-white/10 shadow-sm"
+          className="size-6 rounded-full object-cover border border-border shadow-sm"
         />
       ) : (
         <div className="flex size-6 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-[9px] shadow-sm">
@@ -139,12 +139,12 @@ function FeedCard({
     <Card
       onClick={onViewDetails}
       onDoubleClick={handleDoubleClick}
-      className="group relative w-full overflow-hidden rounded-3xl border border-border/40 bg-card/40 dark:bg-surface-container/20 shadow-md hover:-translate-y-1 hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer select-none flex flex-col p-3.5 gap-3.5"
+      className="group relative w-full overflow-hidden rounded-3xl border border-border bg-card dark:bg-surface-container shadow-md hover:-translate-y-1 hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer select-none flex flex-col p-3.5 gap-3.5"
     >
       {/* Card Header (Source Platform & Save Button) */}
       <div className="flex items-center justify-between w-full">
         {/* Source Platform Badge */}
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted/40 dark:bg-surface-container/60 border border-border/20 text-[9px] font-bold text-muted-foreground shadow-sm">
+        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted dark:bg-surface-container border border-border text-[9px] font-bold text-muted-foreground shadow-sm">
           {recipe.sourcePlatform === "instagram" ? (
             <Film className="size-3 text-pink-500 fill-pink-500/10" />
           ) : recipe.sourcePlatform === "tiktok" ? (
@@ -182,8 +182,8 @@ function FeedCard({
 
       {/* Double click animated splash */}
       {showSplash && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm animate-in fade-in-0 duration-200 z-20">
-          <div className="p-3 rounded-full bg-background/95 dark:bg-surface-container/90 shadow-xl scale-0 animate-bounce border border-primary/20">
+        <div className="absolute inset-0 flex items-center justify-center bg-background animate-in fade-in-0 duration-200 z-20">
+          <div className="p-3 rounded-full bg-background dark:bg-surface-container shadow-xl scale-0 animate-bounce border border-primary/20">
             <BookmarkCheck className="size-6 text-primary fill-primary" />
           </div>
         </div>
@@ -430,7 +430,7 @@ export default function HomeFeed() {
       </section>
 
       {/* Sticky Filters */}
-      <div className="sticky top-16 z-30 -mx-6 px-6 py-4 bg-background/80 backdrop-blur-md border-b border-border/40 flex flex-col gap-3 transition-shadow">
+      <div className="sticky top-16 z-30 -mx-6 px-6 py-4 bg-background border-b border-border flex flex-col gap-3 transition-shadow">
         {/* Filters Panel */}
         <div className="flex flex-col gap-2">
           {/* Category Filters Row */}
@@ -440,10 +440,10 @@ export default function HomeFeed() {
                 key={cat.key}
                 onClick={() => setSelectedCategory(cat.key)}
                 className={cn(
-                  "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border border-white/5 cursor-pointer",
+                  "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border border-border cursor-pointer",
                   selectedCategory === cat.key
                     ? "bg-primary text-white shadow-md shadow-primary/25"
-                    : "glass-panel text-foreground hover:bg-white/40 dark:hover:bg-white/10"
+                    : "surface-panel text-foreground hover:bg-muted"
                 )}
               >
                 {cat.label}
@@ -465,7 +465,7 @@ export default function HomeFeed() {
                       "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 duration-200 border cursor-pointer",
                       isActive
                         ? "bg-primary text-white border-primary shadow-md shadow-primary/25"
-                        : "glass-panel border-white/5 text-foreground hover:bg-white/40 dark:hover:bg-white/10"
+                        : "surface-panel border-border text-foreground hover:bg-muted"
                     )}
                   >
                     {filter.label}
@@ -498,7 +498,7 @@ export default function HomeFeed() {
           <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 w-full">
             {Array.from({ length: 8 }).map((_, idx) => (
               <div key={idx} className="break-inside-avoid mb-4 w-full">
-                <Card className="overflow-hidden rounded-3xl border border-border/40 bg-card/40 p-3.5 flex flex-col gap-3.5">
+                <Card className="overflow-hidden rounded-3xl border border-border bg-card p-3.5 flex flex-col gap-3.5">
                   <div className="flex justify-between items-center w-full">
                     <Skeleton className="h-5 w-16 bg-muted/20 rounded-full animate-pulse" />
                     <Skeleton className="h-8 w-8 bg-muted/20 rounded-full animate-pulse" />
@@ -518,7 +518,7 @@ export default function HomeFeed() {
             <p className="leading-relaxed">
               Questo errore potrebbe essere dovuto alla mancanza di un <strong>indice composito di Firestore</strong> per la combinazione di filtri selezionata.
             </p>
-            <p className="text-xs text-muted-foreground/80 leading-normal bg-background/50 p-3 rounded-xl border border-destructive/10 text-left font-mono overflow-x-auto max-w-full">
+            <p className="text-xs text-muted-foreground/80 leading-normal bg-background p-3 rounded-xl border border-destructive/10 text-left font-mono overflow-x-auto max-w-full">
               {error instanceof Error ? error.message : String(error)}
             </p>
             {/* Extract index creation link from error message */}
@@ -587,7 +587,7 @@ export default function HomeFeed() {
                 <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 w-full">
                   {Array.from({ length: 4 }).map((_, idx) => (
                     <div key={idx} className="break-inside-avoid mb-4 w-full">
-                      <Card className="overflow-hidden rounded-3xl border border-border/40 bg-card/40 p-3.5 flex flex-col gap-3.5">
+                      <Card className="overflow-hidden rounded-3xl border border-border bg-card p-3.5 flex flex-col gap-3.5">
                         <div className="flex justify-between items-center w-full">
                           <Skeleton className="h-5 w-16 bg-muted/20 rounded-full animate-pulse" />
                           <Skeleton className="h-8 w-8 bg-muted/20 rounded-full animate-pulse" />

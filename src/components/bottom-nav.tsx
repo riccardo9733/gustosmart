@@ -23,7 +23,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-6 left-1/2 z-50 h-20 w-[95%] -translate-x-1/2 items-center justify-between rounded-full border border-white/20 bg-background/60 px-4 py-2 shadow-[0_10px_40px_rgba(174,41,0,0.1)] backdrop-blur-2xl flex max-w-lg dark:bg-surface-container/60">
+      <nav className="fixed bottom-6 left-1/2 z-50 h-20 w-[95%] -translate-x-1/2 items-center justify-between rounded-full border border-border bg-card px-4 py-2 shadow-[0_10px_40px_rgba(174,41,0,0.1)] flex max-w-lg dark:bg-surface-container">
         <div className="flex w-full items-center justify-between">
           {/* Left Items */}
           <div className="flex flex-1 justify-around">

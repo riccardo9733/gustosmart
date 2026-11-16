@@ -36,7 +36,7 @@
 
 ## Common Patterns
 
-- **Glassmorphism:** Reused `.glass-panel` class across pages
+- **Solid surfaces:** Reused `.surface-panel` class across pages
 - **Loading:** `Skeleton` components throughout
 - **Notifications:** `sonner` toast for all actions
 - **Analytics:** `@/lib/analytics` `trackEvent()` for user interactions

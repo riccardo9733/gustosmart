@@ -128,7 +128,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()} repositionInputs={false}>
-      <DrawerContent className="max-h-[85vh] p-6 rounded-t-[32px] border-t border-white/20 bg-background dark:bg-surface-container/95 backdrop-blur-xl">
+      <DrawerContent className="max-h-[85vh] p-6 rounded-t-[32px] border-t border-border bg-background dark:bg-surface-container">
         {/* Screen Reader Only for Accessibility */}
         <div className="sr-only">
           <DrawerTitle>{content.title}</DrawerTitle>
@@ -136,7 +136,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
         </div>
 
         <div className="flex flex-col gap-5 max-w-2xl mx-auto w-full pb-8">
-          <DrawerHeader className="p-0 flex flex-row items-center justify-between border-b border-white/10 pb-4">
+          <DrawerHeader className="p-0 flex flex-row items-center justify-between border-b border-border pb-4">
             <div className="flex items-center gap-3">
               <div className="bg-primary/10 dark:bg-primary/20 p-2.5 rounded-2xl text-primary shrink-0">
                 {type === "privacy" ? (
@@ -156,7 +156,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-white/10 dark:hover:bg-white/5 transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+              className="p-2 rounded-full hover:bg-muted transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
               aria-label="Chiudi"
             >
               <X className="h-5 w-5" />
@@ -172,7 +172,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
           <div className="overflow-y-auto max-h-[55vh] pr-2 space-y-4 scrollbar-thin scrollbar-thumb-muted">
             {/* Render Switch if it is cookie policy */}
             {type === "cookie" && (
-              <div className="glass-panel border border-white/20 dark:border-white/10 p-5 rounded-2xl shadow-sm flex items-center justify-between gap-4">
+              <div className="surface-panel border border-border p-5 rounded-2xl shadow-sm flex items-center justify-between gap-4">
                 <div className="space-y-1">
                   <h4 className="font-heading text-sm font-bold text-foreground">
                     {locale === "it"
@@ -216,7 +216,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
               return (
                 <div
                   key={index}
-                  className="glass-panel border border-white/20 dark:border-white/10 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300"
+                  className="surface-panel border border-border p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   <div className="flex items-center gap-3 mb-2.5">
                     <div className="text-primary/80 bg-primary/5 p-2 rounded-xl shrink-0">
@@ -235,7 +235,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
 
             {/* Render dynamic cookie table if it is cookie policy */}
             {type === "cookie" && content.cookiesList && (
-              <div className="glass-panel border border-white/20 dark:border-white/10 p-5 rounded-2xl shadow-sm overflow-x-auto">
+              <div className="surface-panel border border-border p-5 rounded-2xl shadow-sm overflow-x-auto">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="text-primary/80 bg-primary/5 p-2 rounded-xl shrink-0">
                     <Database className="h-4.5 w-4.5" />
@@ -252,7 +252,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
                 </div>
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-white/10 text-muted-foreground font-semibold">
+                    <tr className="border-b border-border text-muted-foreground font-semibold">
                       <th className="pb-2 pr-3 font-semibold">Cookie</th>
                       <th className="pb-2 px-3 font-semibold">Type</th>
                       <th className="pb-2 px-3 font-semibold">Purpose</th>
@@ -261,7 +261,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
                   </thead>
                   <tbody>
                     {content.cookiesList.map((c, i) => (
-                      <tr key={i} className="border-b border-white/5 last:border-0">
+                      <tr key={i} className="border-b border-border last:border-0">
                         <td className="py-2.5 pr-3 font-mono font-medium text-primary">
                           {c.name}
                         </td>
@@ -281,7 +281,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
           </div>
 
           {/* Close Action Button */}
-          <div className="flex justify-end pt-2 border-t border-white/10 mt-1">
+          <div className="flex justify-end pt-2 border-t border-border mt-1">
             <Button
               onClick={onClose}
               className="terracotta-gradient text-white rounded-xl text-xs font-bold px-6 py-4.5 hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-pointer"

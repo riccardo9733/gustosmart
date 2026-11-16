@@ -203,7 +203,7 @@ export function ProfileImageDrawer({ isOpen, onClose, userId }: ProfileImageDraw
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && handleClose()} repositionInputs={false}>
-      <DrawerContent className="max-h-[85vh] p-6 rounded-t-[32px] border-t border-white/20 bg-background dark:bg-surface-container/95 backdrop-blur-xl">
+      <DrawerContent className="max-h-[85vh] p-6 rounded-t-[32px] border-t border-border bg-background dark:bg-surface-container">
         {/* Radix UI hidden accessibility title/description */}
         <div className="sr-only">
           <DrawerTitle>{t("uploadPhoto")}</DrawerTitle>

@@ -721,14 +721,14 @@ export default function AdminDashboard() {
           </span>
 
           {(totalTokens > 0 || promptTokens > 0 || completionTokens > 0) && (
-            <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-muted/30 text-foreground px-2.5 py-1 rounded-lg border border-border/20">
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-muted text-foreground px-2.5 py-1 rounded-lg border border-border/20">
               <span className="font-semibold">{totalTokens} token LLM</span>
               <span className="text-[10px] text-muted-foreground">({promptTokens} in / {completionTokens} out)</span>
             </span>
           )}
 
           {model && (
-            <span className="inline-flex items-center font-mono text-[10px] bg-muted/40 text-muted-foreground px-2 py-0.5 rounded-md border border-border/10">
+            <span className="inline-flex items-center font-mono text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-md border border-border/10">
               {model}
             </span>
           )}
@@ -773,7 +773,7 @@ export default function AdminDashboard() {
 
           {/* Piattaforma */}
           {platform && (
-            <span className="inline-flex items-center gap-1 text-[11px] capitalize font-semibold text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-md border border-border/10">
+            <span className="inline-flex items-center gap-1 text-[11px] capitalize font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/10">
               {getPlatformIcon(platform)}
               {platform}
             </span>
@@ -802,7 +802,7 @@ export default function AdminDashboard() {
     }
 
     return (
-      <div className="font-mono text-[10px] bg-muted/20 p-2 rounded-lg max-w-[350px] overflow-x-auto scrollbar-none text-muted-foreground border border-border/20 flex-1">
+      <div className="font-mono text-[10px] bg-muted p-2 rounded-lg max-w-[350px] overflow-x-auto scrollbar-none text-muted-foreground border border-border/20 flex-1">
         {JSON.stringify(p)}
       </div>
     );
@@ -836,7 +836,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Sync Status Badge */}
-        <div className="glass-panel px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-sm text-xs font-bold text-muted-foreground">
+        <div className="surface-panel px-4 py-2 rounded-full border border-border flex items-center gap-2 shadow-sm text-xs font-bold text-muted-foreground">
           <Database className="h-4 w-4 text-secondary fill-secondary/10" />
           <span>Real-time Live Sync</span>
           <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -846,7 +846,7 @@ export default function AdminDashboard() {
       {/* Tabs & Timeframe Bar */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
         {/* Tabs Switcher */}
-        <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-white/5 w-full lg:w-auto shrink-0 shadow-sm max-w-full">
+        <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-border w-full lg:w-auto shrink-0 shadow-sm max-w-full">
           <button
             onClick={() => setActiveTab("overview")}
             className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 ${
@@ -902,7 +902,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Timeframe Filter Tabs */}
-        <div className="flex items-center gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-white/5 shadow-sm shrink-0 self-stretch sm:self-auto overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-border shadow-sm shrink-0 self-stretch sm:self-auto overflow-x-auto scrollbar-none">
           <span className="px-2 py-1 text-[11px] font-bold text-muted-foreground flex items-center gap-1 shrink-0">
             <Calendar className="h-3.5 w-3.5" />
           </span>
@@ -931,7 +931,7 @@ export default function AdminDashboard() {
       {loadingEvents ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, idx) => (
-            <Card key={idx} className="p-6 rounded-[24px] border border-white/10 bg-muted/10 h-32 animate-pulse" />
+            <Card key={idx} className="p-6 rounded-[24px] border border-border bg-muted h-32 animate-pulse" />
           ))}
         </div>
       ) : (
@@ -944,7 +944,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 
                 {/* Initiated Scans */}
-                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Scansioni Avviate</span>
                     <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
@@ -958,7 +958,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* Ingestion Success Rate */}
-                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Tasso di Successo</span>
                     <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
@@ -974,7 +974,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* Recipes Saved (Engagement) */}
-                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Salvataggi Ricettario</span>
                     <div className="p-1.5 rounded-lg bg-secondary/10 text-secondary">
@@ -988,7 +988,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* PWA Installs */}
-                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Installazioni PWA</span>
                     <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
@@ -1010,7 +1010,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* Ingestion success trend (Daily) */}
-                <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5">
+                <Card className="surface-panel rounded-[28px] border border-border p-6 shadow-xl shadow-primary/5">
                   <CardHeader className="p-0 mb-5">
                     <CardTitle className="text-base font-bold text-foreground">Trend Ingestione</CardTitle>
                     <CardDescription className="text-xs text-muted-foreground">Rapporto tra importazioni completate e fallite.</CardDescription>
@@ -1066,7 +1066,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* OpenRouter cost trend (Daily) */}
-                <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5">
+                <Card className="surface-panel rounded-[28px] border border-border p-6 shadow-xl shadow-primary/5">
                   <CardHeader className="p-0 mb-5">
                     <CardTitle className="text-base font-bold text-foreground">Costo OpenRouter Giornaliero</CardTitle>
                     <CardDescription className="text-xs text-muted-foreground">Spesa totale accumulata (in USD) per il periodo selezionato.</CardDescription>
@@ -1110,7 +1110,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* Platform Distribution donut */}
-                <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 flex flex-col justify-between">
+                <Card className="surface-panel rounded-[28px] border border-border p-6 shadow-xl shadow-primary/5 flex flex-col justify-between">
                   <CardHeader className="p-0 mb-5">
                     <CardTitle className="text-base font-bold text-foreground">Provenienza Ricette</CardTitle>
                     <CardDescription className="text-xs text-muted-foreground">Percentuale delle scansioni per social/sito.</CardDescription>
@@ -1143,7 +1143,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* Feature Engagement Bar Chart */}
-                <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5">
+                <Card className="surface-panel rounded-[28px] border border-border p-6 shadow-xl shadow-primary/5">
                   <CardHeader className="p-0 mb-5">
                     <CardTitle className="text-base font-bold text-foreground">Utilizzo Funzionalità</CardTitle>
                     <CardDescription className="text-xs text-muted-foreground">Frequenza delle azioni interattive degli utenti.</CardDescription>
@@ -1187,7 +1187,7 @@ export default function AdminDashboard() {
               
               {/* Platform Distribution Chart */}
               <div className="lg:col-span-6">
-                <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 h-full">
+                <Card className="surface-panel rounded-[28px] border border-border p-6 shadow-xl shadow-primary/5 h-full">
                   <h3 className="font-heading text-lg font-bold text-foreground mb-6">
                     Distribuzione per Piattaforma Source
                   </h3>
@@ -1214,7 +1214,7 @@ export default function AdminDashboard() {
                             <span className="text-xs font-semibold capitalize text-foreground truncate">{platformLabel}</span>
                           </div>
                           
-                          <div className="flex-1 bg-muted/50 h-3.5 rounded-full overflow-hidden border border-white/5 relative">
+                          <div className="flex-1 bg-muted0 h-3.5 rounded-full overflow-hidden border border-border relative">
                             <div
                               className={`${barColors[platform] || "bg-primary"} h-full rounded-full transition-all`}
                               style={{ width: `${pct}%` }}
@@ -1239,23 +1239,23 @@ export default function AdminDashboard() {
 
               {/* Ingestion Success Log Summary */}
               <div className="lg:col-span-6">
-                <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 h-full">
+                <Card className="surface-panel rounded-[28px] border border-border p-6 shadow-xl shadow-primary/5 h-full">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
                     <h3 className="font-heading text-lg font-bold text-foreground">
                       Stato Globale Ingestione
                     </h3>
                     {scrapecreatorsCredits !== undefined && (
-                      <span className="text-xs font-bold px-3 py-1.5 rounded-full border border-white/10 bg-primary/10 text-primary">
+                      <span className="text-xs font-bold px-3 py-1.5 rounded-full border border-border bg-primary/10 text-primary">
                         Token ScrapeCreators: {scrapecreatorsCredits.toLocaleString("it-IT")}
                       </span>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-muted/10 p-4 rounded-2xl border border-white/5">
+                    <div className="bg-muted p-4 rounded-2xl border border-border">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Import Completati</span>
                       <span className="text-2xl font-extrabold text-emerald-500">{completedImports.length}</span>
                     </div>
-                    <div className="bg-muted/10 p-4 rounded-2xl border border-white/5">
+                    <div className="bg-muted p-4 rounded-2xl border border-border">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Import Falliti</span>
                       <span className="text-2xl font-extrabold text-rose-500">{failedImports.length}</span>
                     </div>
@@ -1303,7 +1303,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-muted-foreground">Caricamento crediti e limiti da OpenRouter API...</p>
                 </div>
               ) : openRouterError ? (
-                <Card className="glass-panel p-6 border-rose-500/10 bg-rose-500/5 text-center max-w-md mx-auto rounded-3xl flex flex-col items-center gap-3">
+                <Card className="surface-panel p-6 border-rose-500/10 bg-rose-500/5 text-center max-w-md mx-auto rounded-3xl flex flex-col items-center gap-3">
                   <AlertTriangle className="h-10 w-10 text-rose-500" />
                   <h4 className="font-bold text-foreground">Impossibile caricare i dati OpenRouter</h4>
                   <p className="text-xs text-muted-foreground leading-relaxed">{openRouterError}</p>
@@ -1313,7 +1313,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                   
                   {/* Credits Usage Card */}
-                  <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 lg:col-span-7 flex flex-col justify-between gap-5">
+                  <Card className="surface-panel rounded-[28px] border border-border p-6 shadow-xl shadow-primary/5 lg:col-span-7 flex flex-col justify-between gap-5">
                     <div>
                       <h3 className="font-heading text-lg font-bold text-foreground mb-1 flex items-center gap-2">
                         <DollarSign className="h-5 w-5 text-primary" />
@@ -1325,19 +1325,19 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-2">
-                      <div className="bg-muted/10 p-4 rounded-2xl border border-white/5 text-center">
+                      <div className="bg-muted p-4 rounded-2xl border border-border text-center">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Acquistati</span>
                         <span className="text-xl font-extrabold text-foreground">
                           ${openRouterCredits?.total_credits !== undefined ? openRouterCredits.total_credits.toFixed(2) : "0.00"}
                         </span>
                       </div>
-                      <div className="bg-muted/10 p-4 rounded-2xl border border-white/5 text-center">
+                      <div className="bg-muted p-4 rounded-2xl border border-border text-center">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Spesi</span>
                         <span className="text-xl font-extrabold text-primary">
                           ${openRouterCredits?.total_usage !== undefined ? openRouterCredits.total_usage.toFixed(2) : "0.00"}
                         </span>
                       </div>
-                      <div className="bg-muted/10 p-4 rounded-2xl border border-white/5 text-center">
+                      <div className="bg-muted p-4 rounded-2xl border border-border text-center">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Residuo</span>
                         <span className="text-xl font-extrabold text-emerald-500">
                           ${openRouterCredits?.cash_balance !== undefined ? openRouterCredits.cash_balance.toFixed(2) : (openRouterCredits?.total_remaining !== undefined ? openRouterCredits.total_remaining.toFixed(2) : "0.00")}
@@ -1356,7 +1356,7 @@ export default function AdminDashboard() {
                               : 0}%
                           </span>
                         </div>
-                        <div className="w-full bg-muted/40 h-2.5 rounded-full overflow-hidden border border-white/5">
+                        <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden border border-border">
                           <div
                             className="bg-primary h-full rounded-full transition-all"
                             style={{
@@ -1369,7 +1369,7 @@ export default function AdminDashboard() {
                   </Card>
 
                   {/* Key and Rate Limits Card */}
-                  <Card className="glass-panel rounded-[28px] border border-white/10 p-6 shadow-xl shadow-primary/5 lg:col-span-5 flex flex-col justify-between gap-4">
+                  <Card className="surface-panel rounded-[28px] border border-border p-6 shadow-xl shadow-primary/5 lg:col-span-5 flex flex-col justify-between gap-4">
                     <div>
                       <h3 className="font-heading text-lg font-bold text-foreground mb-1 flex items-center gap-2">
                         <Activity className="h-5 w-5 text-secondary" />
@@ -1431,7 +1431,7 @@ export default function AdminDashboard() {
                   </Card>
 
                   {/* OpenRouter Calls Table */}
-                  <Card className="glass-panel rounded-[28px] border border-white/10 overflow-hidden shadow-xl shadow-primary/5 col-span-1 lg:col-span-12">
+                  <Card className="surface-panel rounded-[28px] border border-border overflow-hidden shadow-xl shadow-primary/5 col-span-1 lg:col-span-12">
                     <div className="p-6 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/20">
                       <div>
                         <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
@@ -1444,7 +1444,7 @@ export default function AdminDashboard() {
                       </div>
                       
                       {/* Filter Pills */}
-                      <div className="flex bg-surface-container-low dark:bg-surface-container p-0.5 rounded-xl border border-white/5 shadow-sm text-[11px] font-bold">
+                      <div className="flex bg-surface-container-low dark:bg-surface-container p-0.5 rounded-xl border border-border shadow-sm text-[11px] font-bold">
                         <button
                           onClick={() => { setOpenRouterFilter("all"); setOpenRouterPage(1); }}
                           className={`px-3.5 py-1.5 rounded-lg transition-all ${
@@ -1499,7 +1499,7 @@ export default function AdminDashboard() {
                         const genId = (log.params.generation_id as string) || "";
                         
                         return (
-                          <div key={log.id} className="p-4 flex flex-col gap-3 hover:bg-muted/5 transition-colors">
+                          <div key={log.id} className="p-4 flex flex-col gap-3 hover:bg-muted transition-colors">
                             <div className="flex justify-between items-start">
                               <span className="font-mono text-[9px] text-muted-foreground">
                                 {log.timestamp ? new Date(log.timestamp).toLocaleString("it-IT") : "—"}
@@ -1566,7 +1566,7 @@ export default function AdminDashboard() {
                     <div className="hidden md:block overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-muted/30 border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          <tr className="bg-muted border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                             <th className="p-4 pl-6">Timestamp</th>
                             <th className="p-4">Utente</th>
                             <th className="p-4">Modello AI</th>
@@ -1586,7 +1586,7 @@ export default function AdminDashboard() {
                             const genId = (log.params.generation_id as string) || "";
                             
                             return (
-                              <tr key={log.id} className="hover:bg-muted/5 transition-colors">
+                              <tr key={log.id} className="hover:bg-muted transition-colors">
                                 <td className="p-4 pl-6 whitespace-nowrap font-mono text-[10px] text-muted-foreground">
                                   {log.timestamp ? new Date(log.timestamp).toLocaleString() : "—"}
                                 </td>
@@ -1669,7 +1669,7 @@ export default function AdminDashboard() {
 
                     {/* Pagination Controls */}
                     {totalOpenRouterPages > 1 && (
-                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 border-t border-border/20 bg-muted/5 text-xs text-muted-foreground font-semibold">
+                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 border-t border-border/20 bg-muted text-xs text-muted-foreground font-semibold">
                         <div>
                           Mostrati {Math.min(filteredOpenRouterCalls.length, (openRouterPage - 1) * openRouterItemsPerPage + 1)} - {Math.min(filteredOpenRouterCalls.length, openRouterPage * openRouterItemsPerPage)} di {filteredOpenRouterCalls.length} chiamate
                         </div>
@@ -1679,7 +1679,7 @@ export default function AdminDashboard() {
                             size="sm"
                             onClick={() => setOpenRouterPage((p) => Math.max(1, p - 1))}
                             disabled={openRouterPage === 1}
-                            className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted/10"
+                            className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted"
                           >
                             Precedente
                           </Button>
@@ -1691,7 +1691,7 @@ export default function AdminDashboard() {
                             size="sm"
                             onClick={() => setOpenRouterPage((p) => Math.min(totalOpenRouterPages, p + 1))}
                             disabled={openRouterPage === totalOpenRouterPages}
-                            className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted/10"
+                            className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted"
                           >
                             Successiva
                           </Button>
@@ -1713,7 +1713,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 
                 {/* Total Users */}
-                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Utenti Registrati</span>
                     <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
@@ -1727,7 +1727,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* Active Users */}
-                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Utenti Attivi (7gg)</span>
                     <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
@@ -1741,7 +1741,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* Added 7d */}
-                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Iscritti (7gg)</span>
                     <div className="p-1.5 rounded-lg bg-secondary/10 text-secondary">
@@ -1755,7 +1755,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* Added 24h */}
-                <Card className="glass-panel p-5 rounded-[24px] border border-white/10 shadow-lg shadow-primary/5 flex flex-col justify-between">
+                <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Iscritti (24h)</span>
                     <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
@@ -1780,12 +1780,12 @@ export default function AdminDashboard() {
                     value={userSearchQuery}
                     onChange={(e) => setUserSearchQuery(e.target.value)}
                     placeholder="Cerca utente per nome o email..."
-                    className="w-full pl-12 pr-4 py-5 rounded-2xl bg-surface-container/60 border-0 focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
+                    className="w-full pl-12 pr-4 py-5 rounded-2xl bg-surface-container border-0 focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
                   />
                 </div>
 
                 {/* Sorting Select */}
-                <div className="flex items-center gap-2 bg-surface-container/60 px-4 py-2.5 rounded-2xl border border-white/5 shadow-sm self-start sm:self-auto">
+                <div className="flex items-center gap-2 bg-surface-container px-4 py-2.5 rounded-2xl border border-border shadow-sm self-start sm:self-auto">
                   <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Ordina per:</span>
                   <select
                     value={userSortBy}
@@ -1804,11 +1804,11 @@ export default function AdminDashboard() {
               {loadingUsers ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {Array.from({ length: 6 }).map((_, idx) => (
-                    <Card key={idx} className="glass-panel p-5 rounded-[24px] border border-white/10 h-44 animate-pulse flex flex-col justify-between" />
+                    <Card key={idx} className="surface-panel p-5 rounded-[24px] border border-border h-44 animate-pulse flex flex-col justify-between" />
                   ))}
                 </div>
               ) : paginatedUsers.length === 0 ? (
-                <Card className="glass-panel rounded-[28px] border border-white/10 p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+                <Card className="surface-panel rounded-[28px] border border-border p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
                   <Users className="h-10 w-10 text-muted-foreground/50" />
                   <p className="text-sm font-semibold">Nessun utente corrisponde alla ricerca.</p>
                 </Card>
@@ -1829,12 +1829,12 @@ export default function AdminDashboard() {
                       const avatarGradient = getAvatarGradient(u.uid);
 
                       return (
-                        <Card key={u.uid} className="glass-panel p-5 rounded-[24px] border border-white/10 flex flex-col justify-between hover:scale-[1.01] hover:border-white/20 transition-all shadow-md hover:shadow-lg">
+                        <Card key={u.uid} className="surface-panel p-5 rounded-[24px] border border-border flex flex-col justify-between hover:scale-[1.01] hover:border-border transition-all shadow-md hover:shadow-lg">
                           
                           {/* Card Header (Profile Info) */}
                           <div className="flex justify-between items-start gap-3">
                             <div className="flex items-center gap-3">
-                              <div className={`size-10 rounded-full border border-white/10 text-white font-bold flex items-center justify-center text-xs tracking-wider flex-shrink-0 ${avatarGradient}`}>
+                              <div className={`size-10 rounded-full border border-border text-white font-bold flex items-center justify-center text-xs tracking-wider flex-shrink-0 ${avatarGradient}`}>
                                 {initials}
                               </div>
                               <div className="flex flex-col max-w-[170px] sm:max-w-[200px]">
@@ -1853,7 +1853,7 @@ export default function AdminDashboard() {
                                 Admin
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-muted/40 border border-border/10 text-muted-foreground tracking-wider">
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-muted border border-border/10 text-muted-foreground tracking-wider">
                                 User
                               </span>
                             )}
@@ -1886,7 +1886,7 @@ export default function AdminDashboard() {
 
                           {/* Footer Info */}
                           <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
-                            <span className="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-lg border border-white/5">
+                            <span className="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-lg border border-border">
                               <Coins className="h-3 w-3 text-amber-500" />
                               <span className="text-foreground">{u.tokens}</span>
                               <span className="text-muted-foreground font-semibold">tokens</span>
@@ -1903,7 +1903,7 @@ export default function AdminDashboard() {
 
                   {/* Pagination Controls */}
                   {totalUserPages > 1 && (
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 border border-white/10 rounded-[24px] bg-muted/5 text-xs text-muted-foreground font-semibold">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 border border-border rounded-[24px] bg-muted text-xs text-muted-foreground font-semibold">
                       <div>
                         Mostrati {Math.min(processedUsers.length, (userCurrentPage - 1) * userItemsPerPage + 1)} - {Math.min(processedUsers.length, userCurrentPage * userItemsPerPage)} di {processedUsers.length} utenti
                       </div>
@@ -1913,7 +1913,7 @@ export default function AdminDashboard() {
                           size="sm"
                           onClick={() => setUserCurrentPage((p) => Math.max(1, p - 1))}
                           disabled={userCurrentPage === 1}
-                          className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted/10"
+                          className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted"
                         >
                           Precedente
                         </Button>
@@ -1925,7 +1925,7 @@ export default function AdminDashboard() {
                           size="sm"
                           onClick={() => setUserCurrentPage((p) => Math.min(totalUserPages, p + 1))}
                           disabled={userCurrentPage === totalUserPages}
-                          className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted/10"
+                          className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted"
                         >
                           Successiva
                         </Button>
@@ -1951,18 +1951,18 @@ export default function AdminDashboard() {
                   value={logSearchQuery}
                   onChange={(e) => setLogSearchQuery(e.target.value)}
                   placeholder="Filtra per nome evento, email utente..."
-                  className="w-full pl-12 pr-4 py-5 rounded-2xl bg-surface-container/60 border-0 focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
+                  className="w-full pl-12 pr-4 py-5 rounded-2xl bg-surface-container border-0 focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
                 />
               </div>
 
               {/* Logs Card List */}
-              <Card className="glass-panel rounded-[28px] border border-white/10 overflow-hidden shadow-xl shadow-primary/5">
+              <Card className="surface-panel rounded-[28px] border border-border overflow-hidden shadow-xl shadow-primary/5">
                 {/* Mobile Card List view */}
                 <div className="block md:hidden divide-y divide-border/10">
                   {paginatedLogs.map((log) => {
                     const hasGenId = !!log.params.generation_id;
                     return (
-                      <div key={log.id} className="p-4 flex flex-col gap-3 hover:bg-muted/5 transition-colors">
+                      <div key={log.id} className="p-4 flex flex-col gap-3 hover:bg-muted transition-colors">
                         <div className="flex justify-between items-start">
                           <span className="font-mono text-[9px] text-muted-foreground">
                             {log.timestamp ? new Date(log.timestamp).toLocaleString("it-IT") : "—"}
@@ -2005,7 +2005,7 @@ export default function AdminDashboard() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-muted/30 border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      <tr className="bg-muted border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                         <th className="p-4 pl-6">Timestamp</th>
                         <th className="p-4">Evento</th>
                         <th className="p-4">Utente</th>
@@ -2016,7 +2016,7 @@ export default function AdminDashboard() {
                       {paginatedLogs.map((log) => {
                         const hasGenId = !!log.params.generation_id;
                         return (
-                          <tr key={log.id} className="hover:bg-muted/5 transition-colors">
+                          <tr key={log.id} className="hover:bg-muted transition-colors">
                             <td className="p-4 pl-6 whitespace-nowrap font-mono text-[10px] text-muted-foreground">
                               {log.timestamp ? new Date(log.timestamp).toLocaleString() : "—"}
                             </td>
@@ -2066,7 +2066,7 @@ export default function AdminDashboard() {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 border-t border-border/20 bg-muted/5 text-xs text-muted-foreground font-semibold">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 border-t border-border/20 bg-muted text-xs text-muted-foreground font-semibold">
                     <div>
                       Mostrati {Math.min(filteredLogs.length, (currentPage - 1) * itemsPerPage + 1)} - {Math.min(filteredLogs.length, currentPage * itemsPerPage)} di {filteredLogs.length} eventi
                     </div>
@@ -2076,7 +2076,7 @@ export default function AdminDashboard() {
                         size="sm"
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted/10"
+                        className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted"
                       >
                         Precedente
                       </Button>
@@ -2088,7 +2088,7 @@ export default function AdminDashboard() {
                         size="sm"
                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
-                        className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted/10"
+                        className="rounded-xl px-3 py-1.5 h-8 font-bold border-border/20 hover:bg-muted"
                       >
                         Successiva
                       </Button>
@@ -2103,8 +2103,8 @@ export default function AdminDashboard() {
 
       {/* Modal: Generation Details */}
       {selectedGenerationId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="relative w-full max-w-md rounded-[32px] bg-background dark:bg-surface-container p-6 shadow-2xl border border-white/20 dark:border-white/10 animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-300">
+          <div className="relative w-full max-w-md rounded-[32px] bg-background dark:bg-surface-container p-6 shadow-2xl border border-border animate-in zoom-in-95 duration-300">
             {/* Close Button */}
             <button
               onClick={() => setSelectedGenerationId(null)}
@@ -2136,7 +2136,7 @@ export default function AdminDashboard() {
                     <div className="space-y-4 text-xs">
                       <div>
                         <span className="text-muted-foreground font-semibold block mb-1">ID Generazione</span>
-                        <span className="font-mono bg-muted/40 px-2 py-1 rounded border border-white/5 text-[10px] break-all block">
+                        <span className="font-mono bg-muted px-2 py-1 rounded border border-border text-[10px] break-all block">
                           {gen.id}
                         </span>
                       </div>
@@ -2154,7 +2154,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2 py-2.5 px-3 bg-muted/15 rounded-xl border border-white/5 text-center">
+                      <div className="grid grid-cols-3 gap-2 py-2.5 px-3 bg-muted rounded-xl border border-border text-center">
                         <div>
                           <span className="text-[10px] text-muted-foreground block mb-0.5">Token Prompt</span>
                           <span className="font-extrabold text-foreground">{gen.tokens_prompt ?? 0}</span>

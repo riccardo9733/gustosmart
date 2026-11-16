@@ -198,7 +198,7 @@ export default function FolderDetailPage() {
         <Skeleton className="h-12 w-full rounded-2xl bg-muted/20" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {Array.from({ length: 6 }).map((_, idx) => (
-            <Card key={idx} className="relative overflow-hidden rounded-[24px] aspect-[4/5] border border-white/10 shadow-lg bg-muted/10">
+            <Card key={idx} className="relative overflow-hidden rounded-[24px] aspect-[4/5] border border-border shadow-lg bg-muted">
               <Skeleton className="w-full h-full animate-pulse bg-muted/20" />
             </Card>
           ))}
@@ -299,7 +299,7 @@ export default function FolderDetailPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full pl-12 pr-4 py-6 rounded-2xl bg-surface-container/60 border-0 focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
+            className="w-full pl-12 pr-4 py-6 rounded-2xl bg-muted border border-border focus-visible:ring-2 focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground transition-all"
           />
         </div>
       </div>
@@ -372,7 +372,7 @@ export default function FolderDetailPage() {
                 <div
                   key={recipe.id}
                   onClick={() => router.push(`/recipes/${recipe.id}`)}
-                  className="flex items-center gap-4 p-3 rounded-2xl glass-panel border-white/10 hover:translate-x-1.5 hover:shadow-lg transition-all duration-200 cursor-pointer w-full group"
+                  className="flex items-center gap-4 p-3 rounded-2xl surface-panel border-border hover:translate-x-1.5 hover:shadow-lg transition-all duration-200 cursor-pointer w-full group"
                 >
                   {/* Middle Info */}
                   <div className="flex-1 min-w-0 flex flex-col gap-1.5">
@@ -441,7 +441,7 @@ export default function FolderDetailPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-lg bg-white/5 dark:bg-black/10 border border-white/10 hover:bg-white/10 text-foreground active:scale-95 transition-all"
+                            className="h-8 w-8 rounded-lg bg-muted border border-border hover:bg-accent text-foreground active:scale-95 transition-all"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </Button>

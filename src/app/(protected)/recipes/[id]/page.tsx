@@ -920,7 +920,7 @@ export default function RecipeDetailPage() {
         <Button
           variant="outline"
           size="icon"
-          className="absolute top-24 left-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-primary active:scale-95 transition-all"
+          className="absolute top-24 left-6 z-40 rounded-full bg-background border-border hover:bg-muted shadow-md text-primary active:scale-95 transition-all"
           onClick={() => router.back()}
         >
           <ArrowLeft className="h-5 w-5" />
@@ -931,7 +931,7 @@ export default function RecipeDetailPage() {
           variant="outline"
           size="icon"
           className={cn(
-            "absolute top-24 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-foreground active:scale-95 transition-all",
+            "absolute top-24 z-40 rounded-full bg-background border-border hover:bg-muted shadow-md text-foreground active:scale-95 transition-all",
             isSaved ? "right-20" : "right-6"
           )}
           onClick={handleShare}
@@ -948,7 +948,7 @@ export default function RecipeDetailPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="absolute top-24 right-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-foreground active:scale-95 transition-all"
+                  className="absolute top-24 right-6 z-40 rounded-full bg-background border-border hover:bg-muted shadow-md text-foreground active:scale-95 transition-all"
                   aria-label={tRecipes("moveRecipeBtn")}
                 >
                   <MoreVertical className="h-5 w-5" />
@@ -996,7 +996,7 @@ export default function RecipeDetailPage() {
       <main className="relative -mt-24 px-2">
 
         {/* Header Glass Card */}
-        <div className="glass-panel rounded-[32px] p-6 md:p-8 shadow-2xl shadow-primary/5 mb-8">
+        <div className="surface-panel rounded-[32px] p-6 md:p-8 shadow-2xl shadow-primary/5 mb-8">
             <div className="flex flex-col md:flex-row justify-between items-start gap-6">
               <div className="flex-1">
                 <div className="flex flex-wrap gap-2 items-center mb-3">
@@ -1055,7 +1055,7 @@ export default function RecipeDetailPage() {
                           {t("kcalCount", { count: activeRecipe.kcal })}
                         </Badge>
                       </DrawerTrigger>
-                      <DrawerContent className="max-w-md mx-auto rounded-t-[32px] p-6 pb-8 border-t border-border bg-background/95 backdrop-blur-md">
+                      <DrawerContent className="max-w-md mx-auto rounded-t-[32px] p-6 pb-8 border-t border-border bg-background">
                         <DrawerHeader className="p-0 mb-4 text-left">
                           <DrawerTitle className="font-heading text-xl font-bold flex items-center gap-2">
                             <Flame className="w-5 h-5 text-primary fill-primary" />
@@ -1140,7 +1140,7 @@ export default function RecipeDetailPage() {
 
                               {/* AI Assessment Comment */}
                               {displayData?.nutritionalAssessment && (
-                                <div className="bg-primary/5 dark:bg-white/5 border border-primary/10 rounded-2xl p-4 text-xs leading-relaxed text-muted-foreground flex gap-2.5 items-start mt-4 shadow-sm">
+                                <div className="bg-primary/5 dark:bg-muted border border-primary/10 rounded-2xl p-4 text-xs leading-relaxed text-muted-foreground flex gap-2.5 items-start mt-4 shadow-sm">
                                   <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                                   <p>{displayData.nutritionalAssessment}</p>
                                 </div>
@@ -1299,7 +1299,7 @@ export default function RecipeDetailPage() {
 
               {/* Servings Counter & Shopping List Toggle */}
               <div className="flex flex-col sm:flex-row md:flex-col items-stretch gap-3 shrink-0 self-center md:self-start w-full sm:w-auto md:w-auto">
-                <div className="bg-surface-container rounded-full p-2 flex items-center justify-between gap-4 shadow-inner border border-white/5 shrink-0 h-14">
+                <div className="bg-surface-container rounded-full p-2 flex items-center justify-between gap-4 shadow-inner border border-border shrink-0 h-14">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1356,7 +1356,7 @@ export default function RecipeDetailPage() {
 
         {/* Adapt Recipe Card */}
         {(isAnalyzingDietary || isPendingAnalysis || hasAdaptationsAvailable) && (
-          <div className="glass-panel rounded-[24px] p-5 md:p-6 shadow-xl border border-primary/10 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 mb-8 overflow-hidden relative">
+          <div className="surface-panel rounded-[24px] p-5 md:p-6 shadow-xl border border-primary/10 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 mb-8 overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
             
             {(isAnalyzingDietary || isPendingAnalysis) ? (
@@ -1613,7 +1613,7 @@ export default function RecipeDetailPage() {
               </h3>
             </div>
 
-            <div className="glass-panel rounded-[24px] p-6">
+            <div className="surface-panel rounded-[24px] p-6">
               <div className="flex flex-col gap-4">
                 {displayedIngredients && displayedIngredients.length > 0 ? (
                   displayedIngredients.map((ing: any, idx: number) => {
@@ -1738,7 +1738,7 @@ export default function RecipeDetailPage() {
                         )}
                       </div>
 
-                      <div className={`glass-panel rounded-[24px] p-6 flex-1 transition-all duration-300 hover:shadow-lg ${
+                      <div className={`surface-panel rounded-[24px] p-6 flex-1 transition-all duration-300 hover:shadow-lg ${
                         isChecked ? "opacity-60 line-through text-muted-foreground bg-secondary/5" : ""
                       }`}>
                         <p className="text-sm text-on-surface leading-relaxed flex items-start gap-2">
@@ -1785,7 +1785,7 @@ export default function RecipeDetailPage() {
 
         {/* Creator Attribution Section */}
         {(recipe.creatorUsername || (platform === "web" && recipe.creatorFullName)) && (
-          <Card className="rounded-[24px] p-6 mt-8 border border-primary/10 bg-primary/5 dark:bg-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl shadow-primary/5 animate-in fade-in duration-300 min-w-0">
+          <Card className="rounded-[24px] p-6 mt-8 border border-primary/10 bg-primary/5 dark:bg-muted flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl shadow-primary/5 animate-in fade-in duration-300 min-w-0">
             <div className="flex-1 flex gap-4 items-start min-w-0 w-full">
               <div className={`p-2.5 rounded-2xl ${bgClass} shrink-0`}>
                 <SocialIcon className="w-6 h-6 stroke-[1.8]" />

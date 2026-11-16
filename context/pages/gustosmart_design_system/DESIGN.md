@@ -119,7 +119,7 @@ spacing:
 ## Brand & Style
 The design system is engineered to bridge the gap between culinary warmth and high-tech efficiency. It targets a sophisticated audience that values both the artisanal quality of home cooking and the precision of smart-home integration. 
 
-The aesthetic centers on **Modern Glassmorphism**, utilizing layered transparency and background blurs to create a sense of depth and lightweight interaction. The interface should feel "breathable" and optimistic, evoking the sensory pleasure of a well-lit, modern kitchen. We balance technical innovation with a "human-centric" approach, ensuring the UI feels like a helpful kitchen assistant rather than a cold utility.
+The aesthetic centers on **Warm Solid Minimalism**, utilizing opaque surfaces and clear layering to create a sense of depth and lightweight interaction. The interface should feel "breathable" and optimistic, evoking the sensory pleasure of a well-lit, modern kitchen. We balance technical innovation with a "human-centric" approach, ensuring the UI feels like a helpful kitchen assistant rather than a cold utility.
 
 ## Colors
 This design system utilizes a high-contrast palette that balances appetising warmth with technical stability.
@@ -127,14 +127,14 @@ This design system utilizes a high-contrast palette that balances appetising war
 - **Primary (Warm Terracotta):** Used for primary actions, high-priority notifications, and brand-heavy moments. It evokes heat, spices, and energy.
 - **Secondary (Sage Green):** Applied to success states, healthy-choice indicators, and freshness-related features. It provides a calming counter-balance to the terracotta.
 - **Backgrounds:** The light mode uses a warm cream base to keep the interface feeling organic, while the dark mode uses a deep slate navy to provide high contrast for "Chef Mode" or low-light cooking environments.
-- **Surface Treatment:** Surfaces are rarely opaque. They should utilize a 60-80% opacity variant of the background or neutral colors combined with a `20px` to `40px` backdrop blur to achieve the glassmorphism effect.
+- **Surface Treatment:** Surfaces are opaque. They should use solid fills from the surface palette to keep content legible in all lighting conditions.
 
 ## Typography
 The typography strategy pairings the geometric, friendly precision of **Outfit** for headings with the systematic legibility of **Inter** for functional copy.
 
 - **Headlines:** Set in Outfit with tight letter-spacing to create a modern, editorial feel. Use bold and semi-bold weights to establish a clear information hierarchy.
 - **Body:** Inter is the workhorse for instructions and ingredient lists. High line-heights (1.5x+) are essential to ensure readability while the user is actively cooking.
-- **Micro-copy:** Labels and captions use medium weights to maintain legibility against semi-transparent glass backgrounds.
+- **Micro-copy:** Labels and captions use medium weights to maintain legibility on solid surface backgrounds.
 
 ## Layout & Spacing
 The design system employs a **fluid grid** model with generous white space to prevent the UI from feeling cluttered—crucial for a kitchen environment.
@@ -144,10 +144,10 @@ The design system employs a **fluid grid** model with generous white space to pr
 - **Touch Targets:** All interactive elements must maintain a minimum 44x44px hit area, acknowledging that users may have messy or wet hands while interacting with the app.
 
 ## Elevation & Depth
-Depth is conveyed through **Backdrop Blurs** and **Ambient Shadows** rather than traditional elevation levels.
+Depth is conveyed through **solid surface layering** and **ambient shadows**.
 
-- **Glass Surfaces:** Secondary and tertiary panels use a semi-transparent fill (`rgba(255, 255, 255, 0.6)` in light mode) with a background-blur effect.
-- **Borders:** "Inner-glow" borders (1px, low-opacity white or primary tint) should be used on glass panels to define edges against varied backgrounds.
+- **Solid Surfaces:** Secondary and tertiary panels use opaque fills from the surface palette.
+- **Borders:** Subtle 1px borders in outline or outline-variant tones should be used to define edges between panels and backgrounds.
 - **Shadows:** Use extra-diffused, large-radius shadows (`blur: 40px`, `y: 10px`) with a very low opacity (5-10%) and a slight tint of the Primary color to make elements appear as if they are floating over the "kitchen counter" surface.
 
 ## Shapes
@@ -159,8 +159,8 @@ The shape language is ultra-soft and approachable, moving away from the harshnes
 
 ## Components
 - **Primary Buttons:** High-saturation Terracotta fills with white text. Apply a subtle "lift" shadow on hover.
-- **Glass Cards:** The signature component. Transparent background with a `24px` blur and a 1px `white/10%` border. These hold recipe previews and stats.
+- **Solid Cards:** The signature component. Opaque surface background with a 1px outline-variant border. These hold recipe previews and stats.
 - **Instruction Chips:** Use Sage Green for "Step Complete" or "Active Timer" states.
-- **Interactive Inputs:** Text fields should have a glass-style background with a focused state that highlights the border in Primary Terracotta.
+- **Interactive Inputs:** Text fields should have a solid surface background with a focused state that highlights the border in Primary Terracotta.
 - **Cooking Mode List:** A high-contrast list view with oversized checkboxes and increased vertical padding for easy glancing from a distance.
 - **Smart Gauges:** Circular progress indicators for timers and temperature controls, utilizing gradient strokes from Terracotta to Sage.

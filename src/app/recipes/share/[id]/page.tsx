@@ -264,7 +264,7 @@ export default function SharedRecipePage() {
   return (
     <div className="relative w-full min-h-screen bg-background pb-32">
       {/* Branding Navigation Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-background/60 px-6 shadow-xl shadow-primary/5 backdrop-blur-xl dark:bg-surface-container/60">
+      <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background px-6 shadow-xl shadow-primary/5 dark:bg-surface-container">
         <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-90">
           <Leaf className="h-6 w-6 text-primary" strokeWidth={2.5} />
           <h1 className="font-heading text-xl font-bold tracking-tight text-primary">GustoSmart</h1>
@@ -314,7 +314,7 @@ export default function SharedRecipePage() {
           <Button
             variant="outline"
             size="icon"
-            className="absolute top-8 left-6 z-40 rounded-full bg-background/60 backdrop-blur-md border-white/10 hover:bg-background/80 shadow-md text-primary active:scale-95 transition-all"
+            className="absolute top-8 left-6 z-40 rounded-full bg-background border-border hover:bg-muted shadow-md text-primary active:scale-95 transition-all"
             onClick={() => router.push("/")}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -324,7 +324,7 @@ export default function SharedRecipePage() {
         {/* Main Info Box */}
         <main className="relative -mt-24 px-2">
           {/* Header Glass Card */}
-          <div className="glass-panel rounded-[32px] p-6 md:p-8 shadow-2xl shadow-primary/5 mb-8 bg-card/40 backdrop-blur-md border border-border/10">
+          <div className="surface-panel rounded-[32px] p-6 md:p-8 shadow-2xl shadow-primary/5 mb-8 border border-border">
             <div className="flex flex-col md:flex-row justify-between items-start gap-6">
               <div className="flex-1">
                 <div className="flex flex-wrap gap-2 items-center mb-3">
@@ -361,7 +361,7 @@ export default function SharedRecipePage() {
                           {t("kcalCount", { count: recipe.kcal })}
                         </Badge>
                       </DrawerTrigger>
-                      <DrawerContent className="max-w-md mx-auto rounded-t-[32px] p-6 pb-8 border-t border-border bg-background/95 backdrop-blur-md">
+                      <DrawerContent className="max-w-md mx-auto rounded-t-[32px] p-6 pb-8 border-t border-border bg-background">
                         <DrawerHeader className="p-0 mb-4 text-left">
                           <DrawerTitle className="font-heading text-xl font-bold flex items-center gap-2">
                             <Flame className="w-5 h-5 text-primary fill-primary" />
@@ -444,7 +444,7 @@ export default function SharedRecipePage() {
                               )}
 
                               {recipe.nutritionalAssessment && (
-                                <div className="bg-primary/5 dark:bg-white/5 border border-primary/10 rounded-2xl p-4 text-xs leading-relaxed text-muted-foreground flex gap-2.5 items-start mt-4 shadow-sm">
+                                <div className="bg-primary/5 dark:bg-muted border border-primary/10 rounded-2xl p-4 text-xs leading-relaxed text-muted-foreground flex gap-2.5 items-start mt-4 shadow-sm">
                                   <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                                   <p>{recipe.nutritionalAssessment}</p>
                                 </div>
@@ -579,7 +579,7 @@ export default function SharedRecipePage() {
 
               {/* Servings Counter & Main CTA Action */}
               <div className="flex flex-col sm:flex-row md:flex-col items-stretch gap-3 shrink-0 self-center md:self-start w-full sm:w-auto md:w-auto">
-                <div className="bg-surface-container rounded-full p-2 flex items-center justify-between gap-4 shadow-inner border border-white/5 shrink-0 h-14 bg-muted/20">
+                <div className="bg-surface-container rounded-full p-2 flex items-center justify-between gap-4 shadow-inner border border-border shrink-0 h-14">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -642,7 +642,7 @@ export default function SharedRecipePage() {
                 <ShoppingBag className="w-5 h-5 text-primary" />
                 {t("ingredientsTitle")}
               </h3>
-              <div className="glass-panel rounded-[24px] p-6 bg-card/25 border border-border/5">
+              <div className="surface-panel rounded-[24px] p-6 border border-border">
                 <div className="flex flex-col gap-4">
                   {recipe.ingredients && recipe.ingredients.length > 0 ? (
                     recipe.ingredients.map((ing: any, idx: number) => {
@@ -697,7 +697,7 @@ export default function SharedRecipePage() {
                             <div className="w-0.5 h-16 bg-border/40 mt-2" />
                           )}
                         </div>
-                        <div className="glass-panel rounded-[24px] p-6 flex-1 bg-card/25 border border-border/5">
+                        <div className="surface-panel rounded-[24px] p-6 flex-1 border border-border">
                           <p className="text-sm text-on-surface leading-relaxed">
                             {stepText}
                           </p>
@@ -714,7 +714,7 @@ export default function SharedRecipePage() {
 
           {/* Social Credits Footer */}
           {recipe.creatorUsername && (
-            <div className="mt-12 glass-panel rounded-[24px] p-6 bg-card/10 border border-border/5">
+            <div className="mt-12 surface-panel rounded-[24px] p-6 border border-border">
               <div className="flex items-center gap-3 mb-4">
                 <SocialIcon className="w-6 h-6 text-primary" />
                 <h4 className="font-heading font-bold text-sm text-foreground">

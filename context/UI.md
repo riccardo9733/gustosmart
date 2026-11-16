@@ -6,7 +6,7 @@ Questo documento definisce la guida di stile visiva, la struttura dettagliata de
 
 ## 1. Design System & Identità Visiva
 
-Il design dell'applicazione deve essere **Mobile-First**, estremamente fluido, pulito e "Premium". L'obiettivo è offrire un'esperienza utente moderna che trasmetta calore, amore per il cibo e innovazione tecnologica, combinando elementi di *Glassmorphism* con micro-animazioni.
+Il design dell'applicazione deve essere **Mobile-First**, estremamente fluido, pulito e "Premium". L'obiettivo è offrire un'esperienza utente moderna che trasmetta calore, amore per il cibo e innovazione tecnologica, combinando superfici solide con micro-animazioni.
 
 ### 1.1 Tavolozza Colori (Curata e Armoniosa)
 Evitare colori piatti e basici. Utilizzeremo palette HSL calibrate per supportare in modo ottimale il passaggio tra **Light Mode** (caldo ed elegante) e **Dark Mode** (profondo e rilassante).
@@ -16,7 +16,7 @@ Evitare colori piatti e basici. Utilizzeremo palette HSL calibrate per supportar
 | **Primary (Brand)** | `hsl(12, 85%, 53%)` (Warm Terracotta / Coral) | `hsl(12, 90%, 58%)` (Vibrant Saffron) | Colore principale per pulsanti d'azione (CTA), accenti e elementi attivi. |
 | **Secondary** | `hsl(162, 60%, 41%)` (Sage Green) | `hsl(162, 70%, 45%)` (Teal Mint) | Utilizzato per badge, successo, e per la spunta di elementi completati nella lista della spesa. |
 | **Background** | `hsl(28, 20%, 98%)` (Warm Cream / Off-White) | `hsl(222, 47%, 9%)` (Deep Slate Navy) | Sfondo principale dell'applicazione. |
-| **Card / Surface** | `hsl(0, 0%, 100%)` (Pure White) | `hsl(223, 40%, 14% / 70%)` (Semitransparent Slate) | Superfici di card e pannelli con effetto vetro (*backdrop-blur*). |
+| **Card / Surface** | `hsl(0, 0%, 100%)` (Pure White) | `hsl(223, 40%, 14%)` (Solid Slate) | Superfici opache di card e pannelli. |
 | **Border** | `hsl(20, 10%, 90%)` (Light Gray-Warm) | `hsl(217, 30%, 20%)` (Subtle Navy Border) | Bordi sottili per dividere le sezioni. |
 | **Text Primary** | `hsl(222, 47%, 12%)` (Charcoal) | `hsl(210, 40%, 98%)` (Soft White) | Testo principale ad alto contrasto. |
 | **Text Secondary** | `hsl(215, 16%, 47%)` (Muted Slate) | `hsl(215, 20%, 65%)` (Muted Gray) | Testo secondario, didascalie e placeholder. |
@@ -26,7 +26,7 @@ Evitare colori piatti e basici. Utilizzeremo palette HSL calibrate per supportar
 *   **Corpo del Testo:** **Inter** (Alternativa: *SF Pro Display*). Ottimizzata per la leggibilità anche a piccole dimensioni su dispositivi mobili.
 
 ### 1.3 Layout & Navigazione
-*   **Mobile (Bottom Navigation Bar):** Fissata in basso con effetto sfocato (*Glassmorphism* - `backdrop-blur-md bg-opacity-70`). Icone minimali (Home, Ricettario, Spesa, Profilo).
+*   **Mobile (Bottom Navigation Bar):** Fissata in basso con fondo solido e bordo superiore. Icone minimali (Home, Ricettario, Spesa, Profilo).
 *   **Desktop/Tablet (Sidebar):** Barra laterale sinistra collassabile con animazione fluida.
 *   **Card & Componenti:** Angoli arrotondati ampi (`rounded-2xl` / `rounded-3xl`), ombreggiature morbide e diffuse (`shadow-sm` per il giorno, bagliori impercettibili `shadow-[0_0_15px_rgba(255,255,255,0.02)]` per la notte).
 
@@ -139,7 +139,7 @@ Di seguito la checklist operativa per la progettazione e la prima implementazion
 
 ### 💻 Implementazione Componenti React / Next.js
 - [ ] **Componente Layout & Navigazione:**
-  - [ ] Navbar inferiore mobile con effetto Glassmorphism.
+  - [ ] Navbar inferiore mobile con fondo solido.
   - [ ] Sidebar desktop collassabile.
   - [ ] Switch rapido per Dark/Light Mode integrato nell'header.
 - [ ] **Componente Card Ricetta (`RecipeCard.tsx`):**
@@ -147,7 +147,7 @@ Di seguito la checklist operativa per la progettazione e la prima implementazion
   - [ ] Effetto hover con zoom leggero dell'immagine ed evidenziazione dei bordi.
   - [ ] Badge dinamico della sorgente social (Instagram, TikTok, Web).
 - [ ] **Componente Ingestion Loader (`IngestionLoader.tsx`):**
-  - [ ] Overlay a tutto schermo sfocato.
+  - [ ] Overlay a tutto schermo con fondo solido.
   - [ ] Animazione di caricamento (Spinner o Lottie).
   - [ ] Testi dinamici temporizzati per simulare gli step dell'IA.
 - [ ] **Componente Counter Commensali (`ServingsCounter.tsx`):**
