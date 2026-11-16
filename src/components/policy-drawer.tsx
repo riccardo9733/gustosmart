@@ -149,7 +149,7 @@ export function PolicyDrawer({ isOpen, onClose, type }: PolicyDrawerProps) {
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground">
                   {content.title}
                 </h2>
-                <p className="text-[11px] font-medium text-muted-foreground">
+                <p className="text-xs font-medium text-muted-foreground">
                   {content.lastUpdated}
                 </p>
               </div>

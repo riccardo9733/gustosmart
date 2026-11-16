@@ -85,3 +85,12 @@ Regola di sostituzione globale:
 - [ ] `npm test` (vitest) verde dove tocca UI
 - [ ] Ricontrollo visivo light/dark delle 8 schermate della Fase 0, con attenzione a header/nav/drawer in scroll
 - [ ] Aggiornare `documentation/protected-pages.md` riga 39 (cita `.surface-panel`) e `context/UI.md` (cita Glassmorphism, `backdrop-blur`, `bg-opacity-70`, navbar con blur, checklist riga 142)
+
+## Fase 12 — Colori caramella e icone — FATTA
+- [x] 12a: badge dieta, filtri dieta e bottoni versione unificati a Sage (`secondary`); nutri-score A/B/C/D/E, brand piattaforma, macro chart, badge cartella e warning ambra tenuti (semantica)
+- [x] 12a-bis: residui `bg-muted/*` e `border-border/*` solidificati in dettaglio/share/home
+- [x] 12b: testi 9/10/11px portati a `text-xs` (12px) in 12 file
+- [x] 12c: icone tag/stepper/liste a 16px (`size-4`, `h-4 w-4`); icone inline al testo lasciate invariate
+- [x] 12d: rimosse 5 Sparkles dai bottoni versione + 1 dal titolo feed; tenute: header sezione AI, badge traduzione, marcatori IA per-ingrediente, CTA import, nota assessment
+- [x] 12d: badge "Ricetta Privata" viola + emoji sostituiti con Sage + icona Lock
+- [x] 12e: `npm run build` verde, `vitest` 28/28; lint senza nuovi errori (solo categorie pre-esistenti)

@@ -677,7 +677,7 @@ function LoginForm() {
             </Button>
             <button
               onClick={dismissPrompt}
-              className="text-[11px] font-bold text-muted-foreground hover:text-foreground text-center transition-colors cursor-pointer"
+              className="text-xs font-bold text-muted-foreground hover:text-foreground text-center transition-colors cursor-pointer"
             >
               {t("pwaDismissBtn")}
             </button>

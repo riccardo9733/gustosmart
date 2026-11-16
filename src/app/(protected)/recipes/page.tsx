@@ -219,7 +219,7 @@ export default function RecipesPage() {
             className="flex flex-col items-center justify-center border border-dashed border-muted-foreground/30 rounded-[20px] size-28 shrink-0 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 active:scale-95 group cursor-pointer"
           >
             <FolderPlus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-            <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-primary mt-2 text-center px-1">
+            <span className="text-xs font-semibold text-muted-foreground group-hover:text-primary mt-2 text-center px-1">
               {t("addFolderBtn")}
             </span>
           </button>
@@ -238,10 +238,10 @@ export default function RecipesPage() {
               >
                 <Folder className="h-7 w-7 text-primary group-hover:scale-110 transition-transform duration-200" />
                 <div className="flex flex-col items-center w-full text-center">
-                  <span className="text-[11px] font-bold text-foreground line-clamp-1 w-full px-1">
+                  <span className="text-xs font-bold text-foreground line-clamp-1 w-full px-1">
                     {folder.name}
                   </span>
-                  <span className="text-[9px] font-medium text-muted-foreground mt-0.5">
+                  <span className="text-xs font-medium text-muted-foreground mt-0.5">
                     {getFolderRecipeCount(folder.id) === 1
                       ? t("recipeCount")
                       : t("recipesCount", { count: getFolderRecipeCount(folder.id) })}
@@ -269,8 +269,8 @@ export default function RecipesPage() {
           </div>
         ) : recipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-700 max-w-md mx-auto">
-            <div className="w-64 h-64 mb-8 rounded-full bg-primary/5 flex items-center justify-center relative shadow-inner">
-              <div className="absolute inset-0 bg-primary/5 rounded-full animate-pulse" />
+ <div className="w-64 h-64 mb-8 rounded-full bg-primary/5 flex items-center justify-center relative shadow-inner">
+ <div className="absolute inset-0 bg-primary/5 rounded-full animate-pulse" />
               <ChefHat className="w-32 h-32 stroke-[1] text-primary/20 relative z-10" />
             </div>
             <h3 className="font-heading text-2xl font-bold text-foreground mb-2">{t("noRecipesYet")}</h3>
@@ -279,7 +279,7 @@ export default function RecipesPage() {
             </p>
             <Button
               onClick={() => router.push("/")}
-              className="bg-primary hover:bg-primary/95 text-white px-8 py-6 rounded-full font-heading text-base shadow-xl shadow-primary/20 active:scale-95 transition-all"
+ className="bg-primary hover:bg-primary/95 text-white px-8 py-6 rounded-full font-heading text-base shadow-xl shadow-primary/20 active:scale-95 transition-all"
             >
               {t("importFirstRecipe")}
             </Button>
@@ -294,7 +294,7 @@ export default function RecipesPage() {
             <Button
               onClick={resetFilters}
               variant="outline"
-              className="border-primary/20 text-primary hover:bg-primary/5 rounded-full px-6"
+ className="border-primary/20 text-primary hover:bg-primary/5 rounded-full px-6"
             >
               {t("clearFilters")}
             </Button>
@@ -326,29 +326,29 @@ export default function RecipesPage() {
                       {recipe.title}
                     </h4>
 
-                    <div className="flex flex-wrap gap-2 items-center text-muted-foreground text-[10px] sm:text-xs">
+                    <div className="flex flex-wrap gap-2 items-center text-muted-foreground text-xs sm:text-xs">
                       {recipe.category && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-primary/25 text-[9px] uppercase tracking-wider text-primary bg-primary/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-primary/25 text-xs uppercase tracking-wider text-primary bg-primary/5">
                           {getCategoryLabel(recipe.category)}
                         </Badge>
                       )}
                       {recipe.isGlutenFree && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-emerald-500/25 text-[9px] uppercase tracking-wider text-emerald-500 bg-emerald-500/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-secondary/25 text-xs uppercase tracking-wider text-secondary bg-secondary/5">
                           {tDetails("glutenFree")}
                         </Badge>
                       )}
                       {recipe.isVegan && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-green-500/25 text-[9px] uppercase tracking-wider text-green-500 bg-green-500/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-secondary/25 text-xs uppercase tracking-wider text-secondary bg-secondary/5">
                           {tDetails("vegan")}
                         </Badge>
                       )}
                       {recipe.isVegetarian && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-teal-500/25 text-[9px] uppercase tracking-wider text-teal-500 bg-teal-500/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-secondary/25 text-xs uppercase tracking-wider text-secondary bg-secondary/5">
                           {tDetails("vegetarian")}
                         </Badge>
                       )}
                       {recipe.isLactoseFree && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-blue-500/25 text-[9px] uppercase tracking-wider text-blue-500 bg-blue-500/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-secondary/25 text-xs uppercase tracking-wider text-secondary bg-secondary/5">
                           {tDetails("lactoseFree")}
                         </Badge>
                       )}

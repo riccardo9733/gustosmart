@@ -26,7 +26,7 @@ export function Header() {
             aria-label="Mostra progresso importazione"
           >
             <Loader2 className="h-3.5 w-3.5 text-secondary animate-spin" />
-            <span className="text-[10px] font-extrabold text-secondary tracking-wider">
+            <span className="text-xs font-extrabold text-secondary tracking-wider">
               {progress}%
             </span>
           </button>
@@ -38,7 +38,7 @@ export function Header() {
             aria-label="Dashboard Amministratore"
           >
             <ShieldCheck className="h-3.5 w-3.5" />
-            <span className="text-[10px] font-extrabold tracking-wider uppercase hidden sm:inline">Admin</span>
+            <span className="text-xs font-extrabold tracking-wider uppercase hidden sm:inline">Admin</span>
           </Link>
         )}
         {profile && (

@@ -239,7 +239,7 @@ export default function ProfilePage() {
                 <span className="text-2xl font-extrabold text-primary leading-none">
                   {profile?.tokens ?? 100}
                 </span>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">
                   {t("tokensRemaining")}
                 </span>
               </div>
@@ -253,7 +253,7 @@ export default function ProfilePage() {
               />
             </div>
             
-            <div className="flex justify-between text-[11px] font-semibold text-muted-foreground px-1">
+            <div className="flex justify-between text-xs font-semibold text-muted-foreground px-1">
               <span>0 / 100 Scans</span>
               <span>100 / 100 Scans</span>
             </div>
@@ -315,7 +315,7 @@ export default function ProfilePage() {
                 <div className="flex bg-surface-container-low dark:bg-surface-container p-1 rounded-full border border-border">
                   <button
                     onClick={() => setTheme("light")}
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
                       theme === "light"
                         ? "bg-primary text-white shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -325,7 +325,7 @@ export default function ProfilePage() {
                   </button>
                   <button
                     onClick={() => setTheme("dark")}
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
                       theme === "dark"
                         ? "bg-primary text-white shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -335,7 +335,7 @@ export default function ProfilePage() {
                   </button>
                   <button
                     onClick={() => setTheme("system")}
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
                       theme === "system"
                         ? "bg-primary text-white shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -434,14 +434,14 @@ export default function ProfilePage() {
         {/* Version Info & Legal Links */}
         <div className="text-center pt-6 pb-10 space-y-3">
           <div className="space-y-1">
-            <p className="text-[11px] font-bold text-muted-foreground tracking-wide">
+            <p className="text-xs font-bold text-muted-foreground tracking-wide">
               {t("version")}
             </p>
-            <p className="text-[11px] text-muted-foreground/60">
+            <p className="text-xs text-muted-foreground/60">
               {t("designedFor")}
             </p>
           </div>
-          <div className="flex justify-center gap-4 text-[11px] text-muted-foreground/60">
+          <div className="flex justify-center gap-4 text-xs text-muted-foreground/60">
             <button
               type="button"
               onClick={() => setActivePolicy("privacy")}

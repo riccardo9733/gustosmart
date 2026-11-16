@@ -192,7 +192,7 @@ export default function FolderDetailPage() {
     return (
       <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto pb-32 animate-in fade-in duration-500">
         <div className="flex items-center gap-4 pt-4">
-          <Skeleton className="h-10 w-10 rounded-full bg-muted/20" />
+ <Skeleton className="h-10 w-10 rounded-full bg-muted/20" />
           <Skeleton className="h-8 w-48 bg-muted/20" />
         </div>
         <Skeleton className="h-12 w-full rounded-2xl bg-muted/20" />
@@ -215,7 +215,7 @@ export default function FolderDetailPage() {
         <p className="text-muted-foreground text-sm mb-6">
           Questa cartella non esiste o è stata eliminata.
         </p>
-        <Button onClick={() => router.push("/recipes")} variant="outline" className="rounded-full">
+ <Button onClick={() => router.push("/recipes")} variant="outline" className="rounded-full">
           {tDetails("backToRecipes")}
         </Button>
       </div>
@@ -249,7 +249,7 @@ export default function FolderDetailPage() {
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full hover:bg-muted text-primary active:scale-95 transition-all cursor-pointer"
+ className="rounded-full hover:bg-muted text-primary active:scale-95 transition-all cursor-pointer"
               onClick={() => router.push("/recipes")}
             >
               <ArrowLeft className="h-5 w-5" />
@@ -266,7 +266,7 @@ export default function FolderDetailPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-full hover:bg-destructive/10 text-destructive hover:text-destructive active:scale-90 transition-all cursor-pointer"
+ className="h-10 w-10 rounded-full hover:bg-destructive/10 text-destructive hover:text-destructive active:scale-90 transition-all cursor-pointer"
               >
                 <Trash2 className="h-5 w-5" />
               </Button>
@@ -319,7 +319,7 @@ export default function FolderDetailPage() {
               setAddRecipesOpen(true);
             }}
             size="sm"
-            className="rounded-full bg-primary text-white flex items-center gap-1.5 px-4 py-2 hover:bg-primary/95 text-xs font-semibold cursor-pointer active:scale-95 shadow-md shadow-primary/15"
+ className="rounded-full bg-primary text-white flex items-center gap-1.5 px-4 py-2 hover:bg-primary/95 text-xs font-semibold cursor-pointer active:scale-95 shadow-md shadow-primary/15"
           >
             <Plus className="h-3.5 w-3.5" />
             {t("addRecipesToFolderBtn")}
@@ -328,7 +328,7 @@ export default function FolderDetailPage() {
 
         {folderRecipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center max-w-sm mx-auto">
-            <div className="w-20 h-20 bg-muted/20 rounded-full flex items-center justify-center text-muted-foreground mb-4">
+ <div className="w-20 h-20 bg-muted/20 rounded-full flex items-center justify-center text-muted-foreground mb-4">
               <FolderOpen className="h-8 w-8 stroke-[1.2]" />
             </div>
             <h3 className="font-heading text-lg font-bold text-foreground mb-1">{t("noRecipesInFolder")}</h3>
@@ -340,7 +340,7 @@ export default function FolderDetailPage() {
                 setSelectedRecipeIds([]);
                 setAddRecipesOpen(true);
               }}
-              className="bg-primary hover:bg-primary/95 text-white rounded-full px-6 text-xs shadow-lg shadow-primary/10"
+ className="bg-primary hover:bg-primary/95 text-white rounded-full px-6 text-xs shadow-lg shadow-primary/10"
             >
               {t("addRecipesToFolderBtn")}
             </Button>
@@ -380,40 +380,40 @@ export default function FolderDetailPage() {
                       {recipe.title}
                     </h4>
 
-                    <div className="flex flex-wrap gap-2 items-center text-muted-foreground text-[10px] sm:text-xs">
+                    <div className="flex flex-wrap gap-2 items-center text-muted-foreground text-xs sm:text-xs">
                       {recipe.category && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-primary/25 text-[9px] uppercase tracking-wider text-primary bg-primary/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-primary/25 text-xs uppercase tracking-wider text-primary bg-primary/5">
                           {getCategoryLabel(recipe.category)}
                         </Badge>
                       )}
                       {recipe.isGlutenFree && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-emerald-500/25 text-[9px] uppercase tracking-wider text-emerald-500 bg-emerald-500/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-secondary/25 text-xs uppercase tracking-wider text-secondary bg-secondary/5">
                           {tDetails("glutenFree")}
                         </Badge>
                       )}
                       {recipe.isVegan && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-green-500/25 text-[9px] uppercase tracking-wider text-green-500 bg-green-500/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-secondary/25 text-xs uppercase tracking-wider text-secondary bg-secondary/5">
                           {tDetails("vegan")}
                         </Badge>
                       )}
                       {recipe.isVegetarian && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-teal-500/25 text-[9px] uppercase tracking-wider text-teal-500 bg-teal-500/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-secondary/25 text-xs uppercase tracking-wider text-secondary bg-secondary/5">
                           {tDetails("vegetarian")}
                         </Badge>
                       )}
                       {recipe.isLactoseFree && (
-                        <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-blue-500/25 text-[9px] uppercase tracking-wider text-blue-500 bg-blue-500/5">
+ <Badge variant="outline" className="rounded-full px-2 py-0 h-4.5 font-bold border-secondary/25 text-xs uppercase tracking-wider text-secondary bg-secondary/5">
                           {tDetails("lactoseFree")}
                         </Badge>
                       )}
                       {recipe.prepTimeMinutes && (
                         <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
+                          <Clock className="h-4 w-4" />
                           {t("minCount", { count: recipe.prepTimeMinutes })}
                         </span>
                       )}
                       <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
+                        <Users className="h-4 w-4" />
                         {t("servingsCount", { count: recipe.servings || 2 })}
                       </span>
                     </div>
@@ -515,8 +515,8 @@ export default function FolderDetailPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-foreground truncate">{recipe.title}</p>
                       {recipe.folderId && (
-                        <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                          <Folder className="h-3 w-3 inline" />
+                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                          <Folder className="h-4 w-4 inline" />
                           {folders.find(f => f.id === recipe.folderId)?.name || "Altra cartella"}
                         </p>
                       )}

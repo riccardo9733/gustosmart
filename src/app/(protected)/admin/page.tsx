@@ -721,20 +721,20 @@ export default function AdminDashboard() {
           </span>
 
           {(totalTokens > 0 || promptTokens > 0 || completionTokens > 0) && (
-            <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-muted text-foreground px-2.5 py-1 rounded-lg border border-border/20">
+            <span className="inline-flex items-center gap-1 font-mono text-xs bg-muted text-foreground px-2.5 py-1 rounded-lg border border-border/20">
               <span className="font-semibold">{totalTokens} token LLM</span>
-              <span className="text-[10px] text-muted-foreground">({promptTokens} in / {completionTokens} out)</span>
+              <span className="text-xs text-muted-foreground">({promptTokens} in / {completionTokens} out)</span>
             </span>
           )}
 
           {model && (
-            <span className="inline-flex items-center font-mono text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-md border border-border/10">
+            <span className="inline-flex items-center font-mono text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-md border border-border/10">
               {model}
             </span>
           )}
 
           {type && (
-            <span className="inline-flex items-center font-semibold text-[10px] uppercase text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-md border border-violet-500/20">
+            <span className="inline-flex items-center font-semibold text-xs uppercase text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-md border border-violet-500/20">
               {type}
             </span>
           )}
@@ -773,7 +773,7 @@ export default function AdminDashboard() {
 
           {/* Piattaforma */}
           {platform && (
-            <span className="inline-flex items-center gap-1 text-[11px] capitalize font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/10">
+            <span className="inline-flex items-center gap-1 text-xs capitalize font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/10">
               {getPlatformIcon(platform)}
               {platform}
             </span>
@@ -781,13 +781,13 @@ export default function AdminDashboard() {
 
           {/* Extra import details */}
           {durationSeconds !== undefined && (
-            <span className="text-[10px] text-muted-foreground font-mono">
+            <span className="text-xs text-muted-foreground font-mono">
               ⏱️ {durationSeconds}s
             </span>
           )}
 
           {isCached && (
-            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+            <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
               ⚡ Cache Hit
             </span>
           )}
@@ -798,11 +798,11 @@ export default function AdminDashboard() {
     // Fallback per altri eventi
     const keys = Object.keys(p);
     if (keys.length === 0) {
-      return <span className="text-muted-foreground italic text-[10px]">Nessun parametro</span>;
+      return <span className="text-muted-foreground italic text-xs">Nessun parametro</span>;
     }
 
     return (
-      <div className="font-mono text-[10px] bg-muted p-2 rounded-lg max-w-[350px] overflow-x-auto scrollbar-none text-muted-foreground border border-border/20 flex-1">
+      <div className="font-mono text-xs bg-muted p-2 rounded-lg max-w-[350px] overflow-x-auto scrollbar-none text-muted-foreground border border-border/20 flex-1">
         {JSON.stringify(p)}
       </div>
     );
@@ -903,7 +903,7 @@ export default function AdminDashboard() {
 
         {/* Timeframe Filter Tabs */}
         <div className="flex items-center gap-1 bg-surface-container-low dark:bg-surface-container p-1 rounded-2xl border border-border shadow-sm shrink-0 self-stretch sm:self-auto overflow-x-auto scrollbar-none">
-          <span className="px-2 py-1 text-[11px] font-bold text-muted-foreground flex items-center gap-1 shrink-0">
+          <span className="px-2 py-1 text-xs font-bold text-muted-foreground flex items-center gap-1 shrink-0">
             <Calendar className="h-3.5 w-3.5" />
           </span>
           {[
@@ -946,21 +946,21 @@ export default function AdminDashboard() {
                 {/* Initiated Scans */}
                 <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Scansioni Avviate</span>
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">Scansioni Avviate</span>
                     <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                       <Zap className="h-4 w-4" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <h3 className="text-3xl font-extrabold text-foreground leading-none">{totalInitiatedCount}</h3>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">Richieste totali di scansione</p>
+                    <p className="text-xs text-muted-foreground font-semibold mt-1">Richieste totali di scansione</p>
                   </div>
                 </Card>
 
                 {/* Ingestion Success Rate */}
                 <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Tasso di Successo</span>
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">Tasso di Successo</span>
                     <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
@@ -976,28 +976,28 @@ export default function AdminDashboard() {
                 {/* Recipes Saved (Engagement) */}
                 <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Salvataggi Ricettario</span>
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">Salvataggi Ricettario</span>
                     <div className="p-1.5 rounded-lg bg-secondary/10 text-secondary">
                       <Bookmark className="h-4 w-4 fill-secondary/20" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <h3 className="text-3xl font-extrabold text-foreground leading-none">{recipesSaved}</h3>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">Ricette aggiunte dai ricettari</p>
+                    <p className="text-xs text-muted-foreground font-semibold mt-1">Ricette aggiunte dai ricettari</p>
                   </div>
                 </Card>
 
                 {/* PWA Installs */}
                 <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Installazioni PWA</span>
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">Installazioni PWA</span>
                     <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
                       <Smartphone className="h-4 w-4" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <h3 className="text-3xl font-extrabold text-foreground leading-none">{pwaInstalls}</h3>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-1 flex flex-wrap gap-1">
+                    <p className="text-xs text-muted-foreground font-semibold mt-1 flex flex-wrap gap-1">
                       <span>Accettati: {pwaPromptsAccepted}</span>
                       <span className="text-muted-foreground/60">/</span>
                       <span>Mostrati: {pwaPromptsShown}</span>
@@ -1034,13 +1034,13 @@ export default function AdminDashboard() {
                           tickLine={false}
                           axisLine={false}
                           tickMargin={8}
-                          className="fill-muted-foreground text-[10px] font-mono"
+                          className="fill-muted-foreground text-xs font-mono"
                         />
                         <YAxis
                           tickLine={false}
                           axisLine={false}
                           tickMargin={8}
-                          className="fill-muted-foreground text-[10px] font-mono"
+                          className="fill-muted-foreground text-xs font-mono"
                         />
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Area
@@ -1086,14 +1086,14 @@ export default function AdminDashboard() {
                           tickLine={false}
                           axisLine={false}
                           tickMargin={8}
-                          className="fill-muted-foreground text-[10px] font-mono"
+                          className="fill-muted-foreground text-xs font-mono"
                         />
                         <YAxis
                           tickLine={false}
                           axisLine={false}
                           tickMargin={8}
                           tickFormatter={(val) => `$${Number(val).toFixed(3)}`}
-                          className="fill-muted-foreground text-[10px] font-mono"
+                          className="fill-muted-foreground text-xs font-mono"
                         />
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Area
@@ -1164,7 +1164,7 @@ export default function AdminDashboard() {
                           axisLine={false}
                           tickMargin={10}
                           width={100}
-                          className="fill-foreground text-[9px] font-semibold"
+                          className="fill-foreground text-xs font-semibold"
                         />
                         <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                         <Bar dataKey="count" radius={4}>
@@ -1223,7 +1223,7 @@ export default function AdminDashboard() {
 
                           <div className="w-12 text-right shrink-0">
                             <span className="text-xs font-bold text-foreground">{count}</span>
-                            <span className="text-[10px] text-muted-foreground block font-semibold">{pct}%</span>
+                            <span className="text-xs text-muted-foreground block font-semibold">{pct}%</span>
                           </div>
                         </div>
                       );
@@ -1252,11 +1252,11 @@ export default function AdminDashboard() {
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-muted p-4 rounded-2xl border border-border">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Import Completati</span>
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Import Completati</span>
                       <span className="text-2xl font-extrabold text-emerald-500">{completedImports.length}</span>
                     </div>
                     <div className="bg-muted p-4 rounded-2xl border border-border">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Import Falliti</span>
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Import Falliti</span>
                       <span className="text-2xl font-extrabold text-rose-500">{failedImports.length}</span>
                     </div>
                   </div>
@@ -1273,11 +1273,11 @@ export default function AdminDashboard() {
                               {getPlatformIcon(platform)}
                               Errore: {errorType}
                             </span>
-                            <span className="text-muted-foreground text-[10px] font-medium truncate max-w-[200px] block">
+                            <span className="text-muted-foreground text-xs font-medium truncate max-w-[200px] block">
                               Utente: {log.userEmail || "Anonimo"}
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold text-muted-foreground tracking-wider shrink-0 mt-0.5">
+                          <span className="text-xs font-bold text-muted-foreground tracking-wider shrink-0 mt-0.5">
                             {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : ""}
                           </span>
                         </div>
@@ -1326,19 +1326,19 @@ export default function AdminDashboard() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-2">
                       <div className="bg-muted p-4 rounded-2xl border border-border text-center">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Acquistati</span>
+                        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Acquistati</span>
                         <span className="text-xl font-extrabold text-foreground">
                           ${openRouterCredits?.total_credits !== undefined ? openRouterCredits.total_credits.toFixed(2) : "0.00"}
                         </span>
                       </div>
                       <div className="bg-muted p-4 rounded-2xl border border-border text-center">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Spesi</span>
+                        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Spesi</span>
                         <span className="text-xl font-extrabold text-primary">
                           ${openRouterCredits?.total_usage !== undefined ? openRouterCredits.total_usage.toFixed(2) : "0.00"}
                         </span>
                       </div>
                       <div className="bg-muted p-4 rounded-2xl border border-border text-center">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Residuo</span>
+                        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Residuo</span>
                         <span className="text-xl font-extrabold text-emerald-500">
                           ${openRouterCredits?.cash_balance !== undefined ? openRouterCredits.cash_balance.toFixed(2) : (openRouterCredits?.total_remaining !== undefined ? openRouterCredits.total_remaining.toFixed(2) : "0.00")}
                         </span>
@@ -1444,7 +1444,7 @@ export default function AdminDashboard() {
                       </div>
                       
                       {/* Filter Pills */}
-                      <div className="flex bg-surface-container-low dark:bg-surface-container p-0.5 rounded-xl border border-border shadow-sm text-[11px] font-bold">
+                      <div className="flex bg-surface-container-low dark:bg-surface-container p-0.5 rounded-xl border border-border shadow-sm text-xs font-bold">
                         <button
                           onClick={() => { setOpenRouterFilter("all"); setOpenRouterPage(1); }}
                           className={`px-3.5 py-1.5 rounded-lg transition-all ${
@@ -1501,10 +1501,10 @@ export default function AdminDashboard() {
                         return (
                           <div key={log.id} className="p-4 flex flex-col gap-3 hover:bg-muted transition-colors">
                             <div className="flex justify-between items-start">
-                              <span className="font-mono text-[9px] text-muted-foreground">
+                              <span className="font-mono text-xs text-muted-foreground">
                                 {log.timestamp ? new Date(log.timestamp).toLocaleString("it-IT") : "—"}
                               </span>
-                              <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase border ${
+                              <span className={`px-2 py-0.5 rounded-full font-bold text-xs uppercase border ${
                                 type === "ingest"
                                   ? "bg-teal-500/10 text-teal-400 border-teal-500/20"
                                   : type === "ingest_image"
@@ -1534,20 +1534,20 @@ export default function AdminDashboard() {
                             <div className="flex justify-between items-center">
                               <div className="flex flex-col">
                                 <span className="font-semibold text-xs text-foreground truncate max-w-[180px]">{log.userEmail || "Anonimo"}</span>
-                                <span className="text-[9px] text-muted-foreground font-mono truncate max-w-[150px]">{log.userId || "—"}</span>
-                                <span className="text-[10px] text-primary/80 font-mono mt-0.5">{modelName}</span>
+                                <span className="text-xs text-muted-foreground font-mono truncate max-w-[150px]">{log.userId || "—"}</span>
+                                <span className="text-xs text-primary/80 font-mono mt-0.5">{modelName}</span>
                               </div>
                               <span className="font-mono font-bold text-xs text-primary">${cost.toFixed(6)}</span>
                             </div>
 
-                            <div className="flex justify-between items-center text-[10px] text-muted-foreground border-t border-border/10 pt-2">
+                            <div className="flex justify-between items-center text-xs text-muted-foreground border-t border-border/10 pt-2">
                               <span>Tokens: <strong className="text-foreground">{promptTokens + completionTokens}</strong> (In: {promptTokens} | Out: {completionTokens})</span>
                               {genId && (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => setSelectedGenerationId(genId)}
-                                  className="h-7 px-2.5 rounded-lg border-primary/20 text-primary hover:bg-primary/5 text-[10px]"
+                                  className="h-7 px-2.5 rounded-lg border-primary/20 text-primary hover:bg-primary/5 text-xs"
                                 >
                                   <Info className="h-3.5 w-3.5 mr-1" data-icon="inline-start" />
                                   Dettagli
@@ -1566,7 +1566,7 @@ export default function AdminDashboard() {
                     <div className="hidden md:block overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-muted border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          <tr className="bg-muted border-b border-border/40 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                             <th className="p-4 pl-6">Timestamp</th>
                             <th className="p-4">Utente</th>
                             <th className="p-4">Modello AI</th>
@@ -1587,20 +1587,20 @@ export default function AdminDashboard() {
                             
                             return (
                               <tr key={log.id} className="hover:bg-muted transition-colors">
-                                <td className="p-4 pl-6 whitespace-nowrap font-mono text-[10px] text-muted-foreground">
+                                <td className="p-4 pl-6 whitespace-nowrap font-mono text-xs text-muted-foreground">
                                   {log.timestamp ? new Date(log.timestamp).toLocaleString() : "—"}
                                 </td>
                                 <td className="p-4 whitespace-nowrap">
                                   <div className="flex flex-col">
                                     <span className="font-semibold text-foreground">{log.userEmail || "Anonimo"}</span>
-                                    <span className="text-[10px] text-muted-foreground font-mono">{log.userId || "—"}</span>
+                                    <span className="text-xs text-muted-foreground font-mono">{log.userId || "—"}</span>
                                   </div>
                                 </td>
-                                <td className="p-4 whitespace-nowrap font-mono text-[10px] text-muted-foreground">
+                                <td className="p-4 whitespace-nowrap font-mono text-xs text-muted-foreground">
                                   {modelName}
                                 </td>
                                 <td className="p-4 whitespace-nowrap">
-                                  <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] uppercase border ${
+                                  <span className={`px-2 py-0.5 rounded-full font-bold text-xs uppercase border ${
                                     type === "ingest"
                                       ? "bg-teal-500/10 text-teal-400 border-teal-500/20"
                                       : type === "ingest_image"
@@ -1629,7 +1629,7 @@ export default function AdminDashboard() {
                                 <td className="p-4 whitespace-nowrap">
                                   <div className="flex flex-col">
                                     <span className="text-foreground font-medium">Totale: {promptTokens + completionTokens}</span>
-                                    <span className="text-[10px] text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground">
                                       In: {promptTokens} | Out: {completionTokens}
                                     </span>
                                   </div>
@@ -1715,56 +1715,56 @@ export default function AdminDashboard() {
                 {/* Total Users */}
                 <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Utenti Registrati</span>
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">Utenti Registrati</span>
                     <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                       <Users className="h-4 w-4" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <h3 className="text-3xl font-extrabold text-foreground leading-none">{userKPIs.totalUsers}</h3>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">Account totali nel database</p>
+                    <p className="text-xs text-muted-foreground font-semibold mt-1">Account totali nel database</p>
                   </div>
                 </Card>
 
                 {/* Active Users */}
                 <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Utenti Attivi (7gg)</span>
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">Utenti Attivi (7gg)</span>
                     <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
                       <Activity className="h-4 w-4" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <h3 className="text-3xl font-extrabold text-foreground leading-none">{userKPIs.activeUsers}</h3>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-1 font-sans">Attivi negli ultimi 7 giorni</p>
+                    <p className="text-xs text-muted-foreground font-semibold mt-1 font-sans">Attivi negli ultimi 7 giorni</p>
                   </div>
                 </Card>
 
                 {/* Added 7d */}
                 <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Iscritti (7gg)</span>
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">Iscritti (7gg)</span>
                     <div className="p-1.5 rounded-lg bg-secondary/10 text-secondary">
                       <Calendar className="h-4 w-4" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <h3 className="text-3xl font-extrabold text-foreground leading-none">{userKPIs.added7d}</h3>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">Registrati negli ultimi 7 giorni</p>
+                    <p className="text-xs text-muted-foreground font-semibold mt-1">Registrati negli ultimi 7 giorni</p>
                   </div>
                 </Card>
 
                 {/* Added 24h */}
                 <Card className="surface-panel p-5 rounded-[24px] border border-border shadow-lg shadow-primary/5 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Iscritti (24h)</span>
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">Iscritti (24h)</span>
                     <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
                       <Zap className="h-4 w-4" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <h3 className="text-3xl font-extrabold text-foreground leading-none">{userKPIs.added24h}</h3>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-1">Registrati nelle ultime 24 ore</p>
+                    <p className="text-xs text-muted-foreground font-semibold mt-1">Registrati nelle ultime 24 ore</p>
                   </div>
                 </Card>
               </div>
@@ -1841,7 +1841,7 @@ export default function AdminDashboard() {
                                 <span className="font-heading text-sm font-bold text-foreground truncate block leading-tight">
                                   {u.displayName}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground truncate block font-medium">
+                                <span className="text-xs text-muted-foreground truncate block font-medium">
                                   {u.email}
                                 </span>
                               </div>
@@ -1849,11 +1849,11 @@ export default function AdminDashboard() {
 
                             {/* Role Badge */}
                             {isUserAdmin ? (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-red-500/10 border border-red-500/20 text-red-500 tracking-wider">
+                              <span className="px-2 py-0.5 rounded-full text-xs font-extrabold uppercase bg-red-500/10 border border-red-500/20 text-red-500 tracking-wider">
                                 Admin
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-muted border border-border/10 text-muted-foreground tracking-wider">
+                              <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase bg-muted border border-border/10 text-muted-foreground tracking-wider">
                                 User
                               </span>
                             )}
@@ -1862,36 +1862,36 @@ export default function AdminDashboard() {
                           {/* Stats Metrics */}
                           <div className="border-y border-border/10 my-4 py-3 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
                             <div>
-                              <span className="text-[9px] text-muted-foreground uppercase tracking-wider block mb-0.5">Scansioni (7g)</span>
+                              <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-0.5">Scansioni (7g)</span>
                               <span className="text-sm font-extrabold text-foreground flex items-center justify-center gap-1">
-                                <Activity className="h-3 w-3 text-primary" />
+                                <Activity className="h-4 w-4 text-primary" />
                                 {stats.scans}
                               </span>
                             </div>
                             <div>
-                              <span className="text-[9px] text-muted-foreground uppercase tracking-wider block mb-0.5">Salvati (7g)</span>
+                              <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-0.5">Salvati (7g)</span>
                               <span className="text-sm font-extrabold text-foreground flex items-center justify-center gap-1">
-                                <Bookmark className="h-3 w-3 text-secondary fill-secondary/10" />
+                                <Bookmark className="h-4 w-4 text-secondary fill-secondary/10" />
                                 {stats.saves}
                               </span>
                             </div>
                             <div>
-                              <span className="text-[9px] text-muted-foreground uppercase tracking-wider block mb-0.5">Eventi (7g)</span>
+                              <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-0.5">Eventi (7g)</span>
                               <span className="text-sm font-extrabold text-foreground flex items-center justify-center gap-1">
-                                <Flame className="h-3 w-3 text-amber-500 fill-amber-500/10" />
+                                <Flame className="h-4 w-4 text-amber-500 fill-amber-500/10" />
                                 {stats.totalEvents}
                               </span>
                             </div>
                           </div>
 
                           {/* Footer Info */}
-                          <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
+                          <div className="flex justify-between items-center text-xs font-bold text-muted-foreground">
                             <span className="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-lg border border-border">
-                              <Coins className="h-3 w-3 text-amber-500" />
+                              <Coins className="h-4 w-4 text-amber-500" />
                               <span className="text-foreground">{u.tokens}</span>
                               <span className="text-muted-foreground font-semibold">tokens</span>
                             </span>
-                            <span className="font-medium text-[9px]">
+                            <span className="font-medium text-xs">
                               Iscritto: {creationDateStr}
                             </span>
                           </div>
@@ -1964,17 +1964,17 @@ export default function AdminDashboard() {
                     return (
                       <div key={log.id} className="p-4 flex flex-col gap-3 hover:bg-muted transition-colors">
                         <div className="flex justify-between items-start">
-                          <span className="font-mono text-[9px] text-muted-foreground">
+                          <span className="font-mono text-xs text-muted-foreground">
                             {log.timestamp ? new Date(log.timestamp).toLocaleString("it-IT") : "—"}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full font-bold bg-primary/10 text-primary border border-primary/5 text-[9px]">
+                          <span className="px-2 py-0.5 rounded-full font-bold bg-primary/10 text-primary border border-primary/5 text-xs">
                             {log.eventName}
                           </span>
                         </div>
 
                         <div className="flex flex-col gap-0.5">
                           <span className="font-semibold text-xs text-foreground">{log.userEmail || "Anonimo"}</span>
-                          <span className="text-[9px] text-muted-foreground font-mono">{log.userId || "—"}</span>
+                          <span className="text-xs text-muted-foreground font-mono">{log.userId || "—"}</span>
                         </div>
 
                         <div className="flex items-center gap-2 border-t border-border/10 pt-2">
@@ -2005,7 +2005,7 @@ export default function AdminDashboard() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-muted border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      <tr className="bg-muted border-b border-border/40 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                         <th className="p-4 pl-6">Timestamp</th>
                         <th className="p-4">Evento</th>
                         <th className="p-4">Utente</th>
@@ -2017,7 +2017,7 @@ export default function AdminDashboard() {
                         const hasGenId = !!log.params.generation_id;
                         return (
                           <tr key={log.id} className="hover:bg-muted transition-colors">
-                            <td className="p-4 pl-6 whitespace-nowrap font-mono text-[10px] text-muted-foreground">
+                            <td className="p-4 pl-6 whitespace-nowrap font-mono text-xs text-muted-foreground">
                               {log.timestamp ? new Date(log.timestamp).toLocaleString() : "—"}
                             </td>
                             <td className="p-4 whitespace-nowrap">
@@ -2028,7 +2028,7 @@ export default function AdminDashboard() {
                             <td className="p-4 whitespace-nowrap">
                               <div className="flex flex-col">
                                 <span className="font-semibold text-foreground">{log.userEmail || "Anonimo"}</span>
-                                <span className="text-[10px] text-muted-foreground font-mono">{log.userId || "—"}</span>
+                                <span className="text-xs text-muted-foreground font-mono">{log.userId || "—"}</span>
                               </div>
                             </td>
                             <td className="p-4">
@@ -2136,7 +2136,7 @@ export default function AdminDashboard() {
                     <div className="space-y-4 text-xs">
                       <div>
                         <span className="text-muted-foreground font-semibold block mb-1">ID Generazione</span>
-                        <span className="font-mono bg-muted px-2 py-1 rounded border border-border text-[10px] break-all block">
+                        <span className="font-mono bg-muted px-2 py-1 rounded border border-border text-xs break-all block">
                           {gen.id}
                         </span>
                       </div>
@@ -2156,15 +2156,15 @@ export default function AdminDashboard() {
 
                       <div className="grid grid-cols-3 gap-2 py-2.5 px-3 bg-muted rounded-xl border border-border text-center">
                         <div>
-                          <span className="text-[10px] text-muted-foreground block mb-0.5">Token Prompt</span>
+                          <span className="text-xs text-muted-foreground block mb-0.5">Token Prompt</span>
                           <span className="font-extrabold text-foreground">{gen.tokens_prompt ?? 0}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-muted-foreground block mb-0.5">Token Completion</span>
+                          <span className="text-xs text-muted-foreground block mb-0.5">Token Completion</span>
                           <span className="font-extrabold text-foreground">{gen.tokens_completion ?? 0}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-muted-foreground block mb-0.5">Latenza</span>
+                          <span className="text-xs text-muted-foreground block mb-0.5">Latenza</span>
                           <span className="font-extrabold text-secondary">
                             {gen.latency !== undefined ? `${(gen.latency / 1000).toFixed(2)}s` : "—"}
                           </span>

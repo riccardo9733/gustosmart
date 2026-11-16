@@ -459,7 +459,7 @@ export default function ShoppingPage() {
                             className="w-7 h-7 rounded-full bg-background flex items-center justify-center text-primary hover:bg-primary/10 active:scale-95 transition-all shrink-0"
                             onClick={() => handleUpdateServings(recipe.id, -1)}
                           >
-                            <Minus className="h-3 w-3" />
+                            <Minus className="h-4 w-4" />
                           </Button>
                           <span className="font-heading text-sm font-bold text-primary min-w-[16px] text-center">
                             {selection.servings}
@@ -470,7 +470,7 @@ export default function ShoppingPage() {
                             className="w-7 h-7 rounded-full bg-background flex items-center justify-center text-primary hover:bg-primary/10 active:scale-95 transition-all shrink-0"
                             onClick={() => handleUpdateServings(recipe.id, 1)}
                           >
-                            <Plus className="h-3 w-3" />
+                            <Plus className="h-4 w-4" />
                           </Button>
                         </div>
                       )}
@@ -553,12 +553,12 @@ export default function ShoppingPage() {
                         <span>{item.name}</span>
                       </p>
                       {item.isCustom ? (
-                        <span className="text-[10px] text-muted-foreground/80 font-medium italic">
+                        <span className="text-xs text-muted-foreground/80 font-medium italic">
                           {t("manualItem")}
                         </span>
                       ) : (
                         sources.length > 0 && (
-                          <span className="text-[10px] text-muted-foreground leading-none">
+                          <span className="text-xs text-muted-foreground leading-none">
                             {t("unifiedFrom", { recipes: sources.join(", ") })}
                           </span>
                         )

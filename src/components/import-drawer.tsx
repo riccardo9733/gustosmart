@@ -298,7 +298,7 @@ export function ImportDrawer() {
 
               {/* Badges delle Piattaforme Supportate (Informativi, non cliccabili) */}
               <div className="flex flex-col items-center gap-3 mt-1">
-                <span className="text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
+                <span className="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase">
                   Funziona con
                 </span>
                 <div className="flex flex-wrap justify-center items-center gap-2">
