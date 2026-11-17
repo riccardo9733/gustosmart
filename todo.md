@@ -94,3 +94,11 @@ Regola di sostituzione globale:
 - [x] 12d: rimosse 5 Sparkles dai bottoni versione + 1 dal titolo feed; tenute: header sezione AI, badge traduzione, marcatori IA per-ingrediente, CTA import, nota assessment
 - [x] 12d: badge "Ricetta Privata" viola + emoji sostituiti con Sage + icona Lock
 - [x] 12e: `npm run build` verde, `vitest` 28/28; lint senza nuovi errori (solo categorie pre-esistenti)
+
+## Fase 13 — Riparazione blank home (regressione Fase 12) — FATTA
+- Causa: script di normalizzazione whitespace ha fuso interi file in mega-righe da 4k-54k caratteri; i commenti `//` su quelle righe hanno commentato hook e return. TS resta verde (codice commentato non controllato, return undefined valido), build verde, ma le pagine renderizzano vuoto.
+- Il commit b7207f6 ha pubblicato i 3 file corrotti: `page.tsx`, `recipes/[id]`, `recipes/share/[id]`.
+- Fix: ripristinati i 3 file da ddba750 e riapplicate le modifiche Fase 12 senza collasso (Sage, text-xs, icone 16px, Sparkles, badge privato + Lock).
+- Regression test durevole: `src/lib/source-hygiene.test.ts` (3 test) — fallisce sui file corrotti, passa sui ripristinati.
+- Verifiche: `npm run build` verde, `vitest` 31/31, nessun nuovo errore lint.
+- Da fare: review del diff, commit e redeploy.

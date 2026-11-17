@@ -28,9 +28,12 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Only intercept GET requests, ignore Firebase Auth / Firestore / Google API calls
+  // Only intercept same-origin http(s) GET requests, ignore Firebase Auth / Firestore / Google API calls.
+  // The http(s) check also excludes chrome-extension:, blob: and data: URLs,
+  // which the Cache API rejects with "Request scheme unsupported".
   if (
     event.request.method !== "GET" ||
+    !event.request.url.startsWith("http") ||
     event.request.url.includes("/api/") ||
     event.request.url.includes("firestore.googleapis.com") ||
     event.request.url.includes("firebase") ||
